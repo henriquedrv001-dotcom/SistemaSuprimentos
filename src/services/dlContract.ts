@@ -176,13 +176,12 @@ export function validateDLContract(
         "Registre o resultado de todos os materiais: contratado ou não contratado com motivo.",
       );
     if (
-      !plan.request.officialDLNumber.trim() ||
       !plan.request.mxmNumber.trim() ||
       !dateOK(plan.request.date) ||
       !dateOK(contract.signedOn)
     )
       throw new Error(
-        "Informe a referência oficial da DL, requisição MXM com data e data da contratação.",
+        "Informe a requisição MXM com data e a data da contratação.",
       );
   }
   if (contract.release) {

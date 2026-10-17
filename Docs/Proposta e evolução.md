@@ -179,3 +179,6 @@ Validação: 74 testes automatizados e build aprovados. Chromium verificou texto
 
 ## Apresentação de preço e categoria nas DLs
 Preço unitário previsto passa a mostrar moeda BRL ao sair do campo e nos campos bloqueados; durante a edição, mantém o valor decimal sem símbolo ou separador de milhar. A formatação é apenas visual: campos vazios continuam vazios, valores inválidos ficam disponíveis para correção e o salvamento continua em centavos. Categoria aparece em maiúsculas na listagem, preservando o texto original armazenado. Build e Chromium aprovados para 50, 0,89, 1.234,56, edição, vazio, entrada inválida, persistência e planejamento concluído.
+
+## Simplificação dos campos da requisição
+Retirados da tela Número do processo, Referência oficial da DL e Observações / motivo da situação. O campo Responsável pela tramitação passa a Responsável pela compra. Número/data da requisição e situação permanecem. Valores antigos dos campos retirados são preservados; a referência oficial deixa de ser exigida na conclusão. Para registrar motivos novos, use Observação / Justificativa do planejamento. Os pedidos de compra MXM, fornecedores, quantidades, preços e demais requisitos da contratação permanecem validados. Os 74 testes e o build passaram.

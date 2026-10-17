@@ -553,9 +553,7 @@ export default function DLPlanningEditor({
               [
                 ["mxmNumber", "Número da requisição MXM"],
                 ["date", "Data da requisição"],
-                ["officialDLNumber", "Referência oficial da DL"],
-                ["responsible", "Responsável pela tramitação"],
-                ["notes", "Observações / motivo da situação"],
+                ["responsible", "Responsável pela compra"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>

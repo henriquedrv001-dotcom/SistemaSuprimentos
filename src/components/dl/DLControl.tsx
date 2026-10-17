@@ -115,8 +115,8 @@ export default function DLControl({
                 {selected.code} · {selected.title}
               </h2>
               <p className="muted">
-                {contractStatus(selected, today)} · Referência oficial:{" "}
-                {selected.request.officialDLNumber}
+                {contractStatus(selected, today)}
+                {selected.request.officialDLNumber && <> · Referência oficial: {selected.request.officialDLNumber}</>}
               </p>
             </div>
             <button

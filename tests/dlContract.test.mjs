@@ -113,10 +113,12 @@ test("todos os dados oficiais são exigidos antes da liberação", () => {
   }
   const plan = planWithResult();
   plan.request.officialDLNumber = "";
-  assert.throws(
-    () => releaseDLPlan(plan, true, "CONCLUIR"),
-    /referência oficial/,
-  );
+  assert.equal(releaseDLPlan(plan, true, "CONCLUIR").stage, "Concluído");
+  plan.request.mxmNumber = "";
+  assert.throws(() => releaseDLPlan(plan, true, "CONCLUIR"), /requisição MXM/);
+  plan.request.mxmNumber = "000123";
+  plan.contract.signedOn = "";
+  assert.throws(() => releaseDLPlan(plan, true, "CONCLUIR"), /data da contratação/);
 });
 test("rascunho de resultado aceita campos em branco e preço zero explícito", () => {
   const plan = planWithResult();
