@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { demoCycleItems, demoCycles, demoItems, demoOrders } from "./data";
 import type { Item, ItemHistoryEntry, SupplyCycle } from "./types";
+import ItemDetailsDialog from "./components/ItemDetailsDialog";
 
 type Section = "Painel" | "Cadastro de itens" | "Ciclos de suprimento" | "Pedidos diretos" | "Planejamento DLs" | "Controle DLs" | "Acompanhamento de pedidos";
 
@@ -48,11 +49,6 @@ function App() {
   const [visibilityFilter, setVisibilityFilter] = useState("visiveis");
   const [editorMode, setEditorMode] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const editDialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    if (editingItem && editorMode) editDialogRef.current?.showModal();
-  }, [editingItem?.id, editorMode]);
   const [bulkDestination, setBulkDestination] = useState("");
   const [bulkMessage, setBulkMessage] = useState("");
   const catalogWrapRef = useRef<HTMLDivElement>(null);
@@ -232,10 +228,22 @@ function App() {
     const code = editingItem.code.trim().toUpperCase();
     if (!code || !editingItem.description.trim()) { window.alert("Código e descrição são obrigatórios."); return; }
     if (items.some((item) => item.id !== editingItem.id && item.code.toUpperCase() === code)) { window.alert("Já existe outro item com esse código."); return; }
-    const updated = { ...editingItem, code, description: editingItem.description.trim().toUpperCase(), unit: editingItem.unit.trim().toUpperCase(), type: (editingItem.type || "SEM TIPO").trim().toUpperCase(), group: editingItem.group.trim().toUpperCase() };
+    const updated = { ...editingItem, code, description: editingItem.description.trim().toUpperCase(), unit: editingItem.unit.trim().toUpperCase(), type: (editingItem.type || "SEM TIPO").trim().toUpperCase(), group: editingItem.group.trim().toUpperCase(), technicalSpecification: (editingItem.technicalSpecification ?? "").trim() };
     const old = items.find((item) => item.id === updated.id);
     setItems((current) => current.map((item) => item.id === updated.id ? updated : item));
-    recordHistory(updated, "Edição de cadastro", `Cadastro editado. Descrição anterior: ${old?.description ?? "—"}; descrição atual: ${updated.description}.`);
+    const changes: string[] = [];
+    const fields: { key: "code" | "description" | "unit" | "type" | "group" | "criterion" | "technicalSpecification"; label: string }[] = [
+      { key: "code", label: "Código MXM" }, { key: "description", label: "Descrição" },
+      { key: "unit", label: "Unidade" }, { key: "type", label: "Tipo" }, { key: "group", label: "Grupo" },
+      { key: "criterion", label: "Critério" }, { key: "technicalSpecification", label: "Especificação técnica" },
+    ];
+    for (const field of fields) {
+      if ((old?.[field.key] ?? "") !== (updated[field.key] ?? "")) {
+        changes.push(`${field.label}: ${old?.[field.key] || "(vazio)"} → ${updated[field.key] || "(vazio)"}`);
+      }
+    }
+    if (old && old.active !== updated.active) changes.push(`Status: ${old.active ? "Ativo" : "Inativo"} → ${updated.active ? "Ativo" : "Inativo"}`);
+    if (changes.length) recordHistory(updated, "Edição de cadastro", changes.join("\n"));
     if (old && old.visible !== updated.visible) {
       recordHistory(updated, updated.visible ? "Item exibido" : "Item ocultado", "Visibilidade alterada pela edição do cadastro.");
     }
@@ -390,7 +398,7 @@ function App() {
                 </div>
                 {bulkMessage && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
                 <div className="role-toolbar"><span>Permissão de edição: <strong>{editorMode ? "Editor (demonstração)" : "Consulta"}</strong></span><button className="secondary-button" onClick={() => { setEditingItem(null); setEditorMode((current) => !current); }}>{editorMode ? "Usar perfil Consulta" : "Ativar perfil Editor"}</button><span className="form-note">Controle ilustrativo; não substitui autenticação real.</span></div>
-                <div className="table-wrap catalog-table-wrap" ref={catalogWrapRef} onScroll={(e) => { if (syncingScroll.current || !fixedScrollRef.current) return; syncingScroll.current = true; fixedScrollRef.current.scrollLeft = e.currentTarget.scrollLeft; syncingScroll.current = false; }}><table className="catalog-table"><thead><tr><th>Selecionar</th><th>Código</th><th>Descrição</th><th>Unidade</th><th>Critério</th></tr></thead><tbody>
+                <div className="table-wrap catalog-table-wrap" ref={catalogWrapRef} onScroll={(e) => { if (syncingScroll.current || !fixedScrollRef.current) return; syncingScroll.current = true; fixedScrollRef.current.scrollLeft = e.currentTarget.scrollLeft; syncingScroll.current = false; }}><table className="catalog-table"><thead><tr><th>Selecionar</th><th>Código</th><th>Descrição</th><th>Unidade</th><th>Critério</th><th>Grupo</th></tr></thead><tbody>
                   {filteredItems.map((item) => <tr key={item.id}>
                     <td><input aria-label={`Selecionar ${item.code}`} type="checkbox" checked={selectedItemIds.includes(item.id)} onChange={(e) => setSelectedItemIds((current) => e.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /></td>
                     <td className="code-cell"><button className="item-code-button" disabled={!editorMode} aria-label={`Editar item ${item.code}`} title={editorMode ? "Abrir edição do item" : "Ative o perfil Editor para editar"} onClick={() => {
@@ -400,12 +408,21 @@ function App() {
                     <td><strong>{item.description}</strong></td>
                     <td>{item.unit}</td>
                     <td><span className="tag tag-neutral">{item.criterion}</span></td>
+                    <td>{item.group}</td>
                   </tr>)}
-                  {filteredItems.length === 0 && <tr><td colSpan={5} className="empty-state">Nenhum item corresponde aos filtros.</td></tr>}
+                  {filteredItems.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum item corresponde aos filtros.</td></tr>}
                 </tbody></table></div>
                 <div className="catalog-fixed-scroll" ref={fixedScrollRef} onScroll={(e) => { if (syncingScroll.current || !catalogWrapRef.current) return; syncingScroll.current = true; catalogWrapRef.current.scrollLeft = e.currentTarget.scrollLeft; syncingScroll.current = false; }}><div ref={fixedScrollInnerRef} style={{ width: `${catalogWidth}px`, height: 1 }} /></div>
-                {editingItem && editorMode && <dialog ref={editDialogRef} className="edit-item-panel item-edit-dialog" aria-labelledby="edit-item-title" onClose={() => setEditingItem(null)}>
-                  <form onSubmit={(event) => { event.preventDefault(); saveEditedItem(); }}><div className="panel-heading"><div><h2 id="edit-item-title">Editar item {editingItem.code}</h2><p>Alterações serão registradas no histórico local.</p></div><button type="button" className="secondary-button" onClick={() => setEditingItem(null)}>Fechar</button></div><div className="form-grid"><label>Código<input value={editingItem.code} onChange={(e) => setEditingItem({ ...editingItem, code: e.target.value.toUpperCase() })} /></label><label>Descrição<input value={editingItem.description} onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value.toUpperCase() })} /></label><label>Unidade<input value={editingItem.unit} onChange={(e) => setEditingItem({ ...editingItem, unit: e.target.value.toUpperCase() })} /></label><label>Tipo<input value={editingItem.type || "SEM TIPO"} onChange={(e) => setEditingItem({ ...editingItem, type: e.target.value.toUpperCase() })} /></label><label>Grupo<input value={editingItem.group} onChange={(e) => setEditingItem({ ...editingItem, group: e.target.value.toUpperCase() })} /></label><label>Critério<select value={editingItem.criterion} onChange={(e) => setEditingItem({ ...editingItem, criterion: e.target.value as Item["criterion"] })}><option>Mensal</option><option>Entrada e saída</option><option>Sob solicitação</option></select></label><label>Status<select value={editingItem.active === false ? "Inativo" : "Ativo"} onChange={(e) => setEditingItem({ ...editingItem, active: e.target.value === "Ativo" })}><option>Ativo</option><option>Inativo</option></select></label><label>Visibilidade<select value={editingItem.visible ? "visivel" : "oculto"} onChange={(e) => setEditingItem({ ...editingItem, visible: e.target.value === "visivel" })}><option value="visivel">Visível no catálogo</option><option value="oculto">Oculto no catálogo</option></select></label></div><p className="form-note">Ocultar mantém o cadastro e o histórico. Para encontrá-lo depois, use o filtro Mostrar → Ocultos.</p><div className="form-actions"><button type="button" className="secondary-button" onClick={() => setEditingItem(null)}>Cancelar</button><button type="submit" className="primary-button" disabled={!editorMode}>Salvar alterações</button></div></form></dialog>}
+                {editingItem && editorMode && <ItemDetailsDialog
+                  key={editingItem.id}
+                  item={editingItem}
+                  history={history}
+                  cycleItems={demoCycleItems}
+                  cycles={cycles}
+                  onChange={setEditingItem}
+                  onSave={saveEditedItem}
+                  onClose={() => setEditingItem(null)}
+                />}
                 <section className="history-panel"><div className="panel-heading"><div><h2>Histórico de alterações</h2><p>Eventos locais mais recentes do catálogo.</p></div></div>{history.length ? <div className="history-list">{history.slice(0, 20).map((entry) => <div className="history-row" key={entry.id}><strong>{entry.code} · {entry.action}</strong><span>{entry.details}</span><small>{new Date(entry.timestamp).toLocaleString("pt-BR")}</small></div>)}</div> : <p className="muted">Ainda não há eventos registrados.</p>}</section>
                 <p className="form-note">Importação nesta versão aceita CSV/TXT exportado do Excel. A importação .xlsx nativa ainda precisa de uma biblioteca específica. Exclusões afetam somente a demonstração local e não verificam vínculos com ciclos ou pedidos.</p>
               </section>

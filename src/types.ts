@@ -14,6 +14,8 @@ export interface Item {
   criterion: SolicitationCriterion;
   active: boolean;
   visible: boolean;
+  technicalSpecification?: string;
+  associations?: ItemAssociation[];
 }
 
 export interface SupplyCycle {
@@ -58,4 +60,16 @@ export interface ItemHistoryEntry {
   action: string;
   details: string;
   timestamp: string;
+}
+
+
+// Each association keeps its own process/order origin; balances are not aggregated by item.
+export interface ItemAssociation {
+  id: string;
+  processNumber?: string;
+  orderNumber?: string;
+  erpOrderNumber?: string;
+  supplierName?: string;
+  availableBalance?: number;
+  unit?: string;
 }
