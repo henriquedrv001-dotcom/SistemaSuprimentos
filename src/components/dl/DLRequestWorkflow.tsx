@@ -1,3 +1,4 @@
+import DLWorkflowStep from "./DLWorkflowStep";
 import type { ReactNode } from "react";
 import type { DLPlan } from "../../types/dl";
 import type { Item } from "../../types";
@@ -47,20 +48,34 @@ export default function DLRequestWorkflow({
   return (
     <div className="dl-request-steps">
       {prelude}
-      <section
-        className="dl-request-step"
-        aria-labelledby="dl-generation-title"
+      <DLWorkflowStep
+        id="dl-generation-title"
+        number={2}
+        title="Gerar requisição"
+        status={
+          generating
+            ? plan.requestReturn
+              ? "Correção solicitada"
+              : "Em preenchimento"
+            : plan.requestSubmission ||
+                plan.requestReview ||
+                plan.contract?.release
+              ? "Enviada"
+              : plan.stage === "Planejamento concluído"
+                ? "Pronta para iniciar"
+                : "Aguardando planejamento"
+        }
+        completed={
+          !generating &&
+          !!(
+            plan.requestSubmission ||
+            plan.requestReview ||
+            plan.contract?.release
+          )
+        }
+        active={generating || plan.stage === "Planejamento concluído"}
+        description="Registre os materiais no MXM e informe o número e a data da requisição."
       >
-        <div className="panel-heading">
-          <h3 id="dl-generation-title">2. Gerar requisição</h3>
-          <span className={`tag ${generating ? "tag-green" : "tag-neutral"}`}>
-            {generating ? "Preenchimento liberado" : "Somente consulta"}
-          </span>
-        </div>
-        <p className="muted">
-          Abra as informações, registre os materiais no MXM e preencha abaixo o
-          número e a data da requisição gerada.
-        </p>
         {generating && plan.requestReturn && (
           <div className="dl-return-note" role="note">
             <strong>Devolvida para correção</strong>
@@ -132,22 +147,22 @@ export default function DLRequestWorkflow({
             . Para corrigir, aguarde a devolução com observação.
           </p>
         )}
-      </section>
-      <section className="dl-request-step" aria-labelledby="dl-analysis-title">
-        <div className="panel-heading">
-          <h3 id="dl-analysis-title">3. Analisar requisição</h3>
-          <span className={`tag ${analyzing ? "tag-amber" : "tag-neutral"}`}>
-            {analyzing
-              ? "Aguardando análise"
-              : plan.requestReview
-                ? "Análise aprovada"
-                : "Aguardando envio"}
-          </span>
-        </div>
-        <p className="muted">
-          Confira a requisição no MXM. Aprove para seguir em processo ou devolva
-          com uma observação para correção.
-        </p>
+      </DLWorkflowStep>
+      <DLWorkflowStep
+        id="dl-analysis-title"
+        number={3}
+        title="Analisar requisição"
+        status={
+          analyzing
+            ? "Aguardando análise"
+            : plan.requestReview
+              ? "Aprovada"
+              : "Aguardando envio"
+        }
+        completed={!!plan.requestReview}
+        active={analyzing}
+        description="Confira no MXM. Aprove para seguir em processo ou devolva com uma observação."
+      >
         <p>
           <strong>Requisição:</strong>{" "}
           {plan.request.mxmNumber || "Não informada"} ·{" "}
@@ -251,7 +266,7 @@ export default function DLRequestWorkflow({
             número e a data permanecem bloqueados.
           </p>
         )}
-      </section>
+      </DLWorkflowStep>
       {finalSteps}
       {otherChanges && (
         <p className="catalog-feedback">

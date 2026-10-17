@@ -642,3 +642,40 @@ dialog.dl-create {margin:auto}
 .dl-quantity-control {display:flex;align-items:center;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--background-soft);min-height:34px}
 .dl-contract-table .dl-quantity-control input {border:0;background:transparent;box-shadow:none;padding-right:5px}
 .dl-quantity-control span {font-size:10px;color:var(--text-secondary);padding-right:7px;flex-shrink:0}
+
+/* Shared compact presentation for the six DL process stages. */
+.dl-request-steps {--control-height:34px;gap:10px}
+.dl-request-steps .dl-workflow-step {padding:0;overflow:hidden}
+.dl-workflow-step.is-active {border-color:#B7CFE9}
+.dl-workflow-step .dl-stage-disclosure > .dl-step-heading {display:grid;grid-template-columns:minmax(0,1fr) auto 16px;align-items:center;gap:10px;padding:12px 14px;list-style:none;color:var(--text);cursor:pointer}
+.dl-step-heading::-webkit-details-marker {display:none}
+.dl-step-heading:focus-visible {outline:2px solid var(--primary);outline-offset:-3px;border-radius:var(--radius)}
+.dl-workflow-step .dl-step-heading h3 {display:flex;align-items:center;gap:8px;min-width:0;margin:0;font-size:13px;font-weight:600;line-height:1.45}
+.dl-step-number {display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:23px;height:23px;border-radius:6px;background:var(--background-soft);color:var(--text-secondary);font-size:11px;font-variant-numeric:tabular-nums}
+.dl-workflow-step.is-active .dl-step-number {background:#E9F2FD;color:var(--primary)}
+.dl-step-pill {display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;line-height:1.4;padding:4px 7px;border-radius:6px;white-space:nowrap}
+.dl-step-pill.is-complete,.dl-step-pill.is-current {background:#E9F2FD;color:var(--primary)}
+.dl-step-pill.is-pending {background:var(--background-soft);color:var(--text-muted)}
+.dl-step-pill svg,.dl-step-chevron {flex-shrink:0}
+.dl-step-chevron {color:var(--text-muted);transition:transform .15s ease}
+.dl-stage-disclosure[open] > .dl-step-heading .dl-step-chevron {transform:rotate(180deg)}
+.dl-stage-disclosure[open] > .dl-step-heading {border-bottom:1px solid var(--border)}
+.dl-workflow-body {padding:12px 14px 14px;min-width:0}
+.dl-workflow-body p {font-size:12px;line-height:1.55;margin:0 0 10px}
+.dl-workflow-body > :last-child {margin-bottom:0}
+.dl-request-steps .form-grid {margin:12px 0;gap:10px 12px;align-items:start}
+.dl-request-steps .form-grid label {font-size:11px;align-content:start}
+.dl-request-steps .form-grid input,.dl-request-steps .form-grid select {height:34px}
+.dl-request-steps .form-grid textarea {min-height:96px;font-size:12px;line-height:1.5}
+.dl-workflow-body .dl-actions {gap:8px;margin-top:12px}
+.dl-workflow-body .primary-button,.dl-workflow-body .secondary-button {min-height:34px;padding:0 11px;font-size:11px}
+.dl-workflow-body .dl-request-brief {margin:12px 0}
+.dl-workflow-body .dl-contract-summary {gap:10px;margin:12px 0}
+.dl-workflow-body .dl-contract-summary > div {padding:10px;min-width:130px}
+.dl-workflow-body .dl-contract-summary strong {font-size:16px}
+.dl-workflow-body .dl-contract-summary span {font-size:11px;margin-bottom:5px}
+.dl-workflow-body .dl-order-upload {margin:12px 0;gap:10px}
+.dl-workflow-body .dl-order-files {margin:10px 0;gap:6px}
+.dl-workflow-body .dl-order-files li {padding:8px 10px}
+.dl-workflow-body .dl-order-closed,.dl-workflow-body .dl-return-note {padding:9px 10px;font-size:11px}
+@media(max-width:600px) {.dl-workflow-step .dl-stage-disclosure > .dl-step-heading {grid-template-columns:minmax(0,1fr) 16px;gap:6px 8px;padding:10px 12px}.dl-step-heading h3 {grid-column:1;grid-row:1}.dl-step-pill {grid-column:1;grid-row:2;justify-self:start;margin-left:31px;white-space:normal}.dl-step-chevron {grid-column:2;grid-row:1}.dl-workflow-body {padding:10px 12px 12px}.dl-workflow-body .dl-actions button {flex:1 1 160px;white-space:normal}}

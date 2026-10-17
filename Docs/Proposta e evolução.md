@@ -230,3 +230,7 @@ Removidas as listas repetidas de histórico do Cronograma e de Requisição e pr
 
 ### Confirmação final sem digitação — 17/10/2026
 Retirado o campo de digitação CONCLUIR. A conclusão mantém o checkbox obrigatório e abre um pop-up confirmar/cancelar; cancelar não altera a DL nem cria saldos. Compatibilidade do serviço com chamadas anteriores preservada. Validados 104 testes e build, além do percurso Chromium: histórico somente na aba própria, conferência obrigatória, cancelamento sem alteração, quatro origens liberadas somente ao confirmar e Controle persistido após recarregar.
+
+
+### Padrão compacto das seis etapas — 17/10/2026
+Componente visual compartilhado para títulos numerados, situações com ícones, expansão e corpo de cada etapa. Mantidos os títulos e a ordem existentes, com campos/ações compactos, paleta azul e cinza e descrições diretas. Etapas concluídas recolhidas, etapas em andamento abertas e consulta manual pelo título. Retirados os expansores redundantes internos de justificativa/fornecedores. Recolher preserva estado em edição e anexos selecionados. Nenhuma mudança de regra ou estrutura dos dados. Validados build, testes existentes e Chromium no percurso completo e versões desktop/móvel.

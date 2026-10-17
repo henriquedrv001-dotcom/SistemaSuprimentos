@@ -1,3 +1,4 @@
+import DLWorkflowStep from "./DLWorkflowStep";
 import { Paperclip, FileText, Download, X } from "lucide-react";
 import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import { useRef, useState } from "react";
@@ -73,30 +74,25 @@ export function DLJustificationStep({
     }
   }
   return (
-    <section
-      className="dl-request-step"
-      aria-labelledby="dl-justification-title"
+    <DLWorkflowStep
+      id="dl-justification-title"
+      number={1}
+      title="Gerar justificativa"
+      status={
+        plan.processFlow?.justification?.completedAt
+          ? "Concluída"
+          : "Preparação"
+      }
+      completed={!!plan.processFlow?.justification?.completedAt}
+      active={editable}
+      description="Revise e copie o modelo básico para a documentação. O texto é independente da justificativa do MXM."
     >
-      <div className="panel-heading">
-        <h3 id="dl-justification-title">1. Gerar justificativa</h3>
-        <span
-          className={`tag ${plan.processFlow?.justification?.completedAt ? "tag-green" : "tag-neutral"}`}
-        >
-          {plan.processFlow?.justification?.completedAt
-            ? "Concluída"
-            : "Preparação"}
-        </span>
-      </div>
-      <p className="muted">
-        Modelo básico para revisar e copiar para a documentação. Não substitui a
-        Observação / Justificativa do MXM.
-      </p>
-      <details>
-        <summary>Preparar justificativa</summary>
+      <div className="dl-step-content">
         <div className="form-grid">
           <label className="dl-full-row">
             Justificativa do processo
             <textarea
+              aria-label="Justificativa do processo"
               rows={4}
               disabled={!editable || blocked}
               value={text}
@@ -153,13 +149,13 @@ export function DLJustificationStep({
             Concluir justificativa
           </button>
         </div>
-      </details>
+      </div>
       {error && (
         <p role="status" className="muted">
           {error}
         </p>
       )}
-    </section>
+    </DLWorkflowStep>
   );
 }
 export default function DLProcessStages({
@@ -293,23 +289,21 @@ export default function DLProcessStages({
   }
   return (
     <>
-      <section className="dl-request-step" aria-labelledby="dl-order-title">
-        <div className="panel-heading">
-          <h3 id="dl-order-title">4. Registro do pedido</h3>
-          <span
-            className={`tag ${processClosed || hasAttachments ? "tag-green" : "tag-neutral"}`}
-          >
-            {processClosed
-              ? "Pedido gerado"
-              : hasAttachments
-                ? "Anexos registrados"
-                : "Aguardando pedido"}
-          </span>
-        </div>
-        <p className="muted">
-          A responsável pela compra anexa o pedido emitido no MXM para orientar
-          o preenchimento dos dados finais.
-        </p>
+      <DLWorkflowStep
+        id="dl-order-title"
+        number={4}
+        title="Registro do pedido"
+        status={
+          processClosed
+            ? "Pedido gerado"
+            : hasAttachments
+              ? "Anexos registrados"
+              : "Aguardando pedido"
+        }
+        completed={processClosed || hasAttachments}
+        active={eligible && !processClosed}
+        description="Anexe o pedido emitido no MXM. Registrar fecha o processo de compra com status Pedido gerado."
+      >
         {processClosed && plan.processFlow?.orderRegistered && (
           <p className="dl-order-closed" role="status">
             Processo de compra fechado ao registrar o pedido em{" "}
@@ -457,28 +451,27 @@ export default function DLProcessStages({
           </>
         )}
         <p className="muted">
-          Anexos salvos somente neste navegador. Ainda não são compartilhados
-          entre usuários e não acompanham o backup JSON.
+          Anexos locais neste navegador; não são compartilhados entre usuários
+          nem incluídos no backup JSON.
         </p>
-      </section>
-      <section className="dl-request-step" aria-labelledby="dl-suppliers-title">
-        <div className="panel-heading">
-          <h3 id="dl-suppliers-title">5. Definição de fornecedores</h3>
-          <span
-            className={`tag ${submitted || released ? "tag-green" : "tag-neutral"}`}
-          >
-            {released
-              ? "Aprovada"
-              : submitted
-                ? "Enviada para aprovação"
-                : "A preencher"}
-          </span>
-        </div>
-        <p className="muted">
-          O aprendiz confere o pedido anexado e informa fornecedores, números
-          MXM, preços e vigência. Um fornecedor por item; as quantidades vêm do
-          planejamento.
-        </p>
+      </DLWorkflowStep>
+      <DLWorkflowStep
+        id="dl-suppliers-title"
+        number={5}
+        title="Definição de fornecedores"
+        status={
+          released
+            ? "Aprovada"
+            : submitted
+              ? "Enviada para aprovação"
+              : canFill
+                ? "Em preenchimento"
+                : "Aguardando pedido"
+        }
+        completed={submitted || released}
+        active={canFill}
+        description="Confira o pedido e informe fornecedores, números MXM, preços e vigência. As quantidades vêm do planejamento."
+      >
         {(!hasAttachments ||
           (!processClosed && !!plan.processFlow?.purchaseOrders)) &&
           !released && (
@@ -492,8 +485,7 @@ export default function DLProcessStages({
             {plan.processFlow.suppliersReturn.reason}
           </p>
         )}
-        <details>
-          <summary>Conferir fornecedores e valores</summary>
+        <div className="dl-step-content">
           <DLContractForm
             plan={plan}
             items={items}
@@ -519,23 +511,23 @@ export default function DLProcessStages({
               </button>
             </div>
           )}
-        </details>
-      </section>
-      <section className="dl-request-step" aria-labelledby="dl-approval-title">
-        <div className="panel-heading">
-          <h3 id="dl-approval-title">6. Aprovação</h3>
-          <span className={`tag ${released ? "tag-green" : "tag-neutral"}`}>
-            {released
-              ? "DL concluída"
-              : submitted
-                ? "Aguardando aprovação"
-                : "Aguardando fornecedores"}
-          </span>
         </div>
-        <p className="muted">
-          Confira o pedido, os fornecedores e os valores. Somente a aprovação
-          final libera os saldos no Controle de DLs.
-        </p>
+      </DLWorkflowStep>
+      <DLWorkflowStep
+        id="dl-approval-title"
+        number={6}
+        title="Aprovação"
+        status={
+          released
+            ? "DL concluída"
+            : submitted
+              ? "Aguardando aprovação"
+              : "Aguardando fornecedores"
+        }
+        completed={released}
+        active={submitted && !released}
+        description="Confira os dados finais. A aprovação libera os saldos no Controle de DLs."
+      >
         {!released && (
           <div className="dl-actions">
             <button
@@ -579,7 +571,7 @@ export default function DLProcessStages({
             · {plan.contract!.release!.actor}
           </p>
         )}
-      </section>
+      </DLWorkflowStep>
       {error && (
         <p className="catalog-error" role="alert">
           {error}
