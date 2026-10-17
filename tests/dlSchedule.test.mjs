@@ -243,7 +243,7 @@ test("cronograma de DL concluída pode mudar sem alterar contratação ou origem
   assert.throws(
     () =>
       storeDLPlan(done.workspace, unsafe, "Mudar", "", { scheduleOnly: true }),
-    /protegida/,
+    /planejamento está fechado/,
   );
 });
 test("dados antigos sem cronograma ou meses continuam intactos na leitura", () => {

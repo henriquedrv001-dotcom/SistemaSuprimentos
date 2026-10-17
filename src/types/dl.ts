@@ -36,7 +36,20 @@ export interface DLPlan {
   stage: DLStage;
   contract?: DLContract;
   schedule?: DLSchedule;
-  requestWorkflow?: "mxm-review-v1";
+  requestWorkflow?: "mxm-review-v1" | "mxm-review-v2";
+  requestSubmission?: {
+    timestamp: string;
+    actor: string;
+    mxmNumber: string;
+    requestDate: string;
+  };
+  requestReturn?: {
+    timestamp: string;
+    actor: string;
+    reason: string;
+    mxmNumber: string;
+    requestDate: string;
+  };
   requestReview?: {
     timestamp: string;
     actor: string;
@@ -119,4 +132,14 @@ export interface DLSchedule {
   deliveryDays: number | null;
   deliveryDayBasis: "" | "calendar" | "business";
   deliveredOn: string;
+}
+
+export interface DLSaveOptions {
+  release?: boolean;
+  reviewRequest?: boolean;
+  scheduleOnly?: boolean;
+  submitRequest?: boolean;
+  returnRequest?: boolean;
+  reopenPlanning?: boolean;
+  startRequest?: boolean;
 }

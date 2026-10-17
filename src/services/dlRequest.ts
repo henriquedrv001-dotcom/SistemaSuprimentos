@@ -1,3 +1,4 @@
+import { validDateOnly } from "./dlDates.ts";
 import type { DLPlan } from "../types/dl";
 import type { Item } from "../types";
 export function dlObservation(plan: Pick<DLPlan, "justification" | "notes">) {
@@ -11,34 +12,79 @@ export function dlObservation(plan: Pick<DLPlan, "justification" | "notes">) {
 }
 export function resolveDLRequestStage(plan: DLPlan, previous?: DLPlan): DLPlan {
   if (plan.contract?.release) return plan;
-  const number = plan.request.mxmNumber.trim();
-  const requestChanged =
-    !!previous?.requestReview &&
-    (previous.requestReview.mxmNumber !== number ||
-      previous.requestReview.requestDate !== plan.request.date);
   const workflow =
     previous?.requestWorkflow ||
     plan.requestWorkflow ||
     (["Gerar requisição", "Analisar requisição gerada", "Em processo"].includes(
       plan.stage,
     )
-      ? ("mxm-review-v1" as const)
+      ? plan.stage === "Gerar requisição"
+        ? "mxm-review-v2"
+        : "mxm-review-v1"
       : undefined);
+  return { ...plan, ...(workflow ? { requestWorkflow: workflow } : {}) };
+}
+export function submitDLRequest(plan: DLPlan, confirmed: boolean): DLPlan {
+  if (plan.stage !== "Gerar requisição")
+    throw new Error(
+      "A geração da requisição está bloqueada. O responsável precisa devolvê-la para correção.",
+    );
+  if (!confirmed)
+    throw new Error("Confirme o envio da requisição para análise.");
+  if (
+    !plan.request.mxmNumber.trim() ||
+    !validDateOnly(plan.request.date) ||
+    !validDateOnly(plan.deliveryDate ?? "")
+  )
+    throw new Error(
+      "Preencha número e data da requisição MXM e a data de entrega antes de enviar para análise.",
+    );
   const result: DLPlan = {
     ...plan,
-    ...(workflow ? { requestWorkflow: workflow } : {}),
+    stage: "Analisar requisição gerada",
+    requestWorkflow: "mxm-review-v2",
+    request: { ...plan.request, mxmNumber: plan.request.mxmNumber.trim() },
+    requestSubmission: {
+      timestamp: new Date().toISOString(),
+      actor: "Sessão local · sem autenticação",
+      mxmNumber: plan.request.mxmNumber.trim(),
+      requestDate: plan.request.date,
+    },
   };
-  if (requestChanged) delete result.requestReview;
-  if (result.stage === "Gerar requisição" && number)
-    return { ...result, stage: "Analisar requisição gerada" };
-  if (
-    ["Em processo", "Aguardando dados finais"].includes(result.stage) &&
-    requestChanged
-  )
-    return {
-      ...result,
-      stage: number ? "Analisar requisição gerada" : "Gerar requisição",
-    };
+  delete result.requestReview;
+  return result;
+}
+export function returnDLRequest(plan: DLPlan, reason: string): DLPlan {
+  if (plan.stage !== "Analisar requisição gerada")
+    throw new Error(
+      "Somente requisições aguardando análise podem ser devolvidas.",
+    );
+  if (!reason.trim())
+    throw new Error("Informe uma observação explicando a correção necessária.");
+  const result: DLPlan = {
+    ...plan,
+    stage: "Gerar requisição",
+    requestWorkflow: "mxm-review-v2",
+    requestReturn: {
+      timestamp: new Date().toISOString(),
+      actor: "Sessão local · sem autenticação",
+      reason: reason.trim(),
+      mxmNumber: plan.request.mxmNumber,
+      requestDate: plan.request.date,
+    },
+  };
+  delete result.requestReview;
+  return result;
+}
+export function reopenDLPlanning(plan: DLPlan, confirmed: boolean): DLPlan {
+  if (plan.contract?.release)
+    throw new Error(
+      "A contratação concluída está protegida; não pode ser reaberta por este fluxo.",
+    );
+  if (!confirmed) throw new Error("Confirme a reabertura do planejamento.");
+  const result: DLPlan = { ...plan, stage: "Em planejamento" };
+  delete result.requestReview;
+  delete result.requestSubmission;
   return result;
 }
 export function reviewDLRequest(plan: DLPlan, confirmed: boolean): DLPlan {
@@ -59,7 +105,7 @@ export function reviewDLRequest(plan: DLPlan, confirmed: boolean): DLPlan {
   return {
     ...plan,
     stage: "Em processo",
-    requestWorkflow: "mxm-review-v1",
+    requestWorkflow: plan.requestWorkflow ?? "mxm-review-v1",
     requestReview: {
       timestamp: new Date().toISOString(),
       actor: "Sessão local · sem autenticação",

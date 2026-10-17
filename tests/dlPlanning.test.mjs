@@ -169,6 +169,7 @@ test("planejamento finalizado bloqueia edição de orçamento até reabrir", () 
     { ...first.plan, stage: "Em planejamento" },
     "Reaberto",
     "",
+    { reopenPlanning: true },
   );
 });
 test("tramitação requer dados MXM e cancelamento exige motivo", () => {

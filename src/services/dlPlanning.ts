@@ -2,6 +2,7 @@ import { validateDLSchedule } from "./dlSchedule.ts";
 import { dlObservation, resolveDLRequestStage } from "./dlRequest.ts";
 import type { Item } from "../types";
 import type {
+  DLSaveOptions,
   DLIdentityDraft,
   DLPlan,
   DLPlanningLine,
@@ -115,7 +116,7 @@ export function validateDLPlan(plan: DLPlan) {
     throw new Error("Informe uma data de abertura válida.");
   if (
     plan.requestWorkflow !== undefined &&
-    plan.requestWorkflow !== "mxm-review-v1"
+    !["mxm-review-v1", "mxm-review-v2"].includes(plan.requestWorkflow)
   )
     throw new Error("Fluxo da requisição inválido.");
   if (!dlStages.includes(plan.stage))
@@ -188,14 +189,6 @@ export function validateDLPlan(plan: DLPlan) {
       "Registre o motivo nas observações para suspender, cancelar ou indicar que não foi contratado.",
     );
   if (
-    plan.stage === "Gerar requisição" &&
-    plan.request.mxmNumber.trim() &&
-    !validDate(plan.request.date)
-  )
-    throw new Error(
-      "Informe a data da requisição MXM para encaminhá-la à análise.",
-    );
-  if (
     plan.requestReview &&
     (!validDate(plan.requestReview.requestDate) ||
       !Number.isFinite(Date.parse(plan.requestReview.timestamp)) ||
@@ -213,6 +206,32 @@ export function validateDLPlan(plan: DLPlan) {
   )
     throw new Error(
       "Confirme a análise da requisição gerada antes de seguir em processo.",
+    );
+  for (const record of [plan.requestSubmission, plan.requestReturn])
+    if (
+      record &&
+      (!Number.isFinite(Date.parse(record.timestamp)) ||
+        !record.actor.trim() ||
+        !record.mxmNumber.trim() ||
+        !validDate(record.requestDate))
+    )
+      throw new Error("Registro de envio/devolução da requisição inválido.");
+  if (plan.requestReturn && !plan.requestReturn.reason.trim())
+    throw new Error("A devolução precisa de uma observação para correção.");
+  if (
+    plan.requestWorkflow === "mxm-review-v2" &&
+    [
+      "Analisar requisição gerada",
+      "Em processo",
+      "Aguardando dados finais",
+      "Concluído",
+    ].includes(plan.stage) &&
+    (!plan.requestSubmission ||
+      plan.requestSubmission.mxmNumber !== plan.request.mxmNumber.trim() ||
+      plan.requestSubmission.requestDate !== plan.request.date)
+  )
+    throw new Error(
+      "Envie explicitamente a requisição para análise antes de avançar.",
     );
   validateDLContract(plan);
   validateDLSchedule(plan);
@@ -350,14 +369,103 @@ export function storeDLPlan(
   candidate: DLPlan,
   action: string,
   details: string,
-  options?: {
-    release?: boolean;
-    reviewRequest?: boolean;
-    scheduleOnly?: boolean;
-  },
+  options?: DLSaveOptions,
 ) {
   const previous = workspace.plans.find((plan) => plan.id === candidate.id);
   candidate = resolveDLRequestStage(candidate, previous);
+  if (previous) {
+    const planningData = (plan: DLPlan) =>
+      JSON.stringify({
+        title: plan.title,
+        category: plan.category,
+        openedOn: plan.openedOn,
+        responsible: plan.responsible,
+        justification: plan.justification,
+        notes: plan.notes,
+        deliveryDate: plan.deliveryDate,
+        lines: plan.lines,
+      });
+    if (!editableDLItems(previous)) {
+      if (planningData(previous) !== planningData(candidate))
+        throw new Error(
+          "O planejamento está fechado. Reabra antes de alterar suas informações.",
+        );
+      if (editableDLItems(candidate) && !options?.reopenPlanning)
+        throw new Error(
+          "Use a ação Reabrir planejamento para liberar a edição.",
+        );
+    }
+    if (
+      options?.reopenPlanning &&
+      (previous.contract?.release ||
+        candidate.stage !== "Em planejamento" ||
+        candidate.requestSubmission ||
+        candidate.requestReview)
+    )
+      throw new Error(
+        "Reabertura inválida. Preserve os dados e reinicie a conferência da requisição.",
+      );
+    if (
+      ["Gerar requisição", "Analisar requisição gerada"].includes(
+        previous.stage,
+      ) &&
+      JSON.stringify(previous.contract) !== JSON.stringify(candidate.contract)
+    )
+      throw new Error(
+        "A contratação só pode ser alterada após a análise da requisição.",
+      );
+    const changedRequest =
+      previous.request.mxmNumber !== candidate.request.mxmNumber ||
+      previous.request.date !== candidate.request.date;
+    if (
+      changedRequest &&
+      previous.stage !== "Gerar requisição" &&
+      !editableDLItems(previous)
+    )
+      throw new Error(
+        "A requisição enviada está bloqueada. Devolva para correção antes de alterar número ou data.",
+      );
+    if (
+      previous.stage === "Gerar requisição" &&
+      candidate.stage === "Analisar requisição gerada" &&
+      !options?.submitRequest
+    )
+      throw new Error("Use Enviar para análise para encaminhar a requisição.");
+    if (
+      previous.stage === "Analisar requisição gerada" &&
+      candidate.stage === "Gerar requisição" &&
+      (!options?.returnRequest || !candidate.requestReturn?.reason.trim())
+    )
+      throw new Error(
+        "Devolva a requisição com uma observação para liberar a correção.",
+      );
+    if (
+      previous.stage !== "Gerar requisição" &&
+      candidate.stage === "Gerar requisição" &&
+      previous.stage !== "Analisar requisição gerada" &&
+      !options?.startRequest
+    )
+      throw new Error("Use a ação Gerar requisição para iniciar essa etapa.");
+    if (
+      JSON.stringify(previous.requestSubmission) !==
+        JSON.stringify(candidate.requestSubmission) &&
+      !options?.submitRequest &&
+      !options?.reopenPlanning &&
+      !options?.startRequest
+    )
+      throw new Error(
+        "O registro de envio só pode ser alterado pelo envio explícito ou pela reabertura.",
+      );
+    if (
+      JSON.stringify(previous.requestReturn) !==
+        JSON.stringify(candidate.requestReturn) &&
+      !options?.returnRequest
+    )
+      throw new Error(
+        "A observação de devolução deve ser registrada pela ação de devolução.",
+      );
+  }
+
   if (
     candidate.stage === "Em processo" &&
     previous?.stage !== "Em processo" &&
@@ -425,7 +533,10 @@ export function storeDLPlan(
   const now = new Date().toISOString();
   const saved = validateDLPlan({
     ...candidate,
-    title: candidate.title.trim(),
+    title:
+      previous && !editableDLItems(previous)
+        ? candidate.title
+        : candidate.title.trim(),
     updatedAt: now,
     createdAt: previous?.createdAt ?? candidate.createdAt,
     revision: previous ? previous.revision + 1 : 1,

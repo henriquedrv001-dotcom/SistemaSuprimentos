@@ -137,7 +137,7 @@ export default function DLContractForm({
         DL.
       </p>
       <fieldset disabled={readOnly} className="dl-contract-fields">
-        <div className="form-grid">
+        <div className="form-grid dl-validity-fields">
           <label>
             Data da contratação / Emissão do pedido
             <input

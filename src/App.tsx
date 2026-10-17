@@ -1,5 +1,5 @@
 import {resolveDLRequestStage} from "./services/dlRequest";
-import type { DLPlan } from "./types/dl";
+import type { DLPlan, DLSaveOptions } from "./types/dl";
 import { dlWorkspaceKey, emptyDLWorkspace, readDLWorkspace, storeDLPlan } from "./services/dlPlanning";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -331,7 +331,7 @@ function App() {
     setSection(destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
   }
 
-  function saveDLPlan(candidate: DLPlan, action: string, options?: {release?:boolean;reviewRequest?:boolean;scheduleOnly?:boolean}) {
+  function saveDLPlan(candidate: DLPlan, action: string, options?: DLSaveOptions) {
     if (dlState.error) throw new Error(dlState.error);
     if (JSON.stringify(readDLWorkspace(localStorage.getItem(dlWorkspaceKey))) !== JSON.stringify(dlWorkspace) || (localStorage.getItem("suprimentos:item-history:v1") !== null && localStorage.getItem("suprimentos:item-history:v1") !== JSON.stringify(history))) throw new Error("As DLs ou o histórico mudaram em outra aba. Recarregue antes de salvar.");
     const previous = dlWorkspace.plans.find(plan => plan.id === candidate.id);
@@ -341,11 +341,13 @@ function App() {
       if (previous?.[key] !== candidate[key]) changes.push(`${({title:"Objeto", category:"Categoria", openedOn:"Abertura", responsible:"Responsável pelo estoque", justification:"Observação / Justificativa", notes:"Observações legadas", deliveryDate:"Data de entrega", stage:"Situação"})[key]}: ${previous?.[key] || "(vazio)"} → ${candidate[key] || "(vazio)"}`);
     }
     for (const key of Object.keys(candidate.request) as (keyof DLPlan["request"])[]) if (previous?.request[key] !== candidate.request[key] && (previous?.request[key] || candidate.request[key])) changes.push(`Requisição (${key}): ${previous?.request[key] || "(vazio)"} → ${candidate.request[key] || "(vazio)"}`);
-    if (JSON.stringify(previous?.requestReview) !== JSON.stringify(candidate.requestReview)) changes.push(candidate.requestReview ? `Análise da requisição MXM ${candidate.requestReview.mxmNumber} confirmada em ${candidate.requestReview.timestamp}. Situação: Em processo. Identificação: ${candidate.requestReview.actor}.` : "Análise anterior invalidada após alteração do número ou data da requisição.");
+    if (JSON.stringify(previous?.requestReview) !== JSON.stringify(candidate.requestReview)) changes.push(candidate.requestReview ? `Análise da requisição MXM ${candidate.requestReview.mxmNumber} confirmada em ${candidate.requestReview.timestamp}. Situação: Em processo. Identificação: ${candidate.requestReview.actor}.` : "Análise anterior invalidada pela devolução ou reabertura do planejamento.");
     if (JSON.stringify(previous?.schedule) !== JSON.stringify(candidate.schedule)) {
       const labels = {coverageStart:"Início do abastecimento",coverageMonths:"Meses de abastecimento",plannedAuthorizationOn:"Previsão da autorização",authorizationRequestedOn:"Solicitação à gerência",authorizationGrantedOn:"Autorização recebida",plannedRequestOn:"Previsão da requisição",processMonths:"Prazo do processo em meses",deliveryDays:"Prazo da entrega em dias",deliveryDayBasis:"Contagem da entrega",deliveredOn:"Entrega realizada (acompanhamento)"};
       for (const key of Object.keys(labels) as (keyof typeof labels)[]) if(previous?.schedule?.[key] !== candidate.schedule?.[key]) changes.push(`Cronograma · ${labels[key]}: ${previous?.schedule?.[key] ?? "(não informado)"} → ${candidate.schedule?.[key] ?? "(não informado)"}`);
     }
+    if(JSON.stringify(previous?.requestSubmission)!==JSON.stringify(candidate.requestSubmission)) changes.push(candidate.requestSubmission?`Requisição MXM ${candidate.requestSubmission.mxmNumber}, de ${candidate.requestSubmission.requestDate}, enviada explicitamente para análise em ${candidate.requestSubmission.timestamp}. Edição bloqueada até devolução.`:"Envio anterior invalidado pela reabertura do planejamento; será necessário reenviar para análise.");
+    if(JSON.stringify(previous?.requestReturn)!==JSON.stringify(candidate.requestReturn)&&candidate.requestReturn)changes.push(`Requisição devolvida para correção em ${candidate.requestReturn.timestamp}. Observação: ${candidate.requestReturn.reason}`);
     const itemEvents: ItemHistoryEntry[] = [];
     for (const itemId of new Set([...(previous?.lines ?? []).map(line => line.itemId), ...candidate.lines.map(line => line.itemId)])) {
       const old = previous?.lines.find(line => line.itemId === itemId); const next = candidate.lines.find(line => line.itemId === itemId);

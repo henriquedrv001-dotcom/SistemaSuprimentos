@@ -1,3 +1,7 @@
+import { CalendarDays } from "lucide-react";
+import DLHistory from "./DLHistory";
+import DLRequestWorkflow from "./DLRequestWorkflow";
+import type { RequestAction } from "./DLRequestWorkflow";
 import DLSchedulePanel from "./DLSchedulePanel";
 import { emptyDLSchedule } from "../../services/dlSchedule";
 import DLMoneyInput from "./DLMoneyInput";
@@ -5,8 +9,10 @@ import {
   dlObservation,
   resolveDLRequestStage,
   reviewDLRequest,
+  submitDLRequest,
+  returnDLRequest,
+  reopenDLPlanning,
 } from "../../services/dlRequest";
-import DLRequestBrief from "./DLRequestBrief";
 import DLContractForm, {
   contractInput,
   materializeContract,
@@ -15,8 +21,6 @@ import DLReleaseDialog from "./DLReleaseDialog";
 import { releaseDLPlan, validateDLContract } from "../../services/dlContract";
 import { useEffect, useState } from "react";
 import type { DLPlan } from "../../types/dl";
-import { dlStages } from "../../types/dl";
-import type { DLStage } from "../../types/dl";
 import type { DLPlanningProps } from "../../pages/estoque/PlanejamentoControleDLs";
 import {
   addDLItems,
@@ -81,7 +85,7 @@ export default function DLPlanningEditor({
   const released = !!plan.contract?.release;
   const contractDirty =
     JSON.stringify(contractDraft) !==
-    JSON.stringify(contractInput(plan.contract));
+    JSON.stringify(contractInput(plan.contract, plan.lines));
   const [picker, setPicker] = useState(false);
   const [error, setError] = useState("");
   const dirty =
@@ -141,8 +145,96 @@ export default function DLPlanningEditor({
     budgetText = "Revise os valores digitados";
   }
   const editable = editableDLItems(plan);
+  const canEditContract =
+    !released &&
+    !editable &&
+    ![
+      "Gerar requisição",
+      "Analisar requisição gerada",
+      "Cancelado",
+      "Suspenso",
+      "Não contratado",
+    ].includes(plan.stage);
+  const planningDirty =
+    JSON.stringify({ ...draft, request: plan.request }) !==
+      JSON.stringify(plan) ||
+    draft.lines.some(
+      (line) =>
+        values[line.id]?.quantity !== decimalInput(line.quantityMilli, 3) ||
+        values[line.id]?.price !== decimalInput(line.estimatedPriceCents, 2),
+    );
+  const otherRequestChanges = planningDirty || scheduleDirty || contractDirty;
+  function requestAction(action: RequestAction, reason = "") {
+    try {
+      if (otherRequestChanges)
+        throw new Error(
+          "Salve as alterações nas outras abas antes de continuar.",
+        );
+      let candidate: DLPlan = { ...plan, request: { ...plan.request } };
+      let options: Parameters<typeof onSave>[2];
+      let label = "";
+      if (action === "start") {
+        candidate.stage = "Gerar requisição";
+        candidate.requestWorkflow = "mxm-review-v2";
+        delete candidate.requestSubmission;
+        delete candidate.requestReview;
+        options = { startRequest: true };
+        label = "Geração da requisição iniciada";
+      } else if (action === "saveDraft" || action === "submit") {
+        if (plan.stage !== "Gerar requisição")
+          throw new Error(
+            "A geração está bloqueada. Aguarde a devolução para correção.",
+          );
+        candidate.request.mxmNumber = draft.request.mxmNumber;
+        candidate.request.date = draft.request.date;
+        if (action === "submit") {
+          candidate = submitDLRequest(candidate, true);
+          options = { submitRequest: true };
+          label = "Requisição enviada para análise";
+        } else label = "Rascunho da requisição salvo";
+      } else {
+        candidate.request.responsible = draft.request.responsible;
+        if (action === "approve") {
+          candidate = reviewDLRequest(candidate, true);
+          options = { reviewRequest: true };
+          label = "Requisição aprovada e enviada para processo";
+        } else if (action === "return") {
+          candidate = returnDLRequest(candidate, reason);
+          options = { returnRequest: true };
+          label = "Requisição devolvida para correção";
+        } else if (["suspend", "cancel", "notContracted"].includes(action)) {
+          if (!reason.trim())
+            throw new Error("Informe o motivo da alteração de situação.");
+          candidate.stage =
+            action === "suspend"
+              ? "Suspenso"
+              : action === "cancel"
+                ? "Cancelado"
+                : "Não contratado";
+          candidate.request.notes = reason.trim();
+          label = `Processo ${candidate.stage.toLocaleLowerCase("pt-BR")}: ${reason.trim()}`;
+        } else label = "Responsável pela compra atualizado";
+      }
+      validateDLPlan(candidate);
+      onSave(candidate, label, options);
+      setError("");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível atualizar a requisição.",
+      );
+    }
+  }
+
   function save(stage = draft.stage, action = "Planejamento atualizado") {
     try {
+      if (tab === "request") {
+        requestAction(
+          plan.stage === "Gerar requisição" ? "saveDraft" : "saveBuyer",
+        );
+        return;
+      }
       const scheduleOnly = released && tab === "schedule";
       const candidate = scheduleOnly
         ? { ...plan, schedule: scheduleDraft }
@@ -201,8 +293,23 @@ export default function DLPlanningEditor({
         </div>
         <div className="dl-actions">
           <button
+            className="secondary-button"
+            onClick={() => setTab("schedule")}
+            aria-label="Abrir cronograma"
+            aria-pressed={tab === "schedule"}
+          >
+            <CalendarDays size={16} />
+            Cronograma
+          </button>
+          <button
             className="primary-button"
-            disabled={released && tab !== "schedule"}
+            disabled={
+              tab === "items"
+                ? !editable
+                : tab === "contract"
+                  ? !canEditContract
+                  : tab === "history" || (released && tab !== "schedule")
+            }
             onClick={() => save()}
           >
             Salvar alterações
@@ -232,12 +339,28 @@ export default function DLPlanningEditor({
             <button
               className="secondary-button"
               onClick={() => {
-                if (
-                  window.confirm(
-                    "Reabrir o planejamento para revisar materiais e orçamento?",
+                try {
+                  if (dirty)
+                    throw new Error(
+                      "Salve ou descarte as alterações antes de reabrir o planejamento.",
+                    );
+                  if (
+                    window.confirm(
+                      "Reabrir o planejamento? As informações serão liberadas para edição e a requisição precisará ser enviada e analisada novamente.",
+                    )
                   )
-                )
-                  save("Em planejamento", "Planejamento reaberto");
+                    onSave(
+                      reopenDLPlanning(plan, true),
+                      "Planejamento reaberto; novo envio e análise necessários",
+                      { reopenPlanning: true },
+                    );
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : "Não foi possível reabrir.",
+                  );
+                }
               }}
             >
               Reabrir planejamento
@@ -362,7 +485,7 @@ export default function DLPlanningEditor({
               <label key={key}>
                 {label}
                 <input
-                  disabled={released}
+                  disabled={!editable}
                   type={key === "openedOn" ? "date" : "text"}
                   value={draft[key]}
                   onChange={(e) =>
@@ -376,7 +499,7 @@ export default function DLPlanningEditor({
               <textarea
                 aria-label="Observação / Justificativa"
                 rows={2}
-                disabled={released}
+                disabled={!editable}
                 value={dlObservation(draft)}
                 onChange={(e) =>
                   setDraft({
@@ -392,7 +515,7 @@ export default function DLPlanningEditor({
               <input
                 aria-label="Data de entrega"
                 type="date"
-                disabled={released}
+                disabled={!editable}
                 value={draft.deliveryDate ?? ""}
                 onChange={(e) =>
                   setDraft({ ...draft, deliveryDate: e.target.value })
@@ -539,162 +662,20 @@ export default function DLPlanningEditor({
         </>
       )}
       {tab === "request" && (
-        <>
-          <div className="form-grid">
-            <label>
-              Situação
-              <select
-                disabled={released}
-                value={draft.stage}
-                onChange={(e) =>
-                  setDraft({ ...draft, stage: e.target.value as DLStage })
-                }
-              >
-                {dlStages
-                  .filter(
-                    (stage) =>
-                      stage === draft.stage ||
-                      (![
-                        "Concluído",
-                        "Em processo",
-                        "Requisição registrada",
-                        "Em tramitação",
-                      ].includes(stage) &&
-                        (![
-                          "Gerar requisição",
-                          "Analisar requisição gerada",
-                        ].includes(plan.stage) ||
-                          stage !== "Aguardando dados finais") &&
-                        (editable
-                          ? [
-                              "Rascunho",
-                              "Em planejamento",
-                              "Suspenso",
-                              "Cancelado",
-                              "Não contratado",
-                            ].includes(stage)
-                          : !["Rascunho", "Em planejamento"].includes(stage))),
-                  )
-                  .map((stage) => (
-                    <option key={stage}>{stage}</option>
-                  ))}
-              </select>
-            </label>
-            {(
-              [
-                ["mxmNumber", "Número da requisição MXM"],
-                ["date", "Data da requisição"],
-                ["responsible", "Responsável pela compra"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key}>
-                {label}
-                <input
-                  type={key === "date" ? "date" : "text"}
-                  disabled={released}
-                  value={draft.request[key]}
-                  onChange={(e) =>
-                    setDraft({
-                      ...draft,
-                      request: { ...draft.request, [key]: e.target.value },
-                    })
-                  }
-                />
-              </label>
-            ))}
-          </div>
-          <div className="dl-request-workflow">
-            <p>
-              <strong>
-                Gerar requisição → Analisar requisição gerada → Em processo
-              </strong>
-            </p>
-            <p className="muted">
-              O número e a data salvos na etapa Gerar requisição encaminham o
-              registro para análise. A distribuição de tarefas ao aprendiz será
-              conectada quando os perfis e a tela de tarefas forem criados.
-            </p>
-            {!released && plan.stage === "Planejamento concluído" && (
-              <button
-                className="secondary-button"
-                onClick={() =>
-                  save(
-                    "Gerar requisição",
-                    "Preparação da requisição MXM iniciada",
-                  )
-                }
-              >
-                Gerar requisição
-              </button>
-            )}
-            {!released && plan.stage === "Analisar requisição gerada" && (
-              <button
-                className="primary-button"
-                disabled={dirty}
-                onClick={() => {
-                  try {
-                    if (
-                      window.confirm(
-                        `Você analisou a requisição MXM ${plan.request.mxmNumber} e confirma que ela está correta para seguir Em processo?`,
-                      )
-                    ) {
-                      const candidate = reviewDLRequest(plan, true);
-                      validateDLPlan(candidate);
-                      onSave(
-                        candidate,
-                        "Análise da requisição MXM confirmada",
-                        { reviewRequest: true },
-                      );
-                    }
-                  } catch (cause) {
-                    setError(
-                      cause instanceof Error
-                        ? cause.message
-                        : "Revise a requisição.",
-                    );
-                  }
-                }}
-              >
-                Confirmar análise e seguir em processo
-              </button>
-            )}
-            {plan.stage === "Analisar requisição gerada" && dirty && (
-              <p className="muted">
-                Salve as alterações antes de confirmar a análise.
-              </p>
-            )}
-            {plan.requestReview && (
-              <p className="muted">
-                Requisição {plan.requestReview.mxmNumber} analisada em{" "}
-                {new Date(plan.requestReview.timestamp).toLocaleString("pt-BR")}
-                . Identificação demonstrativa local; os perfis serão conectados
-                depois.
-              </p>
-            )}
-            <DLRequestBrief plan={plan} items={items} />
-          </div>
-          <p className="muted">
-            DL identifica o processo de aquisição. PCD é o pedido ao CD; PDL
-            utiliza saldo de uma DL; PFR é emergencial. Os pedidos serão
-            conectados na próxima etapa.
-          </p>
-        </>
+        <DLRequestWorkflow
+          plan={plan}
+          items={items}
+          request={draft.request}
+          onChange={(request) => setDraft({ ...draft, request })}
+          onAction={requestAction}
+          otherChanges={otherRequestChanges}
+          events={workspace.events}
+        />
       )}
       {tab === "history" && (
         <>
           <h3>Histórico desta DL</h3>
-          {workspace.events
-            .filter((event) => event.planId === plan.id)
-            .map((event) => (
-              <article className="dl-event" key={event.id}>
-                <strong>{event.action}</strong>
-                <p style={{ whiteSpace: "pre-wrap" }}>{event.details}</p>
-                <small>
-                  {new Date(event.timestamp).toLocaleString("pt-BR")} ·{" "}
-                  {event.actor}
-                </small>
-              </article>
-            ))}
+          <DLHistory planId={plan.id} events={workspace.events} />
         </>
       )}
       {picker && (

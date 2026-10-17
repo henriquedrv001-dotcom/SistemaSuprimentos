@@ -196,3 +196,9 @@ Ajustes recebidos durante o desenvolvimento: retirada de Observações da contra
 Planejado para Configurações: Fornecedores, Critérios de solicitação e outros cadastros simples; futuramente o fornecedor será escolhido em pop-up conectado ao cadastro. Não foi criado cadastro paralelo de fornecedores nesta etapa.
 
 Validação: 89 testes automatizados e build aprovados. Chromium verificou vigência automática e fim de mês, opção explícita sobre datas antigas, preservação de textos/identificações/quantidades antigas, quantidade planejada preenchida, pedidos com data-base compartilhada, campos retirados, cronograma por DL, indicadores, atualização pós-conclusão sem mudar contratação/saldos, consulta no Controle, persistência, histórico e largura móvel. As proteções contra quota, conflito entre abas e dados corrompidos também passaram.
+
+
+### Requisição: envio, análise e correção — 17/10/2026
+Salvar rascunho não envia a requisição. Número e data ficam abaixo das informações MXM; Enviar para análise bloqueia os campos. Aprovar segue para Em processo; devolver exige observação e libera correção. Planejamento concluído protege metadados e materiais; reabertura explícita invalida envio e análise anteriores. Histórico integrado usa os mesmos eventos, com atalho visível para Cronograma. Perfis e distribuição de tarefas continuam pendentes.
+
+Contratação: data-base, vigência e vencimento alinhados na mesma linha, explicação abaixo e disposição vertical em telas pequenas. Validados 92 testes, build e fluxos Chromium de envio/correção/aprovação/reabertura, contratação e cronograma; coordenadas e alturas dos três campos conferidas no navegador.

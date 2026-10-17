@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Item } from "../../types";
 import { dlStages } from "../../types/dl";
-import type { DLPlan, DLWorkspace } from "../../types/dl";
+import type { DLPlan, DLWorkspace, DLSaveOptions } from "../../types/dl";
 import {
   addDLItems,
   editableDLItems,
@@ -23,15 +23,7 @@ export type DLPlanningProps = {
   items: Item[];
   workspace: DLWorkspace;
   error: string;
-  onSave: (
-    plan: DLPlan,
-    action: string,
-    options?: {
-      release?: boolean;
-      reviewRequest?: boolean;
-      scheduleOnly?: boolean;
-    },
-  ) => DLPlan;
+  onSave: (plan: DLPlan, action: string, options?: DLSaveOptions) => DLPlan;
   pendingItems: Item[] | null;
   onPendingClose: () => void;
   onDirtyChange: (dirty: boolean) => void;

@@ -5,6 +5,9 @@ import {
   dlRequestBrief,
   resolveDLRequestStage,
   reviewDLRequest,
+  submitDLRequest,
+  returnDLRequest,
+  reopenDLPlanning,
 } from "../src/services/dlRequest.ts";
 import {
   addDLItems,
@@ -42,14 +45,30 @@ function planned() {
   plan.stage = "Planejamento concluído";
   return plan;
 }
-function analysis() {
+function generating() {
   const plan = planned();
   plan.stage = "Gerar requisição";
   plan.request.mxmNumber = "0000123";
   plan.request.date = "2026-10-17";
   return resolveDLRequestStage(plan);
 }
-test("observação unificada conserva ambos os campos legados, sem duplicar e sem impedir espaços durante edição", () => {
+function analysis() {
+  return submitDLRequest(generating(), true);
+}
+function storedGeneration() {
+  return storeDLPlan(emptyDLWorkspace(), generating(), "Gerar", "");
+}
+function storedAnalysis() {
+  const first = storedGeneration();
+  return storeDLPlan(
+    first.workspace,
+    submitDLRequest(first.plan, true),
+    "Enviado",
+    "",
+    { submitRequest: true },
+  );
+}
+test("observação unificada conserva ambos os campos legados e espaços durante edição", () => {
   assert.equal(
     dlObservation({ justification: "Texto", notes: "Antigo" }),
     "Texto\n\nAntigo",
@@ -68,17 +87,14 @@ test("observação unificada conserva ambos os campos legados, sem duplicar e se
     "Texto\n",
   );
 });
-test("dados anteriores sem entrega permanecem legíveis e não são regravados na leitura", () => {
+test("dados anteriores sem entrega permanecem intactos e legíveis", () => {
   const plan = planned();
   delete plan.deliveryDate;
   const workspace = { version: 1, lastNumber: 29, plans: [plan], events: [] };
-  const original = JSON.stringify(workspace);
-  const restored = readDLWorkspace(original);
-  assert.equal(JSON.stringify(restored), original);
-  assert.equal(restored.plans[0].notes, "Observação antiga");
-  assert.equal(restored.plans[0].deliveryDate, undefined);
+  const raw = JSON.stringify(workspace);
+  assert.equal(JSON.stringify(readDLWorkspace(raw)), raw);
 });
-test("data de entrega opcional em rascunho e exigida ao preparar requisição", () => {
+test("entrega é exigida na geração, sem bloquear leitura de planejamento anterior", () => {
   const plan = planned();
   delete plan.deliveryDate;
   validateDLPlan(plan);
@@ -90,119 +106,231 @@ test("data de entrega opcional em rascunho e exigida ao preparar requisição", 
     () => validateDLPlan({ ...plan, deliveryDate: "2026-02-30" }),
     /entrega válida/,
   );
-  validateDLPlan({
-    ...plan,
-    stage: "Gerar requisição",
-    deliveryDate: "2026-11-05",
-  });
 });
-test("número preenchido em Gerar requisição passa automaticamente à análise com zeros preservados", () => {
-  const first = storeDLPlan(
-    emptyDLWorkspace(),
-    { ...planned(), stage: "Gerar requisição" },
-    "Gerar",
-    "",
-  );
-  const candidate = {
-    ...first.plan,
-    request: {
-      ...first.plan.request,
-      mxmNumber: "0000123",
-      date: "2026-10-17",
-    },
-  };
+test("salvar número e data não envia rascunho automaticamente", () => {
+  const first = storedGeneration();
   const saved = storeDLPlan(
     first.workspace,
-    candidate,
-    "Requisição preenchida",
+    { ...first.plan, request: { ...first.plan.request, mxmNumber: "0000999" } },
+    "Rascunho",
     "",
   );
-  assert.equal(saved.plan.stage, "Analisar requisição gerada");
-  assert.equal(saved.plan.request.mxmNumber, "0000123");
-  assert.equal(saved.plan.requestWorkflow, "mxm-review-v1");
-  assert.equal(first.plan.stage, "Gerar requisição");
-});
-test("número sem data e análise sem número são rejeitados", () => {
-  const plan = analysis();
-  assert.throws(
-    () => validateDLPlan({ ...plan, request: { ...plan.request, date: "" } }),
-    /número e a data/,
+  assert.equal(saved.plan.stage, "Gerar requisição");
+  assert.equal(saved.plan.request.mxmNumber, "0000999");
+  assert.equal(saved.plan.requestSubmission, undefined);
+  const partial = storeDLPlan(
+    saved.workspace,
+    { ...saved.plan, request: { ...saved.plan.request, date: "" } },
+    "Parcial",
+    "",
   );
+  assert.equal(partial.plan.stage, "Gerar requisição");
+  assert.throws(() => submitDLRequest(partial.plan, true), /Preencha/);
+});
+test("envio explícito registra os identificadores e bloqueia a geração", () => {
+  const first = storedGeneration();
+  assert.throws(() => submitDLRequest(first.plan, false), /Confirme/);
+  const candidate = submitDLRequest(first.plan, true);
+  assert.throws(
+    () => storeDLPlan(first.workspace, candidate, "Enviar", ""),
+    /Enviar para análise/,
+  );
+  const saved = storeDLPlan(first.workspace, candidate, "Enviado", "", {
+    submitRequest: true,
+  });
+  assert.equal(saved.plan.stage, "Analisar requisição gerada");
+  assert.equal(saved.plan.requestSubmission.mxmNumber, "0000123");
+  assert.equal(saved.plan.requestWorkflow, "mxm-review-v2");
+  assert.throws(() => submitDLRequest(saved.plan, true), /bloqueada/);
+});
+test("após enviar, nem número nem data podem ser alterados", () => {
+  const saved = storedAnalysis();
+  for (const patch of [{ mxmNumber: "0000999" }, { date: "2026-10-18" }]) {
+    assert.throws(
+      () =>
+        storeDLPlan(
+          saved.workspace,
+          { ...saved.plan, request: { ...saved.plan.request, ...patch } },
+          "Alterar",
+          "",
+        ),
+      /bloqueada/,
+    );
+  }
   assert.throws(
     () =>
-      validateDLPlan({ ...plan, request: { ...plan.request, mxmNumber: "" } }),
-    /número e a data/,
+      storeDLPlan(
+        saved.workspace,
+        { ...saved.plan, stage: "Gerar requisição" },
+        "Voltar",
+        "",
+      ),
+    /Devolva/,
   );
 });
-test("Em processo depende de confirmação manual e mantém registro de análise", () => {
-  const plan = analysis();
-  const first = storeDLPlan(emptyDLWorkspace(), plan, "Analisar", "");
-  assert.throws(() => reviewDLRequest(first.plan, false), /Confirme/);
-  const reviewed = reviewDLRequest(first.plan, true);
+test("devolução exige observação e somente então libera correção e novo envio", () => {
+  const sent = storedAnalysis();
+  assert.throws(() => returnDLRequest(sent.plan, "   "), /observação/);
+  const candidate = returnDLRequest(sent.plan, "Corrigir a unidade no MXM");
   assert.throws(
-    () => storeDLPlan(first.workspace, reviewed, "Revisado", ""),
+    () => storeDLPlan(sent.workspace, candidate, "Devolver", ""),
+    /Devolva/,
+  );
+  const returned = storeDLPlan(sent.workspace, candidate, "Devolvido", "", {
+    returnRequest: true,
+  });
+  assert.equal(returned.plan.stage, "Gerar requisição");
+  assert.equal(returned.plan.requestReturn.reason, "Corrigir a unidade no MXM");
+  assert.equal(returned.plan.request.mxmNumber, "0000123");
+  const corrected = storeDLPlan(
+    returned.workspace,
+    {
+      ...returned.plan,
+      request: { ...returned.plan.request, mxmNumber: "0000456" },
+    },
+    "Corrigido",
+    "",
+  );
+  assert.equal(corrected.plan.stage, "Gerar requisição");
+  const resent = storeDLPlan(
+    corrected.workspace,
+    submitDLRequest(corrected.plan, true),
+    "Reenviado",
+    "",
+    { submitRequest: true },
+  );
+  assert.equal(resent.plan.requestSubmission.mxmNumber, "0000456");
+  assert.equal(resent.plan.stage, "Analisar requisição gerada");
+  assert.equal(resent.plan.requestReturn.reason, "Corrigir a unidade no MXM");
+  assert.equal(resent.workspace.events.length, 5);
+});
+test("aprovação é explícita e encerra a análise em Em processo", () => {
+  const sent = storedAnalysis();
+  assert.throws(() => reviewDLRequest(sent.plan, false), /Confirme/);
+  const approved = reviewDLRequest(sent.plan, true);
+  assert.throws(
+    () => storeDLPlan(sent.workspace, approved, "Aprovar", ""),
     /confirmação de análise/,
   );
-  const saved = storeDLPlan(first.workspace, reviewed, "Revisado", "", {
+  const saved = storeDLPlan(sent.workspace, approved, "Aprovado", "", {
     reviewRequest: true,
   });
   assert.equal(saved.plan.stage, "Em processo");
   assert.equal(saved.plan.requestReview.mxmNumber, "0000123");
   assert.equal(saved.plan.requestReview.requestDate, "2026-10-17");
-  assert.match(saved.plan.requestReview.actor, /Sessão local/);
-});
-test("alterar número ou data após aprovação invalida análise e devolve à conferência", () => {
-  const reviewed = reviewDLRequest(analysis(), true);
-  for (const patch of [{ mxmNumber: "0000999" }, { date: "2026-10-18" }]) {
-    const changed = resolveDLRequestStage(
-      { ...reviewed, request: { ...reviewed.request, ...patch } },
-      reviewed,
-    );
-    assert.equal(changed.stage, "Analisar requisição gerada");
-    assert.equal(changed.requestReview, undefined);
-    validateDLPlan(changed);
-  }
-  const cleared = resolveDLRequestStage(
-    { ...reviewed, request: { ...reviewed.request, mxmNumber: "", date: "" } },
-    reviewed,
+  assert.throws(
+    () => returnDLRequest(saved.plan, "Corrigir"),
+    /aguardando análise/,
   );
-  assert.equal(cleared.stage, "Gerar requisição");
-  validateDLPlan(cleared);
-});
-test("não é possível saltar análise diretamente para contratação", () => {
-  const first = storeDLPlan(emptyDLWorkspace(), analysis(), "Analisar", "");
   assert.throws(
     () =>
       storeDLPlan(
-        first.workspace,
-        { ...first.plan, stage: "Aguardando dados finais" },
+        saved.workspace,
+        {
+          ...saved.plan,
+          request: { ...saved.plan.request, mxmNumber: "outro" },
+        },
+        "Editar",
+        "",
+      ),
+    /bloqueada/,
+  );
+});
+test("todas as informações do planejamento ficam bloqueadas depois de fechar", () => {
+  const first = storeDLPlan(emptyDLWorkspace(), planned(), "Concluído", "");
+  for (const key of [
+    "title",
+    "category",
+    "openedOn",
+    "responsible",
+    "justification",
+    "notes",
+    "deliveryDate",
+  ])
+    assert.throws(
+      () =>
+        storeDLPlan(
+          first.workspace,
+          { ...first.plan, [key]: "Alterado" },
+          "Alterar",
+          "",
+        ),
+      /planejamento está fechado/,
+    );
+  const changed = structuredClone(first.plan);
+  changed.lines[0].quantityMilli = 99;
+  assert.throws(
+    () => storeDLPlan(first.workspace, changed, "Alterar", ""),
+    /planejamento está fechado/,
+  );
+});
+test("reabertura explícita libera dados e exige novo envio e análise", () => {
+  const sent = storedAnalysis();
+  const approved = storeDLPlan(
+    sent.workspace,
+    reviewDLRequest(sent.plan, true),
+    "Aprovado",
+    "",
+    { reviewRequest: true },
+  );
+  assert.throws(() => reopenDLPlanning(approved.plan, false), /Confirme/);
+  const candidate = reopenDLPlanning(approved.plan, true);
+  assert.throws(
+    () => storeDLPlan(approved.workspace, candidate, "Reabrir", ""),
+    /Reabrir planejamento/,
+  );
+  const reopened = storeDLPlan(approved.workspace, candidate, "Reaberto", "", {
+    reopenPlanning: true,
+  });
+  assert.equal(reopened.plan.stage, "Em planejamento");
+  assert.equal(reopened.plan.requestReview, undefined);
+  assert.equal(reopened.plan.requestSubmission, undefined);
+  assert.equal(reopened.plan.request.mxmNumber, "0000123");
+  const edited = storeDLPlan(
+    reopened.workspace,
+    { ...reopened.plan, title: "Novo objeto" },
+    "Editado",
+    "",
+  );
+  assert.equal(edited.plan.title, "Novo objeto");
+  const closed = storeDLPlan(
+    edited.workspace,
+    { ...edited.plan, stage: "Planejamento concluído" },
+    "Fechado",
+    "",
+  );
+  const start = storeDLPlan(
+    closed.workspace,
+    { ...closed.plan, stage: "Gerar requisição" },
+    "Gerar",
+    "",
+    { startRequest: true },
+  );
+  assert.equal(start.plan.requestSubmission, undefined);
+  assert.equal(start.plan.stage, "Gerar requisição");
+});
+test("não é possível saltar análise diretamente para contratação", () => {
+  const sent = storedAnalysis();
+  assert.throws(
+    () =>
+      storeDLPlan(
+        sent.workspace,
+        { ...sent.plan, stage: "Aguardando dados finais" },
         "Pular",
         "",
       ),
     /Analise/,
   );
   assert.throws(
-    () => releaseDLPlan(first.plan, true, "CONCLUIR"),
+    () => releaseDLPlan(sent.plan, true, "CONCLUIR"),
     /Conclua o planejamento/,
   );
   assert.throws(
-    () => validateDLPlan({ ...first.plan, stage: "Em processo" }),
+    () => validateDLPlan({ ...sent.plan, stage: "Em processo" }),
     /Confirme a análise/,
   );
 });
-test("mudança do pedido na etapa de dados finais também devolve à análise", () => {
-  const reviewed = {
-    ...reviewDLRequest(analysis(), true),
-    stage: "Aguardando dados finais",
-  };
-  const result = resolveDLRequestStage(
-    { ...reviewed, request: { ...reviewed.request, mxmNumber: "0000444" } },
-    reviewed,
-  );
-  assert.equal(result.stage, "Analisar requisição gerada");
-  assert.equal(result.requestReview, undefined);
-});
-test("informações para MXM usam vínculos centrais, especificação, unidade e quantidade exatas; não criam tarefas", () => {
+test("informações para MXM usam os mesmos itens e não criam tarefas", () => {
   const plan = planned();
   const original = JSON.stringify(plan);
   const brief = dlRequestBrief(plan, [item]);
@@ -218,7 +346,7 @@ test("informações para MXM usam vínculos centrais, especificação, unidade e
   assert.equal(JSON.stringify(plan), original);
   assert.equal("tasks" in brief, false);
 });
-test("situações antigas continuam válidas sem inventar análise ou destinatários", () => {
+test("situações anteriores continuam válidas sem inventar análise retroativa", () => {
   const plan = planned();
   delete plan.deliveryDate;
   plan.request.mxmNumber = "123";
@@ -248,32 +376,25 @@ test("observação unificada pode justificar cancelamento, mas espaço em branco
     /motivo/,
   );
 });
-
-test("fluxo aprovado segue aos dados finais e conclusão sem recriar a DL", () => {
-  const initial = storeDLPlan(
-    emptyDLWorkspace(),
-    analysis(),
-    "Requisição gerada",
-    "",
-  );
+test("fluxo aprovado segue à contratação e conclusão sem duplicar a DL", () => {
+  const initial = storedAnalysis();
   const reviewed = storeDLPlan(
     initial.workspace,
     reviewDLRequest(initial.plan, true),
-    "Análise confirmada",
+    "Aprovado",
     "",
     { reviewRequest: true },
   );
   const candidate = {
     ...reviewed.plan,
     stage: "Aguardando dados finais",
-    request: { ...reviewed.plan.request, officialDLNumber: "DL-MXM-0007" },
     contract: {
       awards: [
         {
           id: "award-confirmed",
           lineId: reviewed.plan.lines[0].id,
           supplier: "Fornecedor",
-          supplierReference: "001",
+          supplierReference: "",
           mxmOrder: "0000700",
           orderDate: "2026-10-17",
           quantityMilli: 1125,
@@ -287,12 +408,7 @@ test("fluxo aprovado segue aos dados finais e conclusão sem recriar a DL", () =
       notes: "",
     },
   };
-  const result = storeDLPlan(
-    reviewed.workspace,
-    candidate,
-    "Contratação informada",
-    "",
-  );
+  const result = storeDLPlan(reviewed.workspace, candidate, "Contratação", "");
   const finished = storeDLPlan(
     result.workspace,
     releaseDLPlan(result.plan, true, "CONCLUIR"),
@@ -304,5 +420,33 @@ test("fluxo aprovado segue aos dados finais e conclusão sem recriar a DL", () =
   assert.equal(finished.plan.id, initial.plan.id);
   assert.equal(finished.workspace.plans.length, 1);
   assert.equal(finished.plan.requestReview.mxmNumber, "0000123");
-  assert.equal(finished.plan.deliveryDate, "2026-11-05");
+  assert.throws(() => reopenDLPlanning(finished.plan, true), /protegida/);
+});
+test("metadados de envio e devolução não podem ser falsamente editados pela gravação comum", () => {
+  const sent = storedAnalysis();
+  assert.throws(
+    () =>
+      storeDLPlan(
+        sent.workspace,
+        {
+          ...sent.plan,
+          requestSubmission: { ...sent.plan.requestSubmission, actor: "Outro" },
+        },
+        "Editar",
+        "",
+      ),
+    /registro de envio/,
+  );
+  const partial = {
+    ...sent.plan,
+    stage: "Gerar requisição",
+    requestReturn: {
+      timestamp: new Date().toISOString(),
+      actor: "Sessão local",
+      reason: "",
+      mxmNumber: "0000123",
+      requestDate: "2026-10-17",
+    },
+  };
+  assert.throws(() => validateDLPlan(partial), /observação/);
 });

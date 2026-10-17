@@ -79,13 +79,14 @@ Validação: `npm test` executa 89 testes; `npm run build` gera a versão de pro
 ## Informações e fluxo da requisição MXM
 Em Materiais e orçamento, **Observação / Justificativa** reúne os textos usados no MXM. Observações antigas continuam preservadas; ao editar o campo unificado, o texto completo passa a ser salvo nele, com histórico. **Data de entrega** ocupa o antigo campo de observações e é exigida para iniciar o novo fluxo de requisição, sem bloquear a leitura de planejamentos antigos.
 
-Após concluir o planejamento, use Requisição e processo → **Gerar requisição**. Salvar o número e a data MXM muda automaticamente para **Analisar requisição gerada**. A ação **Confirmar análise e seguir em processo** registra a conferência manual; cancelar a confirmação mantém a etapa anterior. Alterar o número ou a data de uma requisição analisada devolve o registro à análise. Os resultados finais e a contratação seguem após essa conferência.
+Após concluir o planejamento, seus dados e materiais ficam bloqueados até **Reabrir planejamento**. Em Requisição e processo, **Gerar requisição** apresenta o resumo expansível e, abaixo, número e data MXM. **Salvar rascunho** mantém essa etapa; **Enviar para análise** exige os dois dados e bloqueia sua edição. A análise permite aprovar para **Em processo** ou devolver para correção com observação obrigatória. Reabrir o planejamento invalida o envio e a análise anteriores, exigindo nova conferência.
 
+O histórico dentro da requisição e a aba Histórico consultam os mesmos eventos da DL. O cabeçalho também oferece um atalho **Cronograma**. Na contratação, data-base, meses e vencimento ficam alinhados na mesma linha em telas maiores e empilhados em telas pequenas.
 O resumo **Informações para gerar a requisição no MXM** mostra os dados salvos: objeto, observação/justificativa, entrega, responsável, códigos, materiais, unidades, quantidades e especificações. Os dados são referenciados pelo mesmo item e DL, sem uma segunda base independente.
 
 **Tarefas e perfis funcionais ainda não foram implementados.** Nesta versão o fluxo é manual/local; nenhuma tarefa é enviada ao aprendiz. A futura distribuição de Gerar requisição ao aprendiz e da análise ao responsável usará estas informações. As situações antigas continuam legíveis, sem inventar responsáveis ou confirmações retroativas.
 
-Validação atual: 89 testes automatizados, build e fluxo completo no Chromium, incluindo preservação dos textos anteriores, entrega, mudança automática de etapa, conferência manual, reanálise, contratação e Controle.
+Validação atual: 92 testes automatizados, build e fluxos no Chromium, incluindo envio explícito, devolução, aprovação, bloqueios, reabertura, falha de armazenamento, contratação, cronograma e apresentação móvel. Os bloqueios seguem o estado do processo; autorização por perfil depende da futura autenticação.
 
 
 ## Vigência automática e Cronograma

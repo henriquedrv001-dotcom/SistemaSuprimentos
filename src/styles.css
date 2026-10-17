@@ -558,3 +558,16 @@ dialog.dl-create {margin:auto}
 .dl-tag-late {background:#fcebea;color:#a12622}
 .dl-contract-table input[readonly] {background:var(--background-soft)}
 .dl-contract-fields label small {font-weight:400;line-height:1.5}
+.dl-request-steps {display:grid;gap:18px}
+.dl-request-step {border:1px solid var(--border);border-radius:var(--radius);padding:18px;min-width:0}
+.dl-request-step .panel-heading {margin-bottom:10px}
+.dl-request-step h3 {font-size:15px;margin:0}
+.dl-request-step > p {font-size:12px;line-height:1.6}
+.dl-return-note {margin:14px 0;padding:12px;border-radius:var(--radius);background:var(--warning-light);color:var(--text);font-size:12px}
+.dl-return-note p {margin:6px 0 0;line-height:1.6}
+.dl-request-history > summary {color:var(--primary);font-size:12px;font-weight:600;cursor:pointer;padding:10px 0}
+.dl-validity-fields {grid-template-columns:minmax(0,1.5fr) minmax(0,.75fr) minmax(0,1.25fr);align-items:start}
+.dl-validity-fields > label {align-content:start}
+.dl-validity-fields .dl-legacy-validity {grid-column:span 2;align-self:start}
+@media(max-width:900px) {.dl-validity-fields {grid-template-columns:minmax(0,1fr)}.dl-validity-fields .dl-legacy-validity {grid-column:auto}}
+.dl-return-note p,.dl-event p {overflow-wrap:anywhere}
