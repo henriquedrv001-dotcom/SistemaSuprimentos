@@ -589,3 +589,7 @@ dialog.dl-create {margin:auto}
 .dl-milestone-history small {color:var(--text-muted);font-size:11px}
 @media(max-width:900px) {.dl-editor .dl-schedule-fields {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px) {.dl-editor .dl-schedule-fields {grid-template-columns:minmax(0,1fr)}.dl-milestone-history li {flex-direction:column;gap:3px}}
+
+.dl-planning-dates {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:start}
+.dl-planning-dates > label {align-content:start}
+@media(max-width:600px) {.dl-planning-dates {grid-template-columns:minmax(0,1fr)}}

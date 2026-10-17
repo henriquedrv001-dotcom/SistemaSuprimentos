@@ -485,15 +485,13 @@ export default function DLPlanningEditor({
               [
                 ["title", "Objeto / título"],
                 ["category", "Categoria"],
-                ["responsible", "Responsável pelo estoque"],
-                ["openedOn", "Data de abertura"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className={key === "responsible" ? "dl-full-row" : undefined}>
+              <label key={key}>
                 {label}
                 <input
                   disabled={!editable}
-                  type={key === "openedOn" ? "date" : "text"}
+                  type="text"
                   value={draft[key]}
                   onChange={(e) =>
                     setDraft({ ...draft, [key]: e.target.value })
@@ -501,21 +499,25 @@ export default function DLPlanningEditor({
                 />
               </label>
             ))}
-            <label>
-              Data de entrega
-              <input
-                aria-label="Data de entrega"
-                type="date"
-                disabled={!editable}
-                value={draft.deliveryDate ?? ""}
-                onChange={(e) =>
-                  setDraft({ ...draft, deliveryDate: e.target.value })
-                }
-              />
-              <small className="muted">
-                Necessária para gerar a requisição MXM.
-              </small>
-            </label>
+            <div className="dl-full-row dl-planning-dates">
+              {([
+                ["openedOn", "Data de abertura"],
+                ["deliveryDate", "Data de entrega"],
+                ["responsible", "Solicitante"],
+              ] as const).map(([key, label]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    aria-label={label}
+                    disabled={!editable}
+                    type={key === "responsible" ? "text" : "date"}
+                    value={draft[key] ?? ""}
+                    onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                  />
+                  {key === "deliveryDate" && <small className="muted">Necessária para gerar a requisição MXM.</small>}
+                </label>
+              ))}
+            </div>
             <label className="dl-observation-field dl-full-row">
               Observação / Justificativa
               <textarea

@@ -28,7 +28,7 @@ export default function DLRequestBrief({
             ? brief.deliveryDate.split("-").reverse().join("/")
             : "A definir"}
         </dd>
-        <dt>Responsável pelo estoque</dt>
+        <dt>Solicitante</dt>
         <dd>{brief.responsible || "Não informado"}</dd>
       </dl>
       <div className="table-wrap">
