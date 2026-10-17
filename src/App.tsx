@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Boxes, CalendarDays, CheckCircle2,
-  ChevronDown, ClipboardList, FileText, LayoutDashboard, PackageSearch,
+  ChevronDown, ClipboardList, FileText, PackageSearch,
   Search, Truck, WalletCards, FileUp, Trash2, Download, ArrowDownAZ
 } from "lucide-react";
 import { demoCycles, demoItems, demoOrders } from "./data";
 import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
+import AppSidebar, { navigationLocation } from "./components/AppSidebar";
+import type { AppSection } from "./components/AppSidebar";
+import PlanejamentoControleDLs from "./pages/estoque/PlanejamentoControleDLs";
+import AcompanhamentoATAContratos from "./pages/compras/AcompanhamentoATAContratos";
 import CiclosSuprimento from "./pages/estoque/CiclosSuprimento";
 import CycleDestinationDialog from "./components/CycleDestinationDialog";
 import { addPlanningItems, cycleWorkspaceKey, emptyCycleWorkspace, readCycleWorkspace, validateCycle, writeLocalTransaction } from "./services/cyclePlanning";
@@ -16,18 +20,6 @@ import { buildImportPreview, planImportUpdates } from "./services/catalogImport"
 import type { ImportPreview, ImportSelection } from "./services/catalogImport";
 import CatalogActionMenu from "./components/CatalogActionMenu";
 import CatalogTypeFilter, { readCatalogTypeView } from "./components/CatalogTypeFilter";
-
-type Section = "Painel" | "Cadastro de itens" | "Ciclos de suprimento" | "Pedidos diretos" | "Planejamento DLs" | "Controle DLs" | "Acompanhamento de pedidos";
-
-const nav: { label: string; section: Section; icon: typeof LayoutDashboard }[] = [
-  { label: "Painel", section: "Painel", icon: LayoutDashboard },
-  { label: "Cadastro de itens", section: "Cadastro de itens", icon: Boxes },
-  { label: "Ciclos de suprimentos", section: "Ciclos de suprimento", icon: CalendarDays },
-  { label: "Pedidos diretos", section: "Pedidos diretos", icon: Truck },
-  { label: "Planejamento DLs", section: "Planejamento DLs", icon: WalletCards },
-  { label: "Controle DLs", section: "Controle DLs", icon: WalletCards },
-  { label: "Acompanhamento de pedidos", section: "Acompanhamento de pedidos", icon: ClipboardList },
-];
 
 function readLocalCollection<T>(key: string, fallback: T[]): T[] {
   try {
@@ -49,7 +41,7 @@ function writeLocalCollection<T>(key: string, value: T[]) {
 }
 
 function App() {
-  const [section, setSection] = useState<Section>("Painel");
+  const [section, setSection] = useState<AppSection>("Painel");
   const [query, setQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[] | null>(readCatalogTypeView);
   const [filterType, setFilterType] = useState("Todos");
@@ -363,28 +355,11 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark brand-logo">sesc</div>
-          <div><strong>Suprimentos</strong><span>Planejamento e controle</span></div>
-        </div>
-        <div className="nav-label">GESTÃO</div>
-        <nav>
-          {nav.map(({ label, section: targetSection, icon: Icon }) => (
-            <button key={targetSection} className={`nav-item ${section === targetSection ? "active" : ""}`} onClick={() => setSection(targetSection)}>
-              <Icon size={18} /><span>{label}</span>{targetSection === "Acompanhamento de pedidos" && <small>{pendingOrders}</small>}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="mode-pill"><span className="status-dot" /> Protótipo local</div>
-          <p>Dados fictícios para validação do fluxo. Não usar para operações reais.</p>
-        </div>
-      </aside>
+      <AppSidebar section={section} pendingOrders={pendingOrders} onNavigate={setSection} />
 
       <main className="main-area">
         <header className="topbar">
-          <div className="breadcrumbs">Suprimentos <span>/</span> {section}</div>
+          <div className="breadcrumbs" aria-label="Localização">Suprimentos <span>/</span> {navigationLocation(section).group} <span>/</span> {navigationLocation(section).label}</div>
           <div className="user-chip"><div className="avatar">US</div><span>Usuário de teste</span><ChevronDown size={15} /></div>
         </header>
 
@@ -537,12 +512,7 @@ function App() {
             </>
           )}
 
-          {section === "Planejamento DLs" && (
-            <>
-              <div className="page-heading"><div><p className="eyebrow">PLANEJAMENTO</p><h1>Planejamento DLs</h1><p className="muted">Distribuição do planejamento de suprimentos por DL.</p></div></div>
-              <section className="panel"><div className="empty-panel"><div className="empty-icon"><WalletCards size={27} /></div><h2>Planejamento por DL ainda não cadastrado</h2><p>O protótipo possui quantidades planejadas por ciclo, mas ainda não define a distribuição dessas quantidades entre as DLs.</p><div className="rule-callout"><strong>Informações necessárias</strong><span>Cadastro das DLs e definição de como cada item e ciclo será distribuído antes de gerar pedidos.</span></div></div></section>
-            </>
-          )}
+          {(section === "Planejamento DLs" || section === "Controle DLs") && <PlanejamentoControleDLs tab={section === "Controle DLs" ? "control" : "planning"} onChange={tab => setSection(tab === "control" ? "Controle DLs" : "Planejamento DLs")} />}
 
           {section === "Acompanhamento de pedidos" && (
             <>
@@ -551,12 +521,8 @@ function App() {
             </>
           )}
 
-          {section === "Controle DLs" && (
-            <>
-              <div className="page-heading"><div><p className="eyebrow">LICITAÇÕES</p><h1>Controle DLs</h1><p className="muted">Acompanhe os saldos por item licitado e o pedido ERP de origem.</p></div><button className="secondary-button" onClick={() => window.alert("A tela de saldos será ativada após implementar PDLs, itens licitados e compromissos no banco.")}>Ver regras <WalletCards size={17} /></button></div>
-              <section className="panel"><div className="empty-panel"><div className="empty-icon"><WalletCards size={27} /></div><h2>Estrutura preparada para o próximo módulo</h2><p>O saldo não será digitado isoladamente. Será calculado a partir da quantidade licitada, dos compromissos válidos, dos recebimentos e dos cancelamentos registrados.</p><div className="rule-callout"><strong>Regra obrigatória para PDF</strong><span>Selecionar o pedido ERP que identifica o PDL de origem; validar saldo disponível e planejamento antes da emissão.</span></div></div></section>
-            </>
-          )}
+          {section === "ATA / Contratos" && <AcompanhamentoATAContratos />}
+
         </div>
       </main>
     </div>

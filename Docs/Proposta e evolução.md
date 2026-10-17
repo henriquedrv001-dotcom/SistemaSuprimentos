@@ -125,3 +125,13 @@ Aplicar grupo agora abre uma janela com a quantidade de materiais afetados, grup
 
 ## Tabela de ciclos mais compacta
 A coluna e o botão Ajustar foram retirados; o código do material continua abrindo o mesmo formulário Planejar material, sem mudanças nos campos. Larguras foram reduzidas, cabeçalhos/descrições podem quebrar linha e os totais ainda não conectados usam — com legenda e identificação acessível, sem exibir zero. Validado no navegador: dez colunas cabem sem rolagem em 1366px; em telas pequenas a rolagem fica apenas na tabela. Build e teste de abertura pelo código passaram.
+
+## Menu por setores
+Navegação extraída para `src/components/AppSidebar.tsx`, na ordem solicitada:
+- Administração: Cadastro de itens; Tarefas; Configurações. As duas últimas são entradas futuras, desabilitadas e sinalizadas como Em breve, sem telas fictícias.
+- Estoque: Painel; Ciclos de suprimentos; Planejamento e Controle DLs; Pedidos diretos; Acompanhamento de pedidos.
+- Compras: Acompanhamento pedidos de ATA / Contratos, com indicação de que a tela ainda será desenvolvida; nenhuma integração de contratos foi criada.
+
+Planejamento e Controle DLs é uma única entrada, com duas abas preservando os conteúdos das áreas anteriores. O encaminhamento do cadastro para Planejamento DLs continua abrindo a aba de planejamento. A localização no topo identifica setor e módulo; a entrada de DLs fica ativa em ambas as abas. Em telas pequenas, o menu tem rolagem própria e mantém os títulos dos setores.
+
+Validação: build e navegação no Chromium, ordem dos setores/itens, entradas futuras bloqueadas, duas abas de DLs, cadastro, ciclos, pedidos, localização e rolagem móvel. Nenhuma chave de dados locais foi alterada nesta reorganização.
