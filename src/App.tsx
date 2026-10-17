@@ -338,7 +338,7 @@ function App() {
     candidate = resolveDLRequestStage(candidate,previous);
     const changes: string[] = [];
     for (const key of ["title", "category", "openedOn", "responsible", "justification", "notes", "deliveryDate", "stage"] as const) {
-      if (previous?.[key] !== candidate[key]) changes.push(`${({title:"Objeto", category:"Categoria", openedOn:"Abertura", responsible:"Responsável", justification:"Observação / Justificativa", notes:"Observações legadas", deliveryDate:"Data de entrega", stage:"Situação"})[key]}: ${previous?.[key] || "(vazio)"} → ${candidate[key] || "(vazio)"}`);
+      if (previous?.[key] !== candidate[key]) changes.push(`${({title:"Objeto", category:"Categoria", openedOn:"Abertura", responsible:"Responsável pelo estoque", justification:"Observação / Justificativa", notes:"Observações legadas", deliveryDate:"Data de entrega", stage:"Situação"})[key]}: ${previous?.[key] || "(vazio)"} → ${candidate[key] || "(vazio)"}`);
     }
     for (const key of Object.keys(candidate.request) as (keyof DLPlan["request"])[]) if (previous?.request[key] !== candidate.request[key] && (previous?.request[key] || candidate.request[key])) changes.push(`Requisição (${key}): ${previous?.request[key] || "(vazio)"} → ${candidate.request[key] || "(vazio)"}`);
     if (JSON.stringify(previous?.requestReview) !== JSON.stringify(candidate.requestReview)) changes.push(candidate.requestReview ? `Análise da requisição MXM ${candidate.requestReview.mxmNumber} confirmada em ${candidate.requestReview.timestamp}. Situação: Em processo. Identificação: ${candidate.requestReview.actor}.` : "Análise anterior invalidada após alteração do número ou data da requisição.");

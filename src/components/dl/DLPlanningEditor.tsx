@@ -330,7 +330,7 @@ export default function DLPlanningEditor({
                 ["title", "Objeto / título"],
                 ["category", "Categoria"],
                 ["openedOn", "Data de abertura"],
-                ["responsible", "Responsável"],
+                ["responsible", "Responsável pelo estoque"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>
