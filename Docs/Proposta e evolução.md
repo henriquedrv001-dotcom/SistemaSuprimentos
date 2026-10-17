@@ -52,3 +52,7 @@ Validação: build TypeScript/Vite; navegador com seis colunas, bloqueio em Cons
 - Visibilidade (visíveis/ocultos/todos) continua sendo um filtro independente, diferente do filtro mestre de tipos.
 
 Validação do filtro: hierarquia e opções subordinadas, seleção segura, busca, salvar/restaurar/remover padrão e recarga incluindo seleção vazia, fechamento por Escape, alturas iguais, largura móvel e preservação dos itens na base. Build passou.
+
+
+## Simplificação: apenas Status
+A interface passa a usar somente o Status Ativo/Inativo no interruptor do item e no filtro do catálogo. O controle separado de Visibilidade foi retirado. Mostrar continua sendo o filtro mestre por tipos. O campo legado visible é preservado nos dados existentes por compatibilidade, mas não filtra mais a listagem; portanto, itens anteriormente ocultos podem voltar a aparecer conforme o recorte de tipos e status. Nenhum cadastro ou evento antigo é excluído, nem há conversão automática de itens ocultos em inativos.

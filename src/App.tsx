@@ -48,7 +48,6 @@ function App() {
   const [filterGroup, setFilterGroup] = useState("Todos");
   const [filterCriterion, setFilterCriterion] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
-  const [visibilityFilter, setVisibilityFilter] = useState("visiveis");
   const [editorMode, setEditorMode] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [bulkDestination, setBulkDestination] = useState("");
@@ -109,14 +108,13 @@ function App() {
       const matchesGroup = filterGroup === "Todos" || item.group === filterGroup;
       const matchesCriterion = filterCriterion === "Todos" || item.criterion === filterCriterion;
       const matchesStatus = filterStatus === "Todos" || (filterStatus === "Ativo" ? item.active !== false : item.active === false);
-      const matchesVisibility = visibilityFilter === "todos" || (visibilityFilter === "visiveis" ? item.visible !== false : item.visible === false);
-      return matchesQuery && matchesType && matchesGroup && matchesCriterion && matchesStatus && matchesVisibility;
+      return matchesQuery && matchesType && matchesGroup && matchesCriterion && matchesStatus;
     }).sort((a, b) => {
       if (sortMode === "code") return a.code.localeCompare(b.code, "pt-BR", { numeric: true, sensitivity: "base" });
       if (sortMode === "group") return a.group.localeCompare(b.group, "pt-BR") || a.description.localeCompare(b.description, "pt-BR");
       return a.description.localeCompare(b.description, "pt-BR", { numeric: true, sensitivity: "base" });
     });
-  }, [permittedItems, query, filterType, filterGroup, filterCriterion, filterStatus, visibilityFilter, sortMode]);
+  }, [permittedItems, query, filterType, filterGroup, filterCriterion, filterStatus, sortMode]);
 
   useEffect(() => {
     const visibleIds = new Set(filteredItems.map(item => item.id));
@@ -274,9 +272,6 @@ function App() {
     }
     if (old && old.active !== updated.active) changes.push(`Status: ${old.active ? "Ativo" : "Inativo"} → ${updated.active ? "Ativo" : "Inativo"}`);
     if (changes.length) recordHistory(updated, "Edição de cadastro", changes.join("\n"));
-    if (old && old.visible !== updated.visible) {
-      recordHistory(updated, updated.visible ? "Item exibido" : "Item ocultado", "Visibilidade alterada pela edição do cadastro.");
-    }
     setEditingItem(null);
   }
 
@@ -415,7 +410,6 @@ function App() {
                   <label>Grupo<select value={filterGroup} onChange={(e) => { setFilterGroup(e.target.value); setFilterCriterion("Todos"); }}><option>Todos</option>{groups.map((group) => <option key={group}>{group}</option>)}</select></label>
                   <label>Critério<select value={filterCriterion} onChange={(e) => setFilterCriterion(e.target.value)}><option>Todos</option>{criteria.map(criterion => <option key={criterion}>{criterion}</option>)}</select></label>
                   <label>Status<select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option>Todos</option><option>Ativo</option><option>Inativo</option></select></label>
-                  <label>Visibilidade<select value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value)}><option value="visiveis">Visíveis</option><option value="ocultos">Ocultos</option><option value="todos">Todos</option></select></label>
                   <label>Ordenar por<select value={sortMode} onChange={(e) => setSortMode(e.target.value)}><option value="description">Descrição (A–Z)</option><option value="code">Código (A–Z)</option><option value="group">Grupo e descrição</option></select></label>
                 </div>
                 <div className="form-actions catalog-bulk-actions" style={{ justifyContent: "space-between", marginBottom: 12 }}>

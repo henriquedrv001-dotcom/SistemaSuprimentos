@@ -59,9 +59,7 @@ export default function ItemDetailsDialog({ item, history, cycleItems, cycles, o
           <label>Grupo<input value={item.group} onChange={e => onChange({ ...item, group: e.target.value.toUpperCase() })} /></label>
           <label>Critério<select value={item.criterion} onChange={e => onChange({ ...item, criterion: e.target.value as Item["criterion"] })}><option>Mensal</option><option>Entrada e saída</option><option>Sob solicitação</option></select></label>
           <label className="item-specification-field"><span id="item-specification-label">Especificação técnica (opcional)</span><textarea aria-labelledby="item-specification-label" rows={5} value={item.technicalSpecification ?? ""} placeholder="Descreva as características e os requisitos técnicos usados nos processos." onChange={e => onChange({ ...item, technicalSpecification: e.target.value })} /></label>
-          <label>Visibilidade<select value={item.visible ? "visivel" : "oculto"} onChange={e => onChange({ ...item, visible: e.target.value === "visivel" })}><option value="visivel">Visível no catálogo</option><option value="oculto">Oculto no catálogo</option></select></label>
         </div>
-        <p className="form-note">Ocultar mantém o cadastro e o histórico. Para encontrá-lo depois, use o filtro Mostrar → Ocultos.</p>
       </section>
       <section role="tabpanel" id="item-panel-links" aria-labelledby="item-tab-links" hidden={tab !== "links"} tabIndex={0}>
         <h3>Pedidos e DLs associados</h3>
