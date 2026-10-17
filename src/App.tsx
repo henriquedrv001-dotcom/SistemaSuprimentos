@@ -266,6 +266,7 @@ function App() {
 
   function addItem() {
     if (!newItem.code.trim() || !newItem.description.trim()) return;
+    if (!newItem.unit.trim()) { window.alert("Informe a unidade do material, conforme o MXM. A unidade não será preenchida automaticamente."); return; }
     if (items.some((item) => item.code.toLowerCase() === newItem.code.trim().toLowerCase())) {
       window.alert("Já existe um item com esse código.");
       return;
@@ -274,7 +275,7 @@ function App() {
       id: `local-${crypto.randomUUID()}`,
       code: newItem.code.trim().toUpperCase(),
       description: newItem.description.trim().toUpperCase(),
-      unit: newItem.unit.trim().toUpperCase() || "UN",
+      unit: newItem.unit.trim().toUpperCase(),
       type: newItem.type.trim().toUpperCase() || "SEM TIPO",
       group: newItem.group.trim().toUpperCase() || "SEM GRUPO",
       visible: true,
@@ -293,6 +294,7 @@ function App() {
     if (!editorMode) { window.alert("Ative o perfil Editor para alterar o cadastro."); return; }
     const code = editingItem.code.trim().toUpperCase();
     if (!code || !editingItem.description.trim()) { window.alert("Código e descrição são obrigatórios."); return; }
+    if (!editingItem.unit.trim()) { window.alert("Informe a unidade do material, conforme o MXM."); return; }
     if (items.some((item) => item.id !== editingItem.id && item.code.toUpperCase() === code)) { window.alert("Já existe outro item com esse código."); return; }
     const updated = { ...editingItem, code, description: editingItem.description.trim().toUpperCase(), unit: editingItem.unit.trim().toUpperCase(), type: (editingItem.type || "SEM TIPO").trim().toUpperCase(), group: editingItem.group.trim().toUpperCase(), technicalSpecification: (editingItem.technicalSpecification ?? "").trim() };
     const old = items.find((item) => item.id === updated.id);

@@ -35,7 +35,7 @@ test('tentativa de escolher campo protegido não altera personalizações', () =
 });
 
 test('código duplicado no arquivo bloqueia a importação inteira', () => {
-  assert.throws(()=>buildImportPreview(csv(' abc ;UM;;;;\nABC;DOIS;;;;'),[],'mxm.csv'),/Código repetido/);
+  assert.throws(()=>buildImportPreview(csv(' abc ;UM;KG;;;\nABC;DOIS;KG;;;'),[],'mxm.csv'),/Código repetido/);
 });
 
 test('código duplicado no cadastro atual também bloqueia comparação ambígua', () => {
@@ -44,7 +44,7 @@ test('código duplicado no cadastro atual também bloqueia comparação ambígua
 
 test('zeros à esquerda preservados e códigos normalizados para correspondência', () => {
   const preview=buildImportPreview(csv(' 00123 ;DESCRIÇÃO LOCAL;;;;'),[item()],'mxm.csv');assert.equal(preview.unchangedCount,1);
-  assert.equal(buildImportPreview(csv('000001;NOVO;;;;'),[],'mxm.csv').newItems[0].code,'000001');
+  assert.equal(buildImportPreview(csv('000001;NOVO;KG;;;'),[],'mxm.csv').newItems[0].code,'000001');
 });
 
 test('colunas opcionais ausentes ou vazias não apagam valores existentes', () => {
@@ -81,11 +81,32 @@ test('CSV vírgula e TXT tabulado são aceitos', () => {
 test('dados incompletos, aspas abertas, critério desconhecido e cabeçalhos ambíguos são rejeitados', () => {
   assert.throws(()=>buildImportPreview(csv('00123;;;;;'),[],'mxm.csv'),/obrigatórios/);
   assert.throws(()=>buildImportPreview(csv('00123;"SEM FIM'),[],'mxm.csv'),/aspas sem fechamento/);
-  assert.throws(()=>buildImportPreview(csv('00123;ITEM;;;;Inválido'),[],'mxm.csv'),/critério desconhecido/);
+  assert.throws(()=>buildImportPreview(csv('00123;ITEM;KG;;;Inválido'),[],'mxm.csv'),/critério desconhecido/);
   assert.throws(()=>buildImportPreview('Código;Código MXM;Descrição\n1;1;ITEM',[],'mxm.csv'),/mais de uma coluna/);
 });
 
 test('itens fora da extração não são excluídos ou inativados', () => {
-  const old=item();const preview=buildImportPreview(csv('00999;NOVO;;;;'),[old],'mxm.csv');
+  const old=item();const preview=buildImportPreview(csv('00999;NOVO;KG;;;'),[old],'mxm.csv');
   assert.deepEqual(planImportUpdates(preview,{},[old]).items,[old]);assert.equal(preview.newItems.length,1);
+});
+
+
+test('cabeçalhos usuais de unidade preservam KG sem assumir UN', () => {
+  for (const header of ['Unidade', 'UNID', 'UNID.', 'UND', 'UN', 'UM', 'Unidade de medida', 'Unid. medida', 'Unidade de movimentação']) {
+    const preview=buildImportPreview(`Código;Descrição;${header}\n0001;ARROZ;Kg`,[],'mxm.csv');
+    assert.equal(preview.newItems[0].unit,'KG',header);
+  }
+});
+
+test('novos materiais sem coluna de unidade ou com unidade vazia são bloqueados', () => {
+  assert.throws(()=>buildImportPreview('Código;Descrição\n0001;ARROZ',[],'mxm.csv'),/coluna de unidade/);
+  assert.throws(()=>buildImportPreview('Código;Descrição;UNID\n0001;ARROZ;',[],'mxm.csv'),/unidade está vazia/);
+});
+
+test('correção de UN para KG só aplica a unidade escolhida e preserva personalizações', () => {
+  const old=item();const preview=buildImportPreview('Código;Descrição;UNID\n00123;DESCRIÇÃO OFICIAL;KG',[old],'mxm.csv');
+  assert.equal(preview.updates.length,1);assert.ok(preview.updates[0].changes.some(change=>change.field==='unit'&&change.before==='UN'&&change.after==='KG'));
+  assert.equal(planImportUpdates(preview,{},[old]).items[0].unit,'UN');
+  const corrected=planImportUpdates(preview,{'item-1':['unit']},[old]).items[0];
+  assert.deepEqual(corrected,{...old,unit:'KG'});
 });

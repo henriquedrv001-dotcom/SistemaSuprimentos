@@ -112,3 +112,10 @@ As gravações de planejamento/ciclos/histórico são feitas em conjunto, com re
 
 ### Validação
 32 testes automatizados totais, incluindo 13 de planejamento; build TypeScript/Vite. Testes no Chromium cobriram criação, simultaneidade, grupos, inclusão pelas duas origens, deduplicação, quantidades a definir/zero, modelos e independência entre ciclos, retirada, exclusão de grupo sem perda de materiais, encerramento/reabertura, histórico/vínculos no item, proteção contra exclusão de itens vinculados, recarga e largura móvel. Outro fluxo testou 125 materiais com paginação, seleção segura, mudança de grupo em lote, falha de quota com rollback e alteração em outra aba. Regressões do cadastro: filtro Mostrar, importação protegida e compartilhamento texto/PNG passaram novamente. Dados de teste são fictícios e isolados.
+
+## Correção da importação de unidades
+A cópia antiga do importador não reconhecia UNID e usava UN como fallback; isso é uma causa possível para unidades incorretas relatadas pelo responsável, ainda dependendo da conferência da extração usada. A versão atual reconhece Unidade/UNID/UND/UN/UM/Unidade de medida e variações usuais, mantendo o valor informado em maiúsculas. Novos materiais sem unidade ou sem coluna reconhecida bloqueiam o arquivo: não há preenchimento automático como UN. Para existentes, unidade ausente/vazia continua preservando a unidade atual.
+
+A prévia dos novos itens mostra sua unidade. Na revisão dos existentes, Selecionar somente unidades marca apenas diferenças de unidade e desmarca os demais campos, mantendo o download de backup e a confirmação ATUALIZAR. A correção de unidade não converte quantidades planejadas nos ciclos. Cadastro manual e edição também exigem unidade preenchida.
+
+Não foi feita correção automática dos dados no navegador do responsável: é necessário confrontar os códigos com a extração do MXM e aplicar as diferenças aprovadas. Testes cobriram cabeçalhos, bloqueio de novos sem unidade, UN→KG isolado, preservação das personalizações e exibição da unidade atualizada no ciclo sem recalcular quantidade. Total atual: 35 testes automatizados, mais o fluxo de navegador da correção.

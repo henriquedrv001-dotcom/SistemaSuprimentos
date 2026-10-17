@@ -39,7 +39,7 @@ export function buildImportPreview(text: string, items: Item[], filename: string
   const aliases: Record<string, string[]> = {
     code: ["codigo", "cod", "codigomxm", "codigounicomxm", "codigounico", "item", "material"],
     description: ["descricao", "descricaoitem", "descricaodoproduto", "produto", "materialdescricao"],
-    unit: ["unidade", "unid", "und", "un"], type: ["tipo", "tipodematerial", "categoria"],
+    unit: ["unidade", "unid", "und", "un", "um", "unidadedemedida", "unidademedida", "unidmedida", "unidadedemovimentacao", "unidadeestoque"], type: ["tipo", "tipodematerial", "categoria"],
     group: ["grupo", "grupodemateriais", "grupodematerial"],
     criterion: ["criterio", "criteriodesolicitacao", "solicitacao", "tiposolicitacao"],
   };
@@ -65,8 +65,14 @@ export function buildImportPreview(text: string, items: Item[], filename: string
     if (seen.has(code)) throw new Error(`Código repetido no arquivo: ${code}. Corrija a lista antes de importar.`);
     seen.add(code);
     const old = existing.get(code);
+    const importedUnit = read("unit").toUpperCase();
+    if (!old && !importedUnit) {
+      throw new Error(indexes.unit < 0
+        ? `Código ${code}: não encontrei a coluna de unidade. Use Unidade, UNID, UND, UN ou Unidade de medida. Não foi usado “UN” como padrão e nenhum item foi importado.`
+        : `Código ${code}: a unidade está vazia. Preencha a unidade deste novo material na planilha. Nenhum item foi importado.`);
+    }
     const candidate: Item = old ? { ...old, description } : {
-      id: `import-${crypto.randomUUID()}`, code, description, unit: "UN", type: "SEM TIPO", group: "SEM GRUPO", criterion: "Mensal", active: true, visible: true,
+      id: `import-${crypto.randomUUID()}`, code, description, unit: importedUnit, type: "SEM TIPO", group: "SEM GRUPO", criterion: "Mensal", active: true, visible: true,
     };
     for (const field of ["unit", "type", "group"] as const) { const value = read(field); if (value) candidate[field] = value.toUpperCase(); }
     const criterion = read("criterion");
