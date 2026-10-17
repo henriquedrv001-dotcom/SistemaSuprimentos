@@ -1,4 +1,4 @@
-import type { DLPlan, DLSchedule } from "../../types/dl";
+import type { DLPlan, DLSchedule, DLPlanEvent } from "../../types/dl";
 import { milestoneStatus, scheduleDates } from "../../services/dlSchedule";
 import { todayInBrazil } from "../../services/dlPlanning";
 import { contractStatus } from "../../services/dlContract";
@@ -9,11 +9,13 @@ export default function DLSchedulePanel({
   value,
   onChange,
   readOnly = false,
+  events = [],
 }: {
   plan: DLPlan;
   value: DLSchedule;
   onChange: (value: DLSchedule) => void;
   readOnly?: boolean;
+  events?: DLPlanEvent[];
 }) {
   let dates: ReturnType<typeof scheduleDates> | null = null;
   let error = "";
@@ -66,7 +68,7 @@ export default function DLSchedulePanel({
         previsões ficam no histórico.
       </p>
       <fieldset disabled={readOnly} className="dl-contract-fields">
-        <div className="form-grid">
+        <div className="form-grid dl-schedule-fields">
           <label>
             Início do período de abastecimento
             <input
@@ -76,6 +78,10 @@ export default function DLSchedulePanel({
                 onChange({ ...value, coverageStart: e.target.value })
               }
             />
+          </label>
+          <label>
+            Fim previsto do abastecimento
+            <input readOnly value={date(dates?.coverageEnd ?? "")} />
           </label>
           <label>
             Período de abastecimento (meses)
@@ -100,17 +106,12 @@ export default function DLSchedulePanel({
             </small>
           </label>
           <label>
-            Fim previsto do abastecimento
-            <input readOnly value={date(dates?.coverageEnd ?? "")} />
+            Início do planejamento
+            <input readOnly value={date(plan.openedOn)} />
           </label>
           {(
             [
               ["plannedAuthorizationOn", "Autorização prevista para"],
-              [
-                "authorizationRequestedOn",
-                "Autorização solicitada à gerência em",
-              ],
-              ["authorizationGrantedOn", "Autorização recebida em"],
               ["plannedRequestOn", "Data prevista da requisição MXM"],
             ] as const
           ).map(([field, label]) => (
@@ -197,6 +198,17 @@ export default function DLSchedulePanel({
             </small>
           </label>
         </div>
+        <details className="dl-schedule-actuals">
+          <summary>Registrar autorização da gerência</summary>
+          <div className="form-grid">
+            {([
+              ["authorizationRequestedOn", "Autorização solicitada à gerência em"],
+              ["authorizationGrantedOn", "Autorização recebida em"],
+            ] as const).map(([field, label]) => (
+              <label key={field}>{label}<input type="date" value={value[field]} onChange={(e) => onChange({ ...value, [field]: e.target.value })} /></label>
+            ))}
+          </div>
+        </details>
       </fieldset>
       {error && (
         <p className="catalog-error" role="alert">
@@ -254,7 +266,15 @@ export default function DLSchedulePanel({
         informada, usam a data real. Os indicadores do processo e da entrega
         usam os prazos contados da requisição e do pedido reais, quando
         registrados. Os avisos não bloqueiam o andamento do processo.
-      </p>
+      </p>      <section className="dl-milestone-history" aria-label="Histórico de etapas">
+        <h4>Histórico de etapas</h4>
+        {events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição/i.test(event.action)).length ? (
+          <ol>{events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição/i.test(event.action)).map(event => (
+            <li key={event.id}><span>{event.action}</span><small>{new Date(event.timestamp).toLocaleString("pt-BR")} · {event.actor}</small></li>
+          ))}</ol>
+        ) : <p className="muted">Nenhuma aprovação ou fechamento de etapa registrado.</p>}
+      </section>
+
     </>
   );
 }

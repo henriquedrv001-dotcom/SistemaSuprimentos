@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, CircleCheck, Clock3 } from "lucide-react";
 import DLHistory from "./DLHistory";
 import DLRequestWorkflow from "./DLRequestWorkflow";
 import type { RequestAction } from "./DLRequestWorkflow";
@@ -55,7 +55,7 @@ export default function DLPlanningEditor({
       ]),
     ),
   );
-  const [tab, setTab] = useState("items");
+  const [tab, setTab] = useState("schedule");
   const [scheduleDraft, setScheduleDraft] = useState(
     () => plan.schedule ?? emptyDLSchedule(),
   );
@@ -370,17 +370,23 @@ export default function DLPlanningEditor({
       </div>
       <div className="tabs">
         {[
+          ["schedule", "Cronograma"],
           ["items", "Materiais e orçamento"],
           ["request", "Requisição e processo"],
           ["contract", "Contratação e fornecedores"],
-          ["schedule", "Cronograma"],
           ["history", "Histórico"],
         ].map(([id, label]) => (
           <button
             className={`tab ${tab === id ? "active" : ""}`}
             key={id}
+            title={id === "items" ? (editable ? "Etapa aguardando" : "Planejamento fechado") : id === "request" ? (plan.requestReview ? "Etapa concluída" : "Etapa aguardando") : id === "contract" ? (plan.contract?.release ? "Etapa concluída" : "Etapa aguardando") : label}
             onClick={() => setTab(id)}
           >
+            {id === "items" || id === "request" || id === "contract" ? (
+              (id === "items" ? ["Planejamento concluído", "Gerar requisição", "Analisar requisição gerada", "Em processo", "Requisição registrada", "Em tramitação", "Aguardando dados finais", "Concluído"].includes(plan.stage) : id === "request" ? Boolean(plan.requestReview) : Boolean(plan.contract?.release))
+                ? <CircleCheck size={15} className="dl-step-complete" aria-hidden="true" />
+                : <Clock3 size={15} className="dl-step-pending" aria-hidden="true" />
+            ) : null}
             {label}
           </button>
         ))}
@@ -394,6 +400,7 @@ export default function DLPlanningEditor({
         <DLSchedulePanel
           plan={plan}
           value={scheduleDraft}
+          events={workspace.events}
           onChange={setScheduleDraft}
         />
       )}
