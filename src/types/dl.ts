@@ -2,6 +2,9 @@ export const dlStages = [
   "Rascunho",
   "Em planejamento",
   "Planejamento concluído",
+  "Gerar requisição",
+  "Analisar requisição gerada",
+  "Em processo",
   "Requisição registrada",
   "Em tramitação",
   "Aguardando dados finais",
@@ -27,9 +30,18 @@ export interface DLPlan {
   openedOn: string;
   responsible: string;
   justification: string;
+  /** Observação legada; conservada para compatibilidade. */
   notes: string;
+  deliveryDate?: string;
   stage: DLStage;
   contract?: DLContract;
+  requestWorkflow?: "mxm-review-v1";
+  requestReview?: {
+    timestamp: string;
+    actor: string;
+    mxmNumber: string;
+    requestDate: string;
+  };
   lines: DLPlanningLine[];
   request: {
     mxmNumber: string;
@@ -58,6 +70,7 @@ export interface DLWorkspace {
   events: DLPlanEvent[];
 }
 export interface DLIdentityDraft {
+  deliveryDate?: string;
   title: string;
   category: string;
   openedOn: string;

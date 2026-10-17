@@ -75,3 +75,14 @@ O Controle oferece pesquisa por DL, material, fornecedor ou pedido MXM, filtros 
 **Os saldos desta etapa são iniciais.** Reservas, recebimentos e consumos anteriores do MXM não estão conectados; a tela os identifica como Não conectado. Nenhum pedido é criado automaticamente. Documentos, movimentações e ajustes posteriores de contratos concluídos serão tratados nas próximas etapas, com histórico próprio. Permanecem o armazenamento local e a identificação demonstrativa de usuário da versão atual.
 
 Validação: `npm test` executa 61 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
+
+## Informações e fluxo da requisição MXM
+Em Materiais e orçamento, **Observação / Justificativa** reúne os textos usados no MXM. Observações antigas continuam preservadas; ao editar o campo unificado, o texto completo passa a ser salvo nele, com histórico. **Data de entrega** ocupa o antigo campo de observações e é exigida para iniciar o novo fluxo de requisição, sem bloquear a leitura de planejamentos antigos.
+
+Após concluir o planejamento, use Requisição e processo → **Gerar requisição**. Salvar o número e a data MXM muda automaticamente para **Analisar requisição gerada**. A ação **Confirmar análise e seguir em processo** registra a conferência manual; cancelar a confirmação mantém a etapa anterior. Alterar o número ou a data de uma requisição analisada devolve o registro à análise. Os resultados finais e a contratação seguem após essa conferência.
+
+O resumo **Informações para gerar a requisição no MXM** mostra os dados salvos: objeto, observação/justificativa, entrega, responsável, códigos, materiais, unidades, quantidades e especificações. Os dados são referenciados pelo mesmo item e DL, sem uma segunda base independente.
+
+**Tarefas e perfis funcionais ainda não foram implementados.** Nesta versão o fluxo é manual/local; nenhuma tarefa é enviada ao aprendiz. A futura distribuição de Gerar requisição ao aprendiz e da análise ao responsável usará estas informações. As situações antigas continuam legíveis, sem inventar responsáveis ou confirmações retroativas.
+
+Validação atual: 74 testes automatizados, build e fluxo completo no Chromium, incluindo preservação dos textos anteriores, entrega, mudança automática de etapa, conferência manual, reanálise, contratação e Controle.

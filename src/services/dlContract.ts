@@ -44,6 +44,16 @@ export function validateDLContract(
   plan: DLPlan,
   complete = !!plan.contract?.release,
 ) {
+  if (
+    complete &&
+    plan.requestWorkflow &&
+    (!plan.requestReview ||
+      plan.requestReview.mxmNumber !== plan.request.mxmNumber.trim() ||
+      plan.requestReview.requestDate !== plan.request.date)
+  )
+    throw new Error(
+      "Confirme a análise da requisição gerada antes de concluir a contratação.",
+    );
   const contract = plan.contract;
   if (!contract) {
     if (complete || plan.stage === "Concluído")
@@ -239,6 +249,8 @@ export function releaseDLPlan(
     [
       "Rascunho",
       "Em planejamento",
+      "Gerar requisição",
+      "Analisar requisição gerada",
       "Cancelado",
       "Suspenso",
       "Não contratado",

@@ -1,3 +1,4 @@
+import {resolveDLRequestStage} from "./services/dlRequest";
 import type { DLPlan } from "./types/dl";
 import { dlWorkspaceKey, emptyDLWorkspace, readDLWorkspace, storeDLPlan } from "./services/dlPlanning";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -330,15 +331,17 @@ function App() {
     setSection(destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
   }
 
-  function saveDLPlan(candidate: DLPlan, action: string, options?: {release?:boolean}) {
+  function saveDLPlan(candidate: DLPlan, action: string, options?: {release?:boolean;reviewRequest?:boolean}) {
     if (dlState.error) throw new Error(dlState.error);
     if (JSON.stringify(readDLWorkspace(localStorage.getItem(dlWorkspaceKey))) !== JSON.stringify(dlWorkspace) || (localStorage.getItem("suprimentos:item-history:v1") !== null && localStorage.getItem("suprimentos:item-history:v1") !== JSON.stringify(history))) throw new Error("As DLs ou o histórico mudaram em outra aba. Recarregue antes de salvar.");
     const previous = dlWorkspace.plans.find(plan => plan.id === candidate.id);
+    candidate = resolveDLRequestStage(candidate,previous);
     const changes: string[] = [];
-    for (const key of ["title", "category", "openedOn", "responsible", "justification", "notes", "stage"] as const) {
-      if (previous?.[key] !== candidate[key]) changes.push(`${({title:"Objeto", category:"Categoria", openedOn:"Abertura", responsible:"Responsável", justification:"Justificativa", notes:"Observações", stage:"Situação"})[key]}: ${previous?.[key] || "(vazio)"} → ${candidate[key] || "(vazio)"}`);
+    for (const key of ["title", "category", "openedOn", "responsible", "justification", "notes", "deliveryDate", "stage"] as const) {
+      if (previous?.[key] !== candidate[key]) changes.push(`${({title:"Objeto", category:"Categoria", openedOn:"Abertura", responsible:"Responsável", justification:"Observação / Justificativa", notes:"Observações legadas", deliveryDate:"Data de entrega", stage:"Situação"})[key]}: ${previous?.[key] || "(vazio)"} → ${candidate[key] || "(vazio)"}`);
     }
     for (const key of Object.keys(candidate.request) as (keyof DLPlan["request"])[]) if (previous?.request[key] !== candidate.request[key] && (previous?.request[key] || candidate.request[key])) changes.push(`Requisição (${key}): ${previous?.request[key] || "(vazio)"} → ${candidate.request[key] || "(vazio)"}`);
+    if (JSON.stringify(previous?.requestReview) !== JSON.stringify(candidate.requestReview)) changes.push(candidate.requestReview ? `Análise da requisição MXM ${candidate.requestReview.mxmNumber} confirmada em ${candidate.requestReview.timestamp}. Situação: Em processo. Identificação: ${candidate.requestReview.actor}.` : "Análise anterior invalidada após alteração do número ou data da requisição.");
     const itemEvents: ItemHistoryEntry[] = [];
     for (const itemId of new Set([...(previous?.lines ?? []).map(line => line.itemId), ...candidate.lines.map(line => line.itemId)])) {
       const old = previous?.lines.find(line => line.itemId === itemId); const next = candidate.lines.find(line => line.itemId === itemId);

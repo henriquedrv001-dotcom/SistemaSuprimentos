@@ -1,3 +1,9 @@
+import {
+  dlObservation,
+  resolveDLRequestStage,
+  reviewDLRequest,
+} from "../../services/dlRequest";
+import DLRequestBrief from "./DLRequestBrief";
 import DLContractForm, {
   contractInput,
   materializeContract,
@@ -125,7 +131,7 @@ export default function DLPlanningEditor({
   const editable = editableDLItems(plan);
   function save(stage = draft.stage, action = "Planejamento atualizado") {
     try {
-      const candidate = materialize(stage);
+      const candidate = resolveDLRequestStage(materialize(stage), plan);
       validateDLPlan(candidate);
       const saved = onSave(candidate, action);
       setDraft(structuredClone(saved));
@@ -251,7 +257,13 @@ export default function DLPlanningEditor({
             readOnly={
               released ||
               editable ||
-              ["Cancelado", "Suspenso", "Não contratado"].includes(plan.stage)
+              [
+                "Gerar requisição",
+                "Analisar requisição gerada",
+                "Cancelado",
+                "Suspenso",
+                "Não contratado",
+              ].includes(plan.stage)
             }
           />
           {!released && (
@@ -266,9 +278,13 @@ export default function DLPlanningEditor({
                 disabled={
                   dirty ||
                   editable ||
-                  ["Cancelado", "Suspenso", "Não contratado"].includes(
-                    plan.stage,
-                  )
+                  [
+                    "Gerar requisição",
+                    "Analisar requisição gerada",
+                    "Cancelado",
+                    "Suspenso",
+                    "Não contratado",
+                  ].includes(plan.stage)
                 }
                 onClick={() => {
                   try {
@@ -314,8 +330,6 @@ export default function DLPlanningEditor({
                 ["category", "Categoria"],
                 ["openedOn", "Data de abertura"],
                 ["responsible", "Responsável"],
-                ["justification", "Justificativa"],
-                ["notes", "Observações"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>
@@ -330,6 +344,37 @@ export default function DLPlanningEditor({
                 />
               </label>
             ))}
+            <label className="dl-observation-field">
+              Observação / Justificativa
+              <textarea
+                aria-label="Observação / Justificativa"
+                rows={2}
+                disabled={released}
+                value={dlObservation(draft)}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    justification: e.target.value,
+                    notes: "",
+                  })
+                }
+              />
+            </label>
+            <label>
+              Data de entrega
+              <input
+                aria-label="Data de entrega"
+                type="date"
+                disabled={released}
+                value={draft.deliveryDate ?? ""}
+                onChange={(e) =>
+                  setDraft({ ...draft, deliveryDate: e.target.value })
+                }
+              />
+              <small className="muted">
+                Necessária para gerar a requisição MXM.
+              </small>
+            </label>
           </div>
           <div className="panel-heading">
             <div>
@@ -486,7 +531,17 @@ export default function DLPlanningEditor({
                   .filter(
                     (stage) =>
                       stage === draft.stage ||
-                      (stage !== "Concluído" &&
+                      (![
+                        "Concluído",
+                        "Em processo",
+                        "Requisição registrada",
+                        "Em tramitação",
+                      ].includes(stage) &&
+                        (![
+                          "Gerar requisição",
+                          "Analisar requisição gerada",
+                        ].includes(plan.stage) ||
+                          stage !== "Aguardando dados finais") &&
                         (editable
                           ? [
                               "Rascunho",
@@ -527,6 +582,76 @@ export default function DLPlanningEditor({
                 />
               </label>
             ))}
+          </div>
+          <div className="dl-request-workflow">
+            <p>
+              <strong>
+                Gerar requisição → Analisar requisição gerada → Em processo
+              </strong>
+            </p>
+            <p className="muted">
+              O número e a data salvos na etapa Gerar requisição encaminham o
+              registro para análise. A distribuição de tarefas ao aprendiz será
+              conectada quando os perfis e a tela de tarefas forem criados.
+            </p>
+            {!released && plan.stage === "Planejamento concluído" && (
+              <button
+                className="secondary-button"
+                onClick={() =>
+                  save(
+                    "Gerar requisição",
+                    "Preparação da requisição MXM iniciada",
+                  )
+                }
+              >
+                Gerar requisição
+              </button>
+            )}
+            {!released && plan.stage === "Analisar requisição gerada" && (
+              <button
+                className="primary-button"
+                disabled={dirty}
+                onClick={() => {
+                  try {
+                    if (
+                      window.confirm(
+                        `Você analisou a requisição MXM ${plan.request.mxmNumber} e confirma que ela está correta para seguir Em processo?`,
+                      )
+                    ) {
+                      const candidate = reviewDLRequest(plan, true);
+                      validateDLPlan(candidate);
+                      onSave(
+                        candidate,
+                        "Análise da requisição MXM confirmada",
+                        { reviewRequest: true },
+                      );
+                    }
+                  } catch (cause) {
+                    setError(
+                      cause instanceof Error
+                        ? cause.message
+                        : "Revise a requisição.",
+                    );
+                  }
+                }}
+              >
+                Confirmar análise e seguir em processo
+              </button>
+            )}
+            {plan.stage === "Analisar requisição gerada" && dirty && (
+              <p className="muted">
+                Salve as alterações antes de confirmar a análise.
+              </p>
+            )}
+            {plan.requestReview && (
+              <p className="muted">
+                Requisição {plan.requestReview.mxmNumber} analisada em{" "}
+                {new Date(plan.requestReview.timestamp).toLocaleString("pt-BR")}
+                . Identificação demonstrativa local; os perfis serão conectados
+                depois.
+              </p>
+            )}
+            <DLRequestBrief plan={plan} items={items} />
           </div>
           <p className="muted">
             DL identifica o processo de aquisição. PCD é o pedido ao CD; PDL

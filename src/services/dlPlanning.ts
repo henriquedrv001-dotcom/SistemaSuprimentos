@@ -1,3 +1,4 @@
+import { dlObservation, resolveDLRequestStage } from "./dlRequest.ts";
 import type { Item } from "../types";
 import type {
   DLIdentityDraft,
@@ -94,8 +95,28 @@ function validDate(date: string) {
 }
 export function validateDLPlan(plan: DLPlan) {
   if (!plan.title.trim()) throw new Error("Informe o objeto/título da DL.");
+  if (
+    plan.deliveryDate !== undefined &&
+    (typeof plan.deliveryDate !== "string" ||
+      (plan.deliveryDate && !validDate(plan.deliveryDate)))
+  )
+    throw new Error("Informe uma data de entrega válida.");
+  if (
+    ["Gerar requisição", "Analisar requisição gerada", "Em processo"].includes(
+      plan.stage,
+    ) &&
+    !plan.deliveryDate
+  )
+    throw new Error(
+      "Informe a data de entrega para preparar ou tramitar a requisição MXM.",
+    );
   if (!validDate(plan.openedOn))
     throw new Error("Informe uma data de abertura válida.");
+  if (
+    plan.requestWorkflow !== undefined &&
+    plan.requestWorkflow !== "mxm-review-v1"
+  )
+    throw new Error("Fluxo da requisição inválido.");
   if (!dlStages.includes(plan.stage))
     throw new Error("Situação do planejamento inválida.");
   if (
@@ -129,6 +150,9 @@ export function validateDLPlan(plan: DLPlan) {
   const budget = planBudget(plan.lines);
   const requiresBudget = [
     "Planejamento concluído",
+    "Gerar requisição",
+    "Analisar requisição gerada",
+    "Em processo",
     "Requisição registrada",
     "Em tramitação",
     "Aguardando dados finais",
@@ -140,6 +164,8 @@ export function validateDLPlan(plan: DLPlan) {
     );
   if (
     [
+      "Analisar requisição gerada",
+      "Em processo",
       "Requisição registrada",
       "Em tramitação",
       "Aguardando dados finais",
@@ -155,10 +181,37 @@ export function validateDLPlan(plan: DLPlan) {
   if (
     ["Cancelado", "Suspenso", "Não contratado"].includes(plan.stage) &&
     !plan.request.notes.trim() &&
-    !plan.notes.trim()
+    !dlObservation(plan).trim()
   )
     throw new Error(
       "Registre o motivo nas observações para suspender, cancelar ou indicar que não foi contratado.",
+    );
+  if (
+    plan.stage === "Gerar requisição" &&
+    plan.request.mxmNumber.trim() &&
+    !validDate(plan.request.date)
+  )
+    throw new Error(
+      "Informe a data da requisição MXM para encaminhá-la à análise.",
+    );
+  if (
+    plan.requestReview &&
+    (!validDate(plan.requestReview.requestDate) ||
+      !Number.isFinite(Date.parse(plan.requestReview.timestamp)) ||
+      !plan.requestReview.actor.trim())
+  )
+    throw new Error("O registro de análise da requisição é inválido.");
+  if (
+    (plan.stage === "Em processo" ||
+      (plan.requestWorkflow &&
+        ["Aguardando dados finais", "Concluído"].includes(plan.stage))) &&
+    (!plan.deliveryDate ||
+      !plan.requestReview ||
+      plan.requestReview.mxmNumber !== plan.request.mxmNumber.trim() ||
+      plan.requestReview.requestDate !== plan.request.date)
+  )
+    throw new Error(
+      "Confirme a análise da requisição gerada antes de seguir em processo.",
     );
   validateDLContract(plan);
   return plan;
@@ -239,6 +292,7 @@ export function newDLPlan(
     responsible: draft.responsible.trim(),
     justification: draft.justification.trim(),
     notes: draft.notes.trim(),
+    deliveryDate: draft.deliveryDate ?? "",
     id: `dl-${crypto.randomUUID()}`,
     code: formatDLCode(sequenceNumber),
     sequenceNumber,
@@ -294,9 +348,29 @@ export function storeDLPlan(
   candidate: DLPlan,
   action: string,
   details: string,
-  options?: { release?: boolean },
+  options?: { release?: boolean; reviewRequest?: boolean },
 ) {
   const previous = workspace.plans.find((plan) => plan.id === candidate.id);
+  candidate = resolveDLRequestStage(candidate, previous);
+  if (
+    candidate.stage === "Em processo" &&
+    previous?.stage !== "Em processo" &&
+    (!options?.reviewRequest ||
+      previous?.stage !== "Analisar requisição gerada")
+  )
+    throw new Error(
+      "Use a confirmação de análise da requisição antes de seguir em processo.",
+    );
+  if (
+    previous &&
+    ["Gerar requisição", "Analisar requisição gerada"].includes(
+      previous.stage,
+    ) &&
+    ["Aguardando dados finais", "Concluído"].includes(candidate.stage)
+  )
+    throw new Error(
+      "Analise a requisição gerada e confirme Em processo antes de avançar à contratação.",
+    );
   if (
     previous &&
     (candidate.revision !== previous.revision ||

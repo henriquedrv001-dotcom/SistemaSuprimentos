@@ -26,7 +26,7 @@ export type DLPlanningProps = {
   onSave: (
     plan: DLPlan,
     action: string,
-    options?: { release?: boolean },
+    options?: { release?: boolean; reviewRequest?: boolean },
   ) => DLPlan;
   pendingItems: Item[] | null;
   onPendingClose: () => void;
