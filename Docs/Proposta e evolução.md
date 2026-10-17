@@ -56,3 +56,11 @@ Validação do filtro: hierarquia e opções subordinadas, seleção segura, bus
 
 ## Simplificação: apenas Status
 A interface passa a usar somente o Status Ativo/Inativo no interruptor do item e no filtro do catálogo. O controle separado de Visibilidade foi retirado. Mostrar continua sendo o filtro mestre por tipos. O campo legado visible é preservado nos dados existentes por compatibilidade, mas não filtra mais a listagem; portanto, itens anteriormente ocultos podem voltar a aparecer conforme o recorte de tipos e status. Nenhum cadastro ou evento antigo é excluído, nem há conversão automática de itens ocultos em inativos.
+
+## Barra compacta do catálogo
+- Mostrar mantém filtro mestre e preferência; o botão usa ícone de filtro e contagem de tipos.
+- Tipo, Grupo, Critério e Status ficam na mesma linha em telas amplas; em telas menores, adaptam-se a duas ou uma coluna.
+- Visibilidade foi retirada; não há mais campo independente.
+- Preparar seleção abre diretamente os três destinos (Ciclo de suprimento, Planejamento DLs, Preparação de pedido direto), substituindo o seletor Adicionar a. Sem itens selecionados, o botão fica desabilitado. A ação continua sendo preparação demonstrativa e não cria vínculos ou reservas reais.
+- Ordenar foi movido para a linha de ações ao lado de Preparar seleção, com ícone A–Z, opções Descrição/Código/Grupo e descrição e indicação da opção atual.
+- Altura dos controles do catálogo reduzida para 36px, mantendo o tema azul. Menus fecham por Escape ou clique fora; seleção de destino respeita os itens filtrados.

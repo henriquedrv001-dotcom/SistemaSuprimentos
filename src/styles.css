@@ -378,3 +378,21 @@ td small { display: block; margin-top: 3px; font-size: 10px; color: var(--text-m
 .type-filter-message:empty { display: none; }
 .type-filter-done { width: 100%; }
 @media (max-width: 720px) { .catalog-toolbar { align-items: stretch; flex-direction: column; } .catalog-toolbar-actions { width: 100%; flex-direction: column; align-items: stretch; } .catalog-search { width: 100%; } .type-filter-trigger { width: 100%; } .type-filter-menu { right: auto; left: 0; max-width: 100%; width: 360px; } }
+
+/* Ferramentas compactas do catálogo. */
+.catalog-panel { --control-height: 36px; }
+.catalog-panel .catalog-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.catalog-panel .catalog-filters label { gap: 5px; }
+.catalog-panel .catalog-filters select { font-size: 12px; }
+.catalog-panel .catalog-toolbar { margin-bottom: 16px; }
+.catalog-panel .catalog-toolbar-actions { gap: 8px; }
+.catalog-panel .catalog-bulk-actions { margin-top: 0; }
+.catalog-panel .bulk-actions-right { gap: 8px; }
+.catalog-panel .type-filter-trigger { gap: 7px; font-weight: 600; }
+.catalog-action-menu { position: relative; }
+.catalog-action-options { position: absolute; right: 0; top: calc(100% + 6px); z-index: 21; width: 240px; max-width: calc(100vw - 50px); padding: 5px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-menu); }
+.catalog-action-options > button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px; border: 0; border-radius: 5px; background: transparent; color: var(--text); text-align: left; font-size: 12px; }
+.catalog-action-options > button:hover, .catalog-action-options > button[aria-pressed="true"] { background: var(--primary-light); color: var(--primary); }
+.catalog-action-options > button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+@media (max-width: 1000px) { .catalog-panel .catalog-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .catalog-panel .catalog-filters { grid-template-columns: 1fr; } .catalog-panel .bulk-actions-right { width: 100%; justify-content: flex-start; } .catalog-action-options { right: auto; left: 0; } }

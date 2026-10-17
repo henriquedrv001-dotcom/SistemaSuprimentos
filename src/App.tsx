@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Boxes, CalendarDays, CheckCircle2,
   ChevronDown, ClipboardList, FileText, LayoutDashboard, PackageSearch,
-  Search, Truck, WalletCards, FileUp, Trash2, Download
+  Search, Truck, WalletCards, FileUp, Trash2, Download, ArrowDownAZ
 } from "lucide-react";
 import { demoCycleItems, demoCycles, demoItems, demoOrders } from "./data";
 import type { Item, ItemHistoryEntry, SupplyCycle } from "./types";
 import ItemDetailsDialog from "./components/ItemDetailsDialog";
+import CatalogActionMenu from "./components/CatalogActionMenu";
 import CatalogTypeFilter, { readCatalogTypeView } from "./components/CatalogTypeFilter";
 
 type Section = "Painel" | "Cadastro de itens" | "Ciclos de suprimento" | "Pedidos diretos" | "Planejamento DLs" | "Controle DLs" | "Acompanhamento de pedidos";
@@ -50,7 +51,6 @@ function App() {
   const [filterStatus, setFilterStatus] = useState("Todos");
   const [editorMode, setEditorMode] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const [bulkDestination, setBulkDestination] = useState("");
   const [bulkMessage, setBulkMessage] = useState("");
   const catalogWrapRef = useRef<HTMLDivElement>(null);
   const fixedScrollRef = useRef<HTMLDivElement>(null);
@@ -91,7 +91,7 @@ function App() {
   function changeTypeView(next: string[] | null) {
     setSelectedTypes(next); setFilterType("Todos"); setFilterGroup("Todos");
     setFilterCriterion("Todos"); setFilterStatus("Todos");
-    setSelectedItemIds([]); setBulkDestination(""); setBulkMessage("");
+    setSelectedItemIds([]); setBulkMessage("");
   }
 
   useEffect(() => {
@@ -275,14 +275,14 @@ function App() {
     setEditingItem(null);
   }
 
-  function prepareBulkAction() {
-    if (!selectedItemIds.length || !bulkDestination) return;
-    const selected = items.filter((item) => selectedItemIds.includes(item.id));
-    const label = bulkDestination === "cycle" ? "Ciclos de suprimento" : bulkDestination === "dl" ? "Planejamento DLs" : "Pedidos diretos";
+  function prepareBulkAction(destination: string) {
+    if (!["cycle", "dl", "order"].includes(destination)) return;
+    const selected = filteredItems.filter((item) => selectedItemIds.includes(item.id));
+    if (!selected.length) return;
+    const label = destination === "cycle" ? "Ciclos de suprimento" : destination === "dl" ? "Planejamento DLs" : "Pedidos diretos";
     setBulkMessage(`${selected.length} item(ns) selecionado(s) encaminhado(s) para preparação em “${label}”. Nenhum ciclo, pedido ou saldo foi criado automaticamente.`);
     selected.forEach((item) => recordHistory(item, "Encaminhado para preparação", `Destino escolhido: ${label}.`));
-    setSection(bulkDestination === "cycle" ? "Ciclos de suprimento" : bulkDestination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
-    setBulkDestination("");
+    setSection(destination === "cycle" ? "Ciclos de suprimento" : destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
   }
 
   function addCycle() {
@@ -403,20 +403,27 @@ function App() {
                 <div className="form-actions"><button className="secondary-button" onClick={() => setShowAddItem(false)}>Cancelar</button><button className="primary-button" onClick={addItem}>Adicionar à demonstração</button></div>
                 <p className="form-note">Dados salvos apenas neste navegador. A conexão ao banco será feita em etapa posterior.</p>
               </section>}
-              <section className="panel">
+              <section className="panel catalog-panel">
                 <div className="toolbar catalog-toolbar"><div><h2>Catálogo de itens</h2><p aria-live="polite">{filteredItems.length} de {items.length} itens exibidos</p></div><div className="catalog-toolbar-actions"><label className="search-box catalog-search"><Search size={16} aria-hidden="true" /><input aria-label="Buscar itens" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar código, descrição, grupo ou unidade" /></label><CatalogTypeFilter types={allTypes} selected={selectedTypes} onChange={changeTypeView} /></div></div>
                 <div className="catalog-filters">
                   <label>Tipo<select value={filterType} onChange={(e) => { setFilterType(e.target.value); setFilterGroup("Todos"); setFilterCriterion("Todos"); setSelectedItemIds([]); }}><option>Todos</option>{types.map((type) => <option key={type}>{type}</option>)}</select></label>
                   <label>Grupo<select value={filterGroup} onChange={(e) => { setFilterGroup(e.target.value); setFilterCriterion("Todos"); }}><option>Todos</option>{groups.map((group) => <option key={group}>{group}</option>)}</select></label>
                   <label>Critério<select value={filterCriterion} onChange={(e) => setFilterCriterion(e.target.value)}><option>Todos</option>{criteria.map(criterion => <option key={criterion}>{criterion}</option>)}</select></label>
                   <label>Status<select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option>Todos</option><option>Ativo</option><option>Inativo</option></select></label>
-                  <label>Ordenar por<select value={sortMode} onChange={(e) => setSortMode(e.target.value)}><option value="description">Descrição (A–Z)</option><option value="code">Código (A–Z)</option><option value="group">Grupo e descrição</option></select></label>
                 </div>
                 <div className="form-actions catalog-bulk-actions" style={{ justifyContent: "space-between", marginBottom: 12 }}>
                   <label className="select-all-label"><input type="checkbox" checked={filteredItems.length > 0 && filteredItems.every((item) => selectedItemIds.includes(item.id))} onChange={(e) => setSelectedItemIds(e.target.checked ? [...new Set([...selectedItemIds, ...filteredItems.map((item) => item.id)])] : selectedItemIds.filter((id) => !filteredItems.some((item) => item.id === id)))} /> Selecionar todos os itens filtrados</label>
                   <div className="bulk-actions-right">
-                    <select aria-label="Adicionar itens selecionados a" value={bulkDestination} onChange={(e) => setBulkDestination(e.target.value)}><option value="">Adicionar a…</option><option value="cycle">Ciclo de suprimento</option><option value="dl">Planejamento DLs</option><option value="order">Preparação de pedido direto</option></select>
-                    <button className="secondary-button" disabled={!selectedItemIds.length || !bulkDestination} onClick={prepareBulkAction}>Preparar seleção ({selectedItemIds.length})</button>
+                    <CatalogActionMenu label={`Preparar seleção (${selectedItemIds.length})`} icon={<ClipboardList size={16} aria-hidden="true" />} disabled={!selectedItemIds.length} options={[
+                      { value: "cycle", label: "Ciclo de suprimento" },
+                      { value: "dl", label: "Planejamento DLs" },
+                      { value: "order", label: "Preparação de pedido direto" },
+                    ]} onSelect={prepareBulkAction} />
+                    <CatalogActionMenu label="Ordenar" icon={<ArrowDownAZ size={16} aria-hidden="true" />} selected={sortMode} options={[
+                      { value: "description", label: "Descrição (A–Z)" },
+                      { value: "code", label: "Código (A–Z)" },
+                      { value: "group", label: "Grupo e descrição" },
+                    ]} onSelect={setSortMode} />
                     <button className="secondary-button" disabled={!selectedItemIds.length} onClick={deleteSelectedItems}><Trash2 size={16} /> Excluir selecionados</button>
                   </div>
                 </div>

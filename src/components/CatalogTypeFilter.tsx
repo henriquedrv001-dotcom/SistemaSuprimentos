@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Filter } from "lucide-react";
 
 const preferenceKey = "suprimentos:cadastro:mostrar-tipos:v1";
 export function readCatalogTypeView(): string[] | null {
@@ -44,7 +44,7 @@ export default function CatalogTypeFilter({ types, selected, onChange }: Props) 
   }
 
   return <div className="type-filter" ref={rootRef}>
-    <button ref={triggerRef} type="button" className="type-filter-trigger" aria-expanded={open} aria-controls="catalog-type-view" onClick={() => { setOpen(!open); setQuery(""); setMessage(""); }}><span>Mostrar: {selected === null ? "todos os tipos" : count === 0 ? "nenhum tipo" : `${count} ${count === 1 ? "tipo" : "tipos"}`}</span><ChevronDown size={16} /></button>
+    <button ref={triggerRef} type="button" className="type-filter-trigger" aria-expanded={open} aria-controls="catalog-type-view" onClick={() => { setOpen(!open); setQuery(""); setMessage(""); }}><Filter size={16} aria-hidden="true" /><span>Mostrar: {count} {count === 1 ? "tipo" : "tipos"}</span><ChevronDown size={14} aria-hidden="true" /></button>
     {open && <section id="catalog-type-view" className="type-filter-menu" aria-label="Tipos permitidos no cadastro">
       <div className="type-filter-heading"><strong>Mostrar tipos de itens</strong><span>{count} de {types.length}</span></div>
       <p className="type-filter-help">Escolha os tipos que aparecem no cadastro e nos filtros abaixo. Os demais continuam na base.</p>
