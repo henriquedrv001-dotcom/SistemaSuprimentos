@@ -270,7 +270,7 @@ export function contractStatus(plan: DLPlan, today: string) {
 export function releaseDLPlan(
   plan: DLPlan,
   checked: boolean,
-  confirmation: string,
+  confirmation: boolean | string,
 ): DLPlan {
   if (plan.contract?.release)
     throw new Error(
@@ -290,9 +290,9 @@ export function releaseDLPlan(
     throw new Error(
       "Conclua o planejamento e revise a tramitação antes de liberar a contratação.",
     );
-  if (!checked || confirmation !== "CONCLUIR")
+  if (!checked || (confirmation !== true && confirmation !== "CONCLUIR"))
     throw new Error(
-      "Confirme os pedidos de compra MXM emitidos e digite CONCLUIR para disponibilizar no Controle.",
+      "Confirme a conferência dos pedidos de compra MXM e a conclusão para disponibilizar no Controle.",
     );
   if (plan.processFlow && (!dlOrderDocuments(plan).length || !plan.processFlow.suppliersSubmitted)) throw new Error("Registre o pedido e envie os fornecedores para aprovação antes de concluir.");
   validateDLContract(plan, true);

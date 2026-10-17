@@ -472,7 +472,6 @@ export default function DLPlanningEditor({
         <DLSchedulePanel
           plan={plan}
           value={scheduleDraft}
-          events={workspace.events}
           onChange={setScheduleDraft}
           readOnly={justificationDirty}
         />
@@ -483,9 +482,9 @@ export default function DLPlanningEditor({
           plan={plan}
           items={items}
           onClose={() => setReleaseOpen(false)}
-          onConfirm={(checked, text) => {
+          onConfirm={(checked, confirmed) => {
             onSave(
-              releaseDLPlan(plan, checked, text),
+              releaseDLPlan(plan, checked, confirmed),
               "DL concluída e disponibilizada no Controle",
               { release: true },
             );
@@ -701,7 +700,6 @@ export default function DLPlanningEditor({
           onChange={(request) => setDraft({ ...draft, request })}
           onAction={requestAction}
           otherChanges={otherRequestChanges}
-          events={workspace.events}
           prelude={
             <DLJustificationStep
               plan={plan}

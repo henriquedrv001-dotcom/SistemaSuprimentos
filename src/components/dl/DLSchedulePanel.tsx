@@ -1,4 +1,4 @@
-import type { DLPlan, DLSchedule, DLPlanEvent } from "../../types/dl";
+import type { DLPlan, DLSchedule } from "../../types/dl";
 import { milestoneStatus, scheduleDates } from "../../services/dlSchedule";
 import { todayInBrazil } from "../../services/dlPlanning";
 import { contractStatus } from "../../services/dlContract";
@@ -9,13 +9,11 @@ export default function DLSchedulePanel({
   value,
   onChange,
   readOnly = false,
-  events = [],
 }: {
   plan: DLPlan;
   value: DLSchedule;
   onChange: (value: DLSchedule) => void;
   readOnly?: boolean;
-  events?: DLPlanEvent[];
 }) {
   let dates: ReturnType<typeof scheduleDates> | null = null;
   let error = "";
@@ -266,14 +264,7 @@ export default function DLSchedulePanel({
         informada, usam a data real. Os indicadores do processo e da entrega
         usam os prazos contados da requisição e do pedido reais, quando
         registrados. Os avisos não bloqueiam o andamento do processo.
-      </p>      <section className="dl-milestone-history" aria-label="Histórico de etapas">
-        <h4>Histórico de etapas</h4>
-        {events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição|pedido gerado/i.test(event.action)).length ? (
-          <ol>{events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição|pedido gerado/i.test(event.action)).map(event => (
-            <li key={event.id}><span>{event.action}</span><small>{new Date(event.timestamp).toLocaleString("pt-BR")} · {event.actor}</small></li>
-          ))}</ol>
-        ) : <p className="muted">Nenhuma aprovação ou fechamento de etapa registrado.</p>}
-      </section>
+      </p>
 
     </>
   );

@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import type { DLPlan, DLPlanEvent } from "../../types/dl";
+import type { DLPlan } from "../../types/dl";
 import type { Item } from "../../types";
 import DLRequestBrief from "./DLRequestBrief";
-import DLHistory from "./DLHistory";
 export type RequestAction =
   | "start"
   | "saveDraft"
@@ -20,7 +19,6 @@ export default function DLRequestWorkflow({
   onChange,
   onAction,
   otherChanges,
-  events,
   prelude,
   finalSteps,
 }: {
@@ -30,7 +28,6 @@ export default function DLRequestWorkflow({
   onChange: (request: DLPlan["request"]) => void;
   onAction: (action: RequestAction, reason?: string) => void;
   otherChanges: boolean;
-  events: DLPlanEvent[];
   prelude?: ReactNode;
   finalSteps?: ReactNode;
 }) {
@@ -261,10 +258,6 @@ export default function DLRequestWorkflow({
           Salve as alterações pendentes na etapa em edição antes de continuar.
         </p>
       )}
-      <details className="dl-request-history">
-        <summary>Histórico da DL</summary>
-        <DLHistory planId={plan.id} events={events} />
-      </details>
     </div>
   );
 }

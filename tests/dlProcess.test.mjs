@@ -317,3 +317,14 @@ test("reabertura mantém anexos mas exige registrar novamente antes do novo envi
   assert.equal(dlOrderDocuments(registeredAgain).length, 2);
   assert(submitDLSuppliers(registeredAgain).processFlow.suppliersSubmitted);
 });
+
+test("concluir por confirmação do pop-up ainda exige checkbox e aprovação dos fornecedores", () => {
+  const p = submitDLSuppliers(registered());
+  assert.throws(() => releaseDLPlan(p, false, true), /Confirme/);
+  assert.throws(() => releaseDLPlan(p, true, false), /Confirme/);
+  assert.deepEqual(contractOrigins(p), []);
+  const completed = releaseDLPlan(p, true, true);
+  assert.equal(completed.stage, "Concluído");
+  assert.equal(contractOrigins(completed).length, 1);
+  assert.throws(() => releaseDLPlan(registered(), true, true), /envie os fornecedores/);
+});

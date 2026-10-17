@@ -222,3 +222,11 @@ Validação: 103 testes e build; Chromium cobre vários anexos, acréscimo sem p
 Tabela de fornecedores compacta, quantidade/unidade integradas, preços em moeda e totais alinhados. Modal de conclusão com cabeçalho/rodapé fixos e conteúdo rolável, fonte uniforme e descrições que quebram linha. A confirmação normaliza caixa e espaços antes de chamar o serviço estrito; o checkbox e a validação dos dados continuam obrigatórios. Corrigida a seleção do campo monetário ao alternar moeda/edição para evitar concatenar o valor anterior.
 
 Validado no Chromium o percurso completo, incluindo quatro materiais, conferência com cancelar, minúsculas/espaços, requisitos obrigatórios, versões desktop/móvel, conclusão única e Controle com quatro origens e R$ 6.504,00 persistidos. Teste em dados demonstrativos isolados, sem alterar os dados locais do usuário.
+
+
+### Histórico somente na aba própria — 17/10/2026
+Removidas as listas repetidas de histórico do Cronograma e de Requisição e processo. Os registros salvos e sua gravação continuam intactos, disponíveis na aba Histórico. Indicadores de situação e mensagens operacionais das etapas continuam nas respectivas telas.
+
+
+### Confirmação final sem digitação — 17/10/2026
+Retirado o campo de digitação CONCLUIR. A conclusão mantém o checkbox obrigatório e abre um pop-up confirmar/cancelar; cancelar não altera a DL nem cria saldos. Compatibilidade do serviço com chamadas anteriores preservada. Validados 104 testes e build, além do percurso Chromium: histórico somente na aba própria, conferência obrigatória, cancelamento sem alteração, quatro origens liberadas somente ao confirmar e Controle persistido após recarregar.

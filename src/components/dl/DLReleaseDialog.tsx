@@ -19,14 +19,12 @@ export default function DLReleaseDialog({
 }: {
   plan: DLPlan;
   items: Item[];
-  onConfirm: (checked: boolean, text: string) => void;
+  onConfirm: (checked: boolean, confirmed: boolean) => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [checked, setChecked] = useState(false);
-  const [text, setText] = useState("");
   const [error, setError] = useState("");
-  const confirmation = text.trim().toLocaleUpperCase("pt-BR");
   useEffect(() => {
     ref.current?.showModal();
   }, []);
@@ -130,20 +128,9 @@ export default function DLReleaseDialog({
             Conferi os dados finais e confirmo que os pedidos de compra MXM
             foram emitidos.
           </label>
-          <label className="dl-result-reason">
-            Digite CONCLUIR para confirmar
-            <input
-              aria-label="Confirmação de conclusão da DL"
-              autoComplete="off"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-          </label>
-          {(!checked || confirmation !== "CONCLUIR") && (
+          {!checked && (
             <p className="muted" role="status">
-              {!checked
-                ? "Marque a conferência dos dados finais para continuar."
-                : "Digite CONCLUIR para habilitar a conclusão."}
+              Marque a conferência dos dados finais para continuar.
             </p>
           )}
         </div>
@@ -159,10 +146,15 @@ export default function DLReleaseDialog({
         </button>
         <button
           className="primary-button"
-          disabled={!checked || confirmation !== "CONCLUIR" || !!validation}
+          disabled={!checked || !!validation}
           onClick={() => {
             try {
-              onConfirm(checked, confirmation);
+              if (
+                window.confirm(
+                  `Concluir ${plan.code} e disponibilizar no Controle? Os saldos iniciais serão registrados e os dados finais ficarão protegidos.`,
+                )
+              )
+                onConfirm(checked, true);
             } catch (cause) {
               setError(
                 cause instanceof Error
