@@ -39,6 +39,7 @@ export default function DLRequestBrief({
               <th>Material</th>
               <th>Quantidade</th>
               <th>Unidade</th>
+              <th>Grupo de pagamento</th>
               <th>Especificação técnica</th>
             </tr>
           </thead>
@@ -49,6 +50,7 @@ export default function DLRequestBrief({
                 <td>{item.description}</td>
                 <td>{decimalInput(item.quantityMilli, 3) || "A definir"}</td>
                 <td>{item.unit}</td>
+                <td>MATE.13</td>
                 <td style={{ whiteSpace: "pre-wrap" }}>
                   {item.technicalSpecification || "—"}
                 </td>
