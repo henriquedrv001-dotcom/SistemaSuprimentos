@@ -20,6 +20,7 @@ import {
   removePlanningItems,
   saveGroupTemplate,
 } from "../../services/cyclePlanning";
+import ConfirmGroupChangeDialog from "../../components/ConfirmGroupChangeDialog";
 import CycleItemPicker from "../../components/CycleItemPicker";
 import { CycleForm, CycleLineForm } from "../../components/CycleForms";
 import CycleGroupsDialog from "../../components/CycleGroupsDialog";
@@ -56,6 +57,7 @@ export default function CiclosSuprimento({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [moveGroup, setMoveGroup] = useState("");
+  const [pendingGroupChange, setPendingGroupChange] = useState<{ lines: CyclePlanningLine[]; groupId: string | null } | null>(null);
   const [statusFilter, setStatusFilter] = useState("open");
   useEffect(() => {
     if (initialCycleId) {
@@ -493,25 +495,11 @@ export default function CiclosSuprimento({
                           line.requestGroupId !==
                           (moveGroup === "none" ? null : moveGroup),
                       );
-                      let next = workspace;
-                      for (const line of changed)
-                        next = editPlanningLine(next, cycles, {
-                          ...line,
-                          requestGroupId:
-                            moveGroup === "none" ? null : moveGroup,
-                        });
-                      onCommit(
-                        next,
-                        lineEvents(
-                          changed,
-                          "Alteração de grupo no ciclo",
-                          `Ciclo: ${cycle.name}. Grupo: ${moveGroup === "none" ? "Sem grupo" : groupNames.get(moveGroup)}.`,
-                        ),
-                      );
-                      setMessage(
-                        `${changed.length} materiais atualizados no grupo de solicitação.`,
-                      );
-                      setMoveGroup("");
+                      if (!changed.length) {
+                        setMessage("Os materiais selecionados já estão neste grupo. Nenhuma alteração foi feita.");
+                        return;
+                      }
+                      setPendingGroupChange({ lines: changed, groupId: moveGroup === "none" ? null : moveGroup });
                     })
                   }
                 >
@@ -690,6 +678,25 @@ export default function CiclosSuprimento({
           </section>
         </>
       )}
+      {pendingGroupChange && cycle && <ConfirmGroupChangeDialog
+        count={pendingGroupChange.lines.length}
+        origins={[...new Set(pendingGroupChange.lines.map(line => groupNames.get(line.requestGroupId ?? "") ?? "Sem grupo"))]}
+        destination={groupNames.get(pendingGroupChange.groupId ?? "") ?? "Sem grupo"}
+        onClose={() => setPendingGroupChange(null)}
+        onConfirm={() => {
+          if (locked) throw new Error("Este ciclo não está disponível para edição.");
+          let next = workspace;
+          for (const previous of pendingGroupChange.lines) {
+            const current = workspace.lines.find(line => line.id === previous.id && line.cycleId === cycle.id);
+            if (!current || current.requestGroupId !== previous.requestGroupId) throw new Error("A seleção mudou. Cancele e revise os grupos antes de continuar.");
+            next = editPlanningLine(next, cycles, { ...current, requestGroupId: pendingGroupChange.groupId });
+          }
+          onCommit(next, pendingGroupChange.lines.map(line => ({ itemId: line.itemId, action: "Alteração de grupo no ciclo", details: `Ciclo: ${cycle.name}. Grupo: ${groupNames.get(line.requestGroupId ?? "") ?? "Sem grupo"} → ${groupNames.get(pendingGroupChange.groupId ?? "") ?? "Sem grupo"}.` })));
+          setMessage(`${pendingGroupChange.lines.length} materiais atualizados no grupo de solicitação.`);
+          setMoveGroup("");
+          setPendingGroupChange(null);
+        }}
+      />}
       {cycleForm && (
         <CycleForm
           cycle={cycleForm === "new" ? undefined : cycleForm}

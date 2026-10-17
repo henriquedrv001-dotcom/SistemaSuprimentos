@@ -119,3 +119,6 @@ A cópia antiga do importador não reconhecia UNID e usava UN como fallback; iss
 A prévia dos novos itens mostra sua unidade. Na revisão dos existentes, Selecionar somente unidades marca apenas diferenças de unidade e desmarca os demais campos, mantendo o download de backup e a confirmação ATUALIZAR. A correção de unidade não converte quantidades planejadas nos ciclos. Cadastro manual e edição também exigem unidade preenchida.
 
 Não foi feita correção automática dos dados no navegador do responsável: é necessário confrontar os códigos com a extração do MXM e aplicar as diferenças aprovadas. Testes cobriram cabeçalhos, bloqueio de novos sem unidade, UN→KG isolado, preservação das personalizações e exibição da unidade atualizada no ciclo sem recalcular quantidade. Total atual: 35 testes automatizados, mais o fluxo de navegador da correção.
+
+## Confirmação para trocar grupos em lote
+Aplicar grupo agora abre uma janela com a quantidade de materiais afetados, grupos de origem e destino. As opções são Não, manter grupo (foco inicial) e Sim, alterar grupo. Cancelar ou usar Escape não altera os dados nem o histórico; escolher o grupo atual também não gera alterações. Após confirmar, quantidades são preservadas e o histórico registra origem → destino. Build e teste de navegador dessas condições passaram.
