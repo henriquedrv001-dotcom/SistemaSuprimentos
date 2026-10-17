@@ -453,7 +453,7 @@ function App() {
                   onSave={saveEditedItem}
                   onClose={() => setEditingItem(null)}
                 />}
-                <section className="history-panel"><div className="panel-heading"><div><h2>Histórico de alterações</h2><p>Eventos locais mais recentes do catálogo.</p></div></div>{history.length ? <div className="history-list">{history.slice(0, 20).map((entry) => <div className="history-row" key={entry.id}><strong>{entry.code} · {entry.action}</strong><span>{entry.details}</span><small>{new Date(entry.timestamp).toLocaleString("pt-BR")}</small></div>)}</div> : <p className="muted">Ainda não há eventos registrados.</p>}</section>
+
                 <p className="form-note">Importação nesta versão aceita CSV/TXT exportado do Excel. A importação .xlsx nativa ainda precisa de uma biblioteca específica. Exclusões afetam somente a demonstração local e não verificam vínculos com ciclos ou pedidos.</p>
               </section>
             </>
