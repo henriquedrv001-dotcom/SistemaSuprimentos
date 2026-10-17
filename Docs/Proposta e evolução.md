@@ -176,3 +176,6 @@ Resumo reutilizável para a futura tarefa do aprendiz: mesma DL, objeto, observa
 Limite desta etapa: nenhuma tarefa, perfil, posição funcional ou atribuição a pessoa real foi criada. O futuro desenho atribuirá a geração ao aprendiz e retornará a análise ao responsável; o MXM permanece responsável pela execução oficial. A conferência atual é manual, com identificação demonstrativa de sessão.
 
 Validação: 74 testes automatizados e build aprovados. Chromium verificou textos legados, edição com espaços/quebras de linha, entrega obrigatória e persistente, resumo MXM, geração/análise automática, cancelamento/aceite da análise, reanálise após alteração, contratação protegida enquanto pendente, histórico e largura móvel. Os roteiros da contratação/Controle e recuperação após falha também passaram.
+
+## Apresentação de preço e categoria nas DLs
+Preço unitário previsto passa a mostrar moeda BRL ao sair do campo e nos campos bloqueados; durante a edição, mantém o valor decimal sem símbolo ou separador de milhar. A formatação é apenas visual: campos vazios continuam vazios, valores inválidos ficam disponíveis para correção e o salvamento continua em centavos. Categoria aparece em maiúsculas na listagem, preservando o texto original armazenado. Build e Chromium aprovados para 50, 0,89, 1.234,56, edição, vazio, entrada inválida, persistência e planejamento concluído.

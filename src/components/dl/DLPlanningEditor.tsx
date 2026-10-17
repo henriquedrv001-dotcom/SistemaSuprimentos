@@ -1,3 +1,4 @@
+import DLMoneyInput from "./DLMoneyInput";
 import {
   dlObservation,
   resolveDLRequestStage,
@@ -457,20 +458,11 @@ export default function DLPlanningEditor({
                         />
                       </td>
                       <td>
-                        <input
-                          aria-label={`Preço ${item?.code}`}
-                          inputMode="decimal"
+                        <DLMoneyInput
+                          label={`Preço ${item?.code}`}
                           disabled={!editable}
                           value={values[line.id]?.price ?? ""}
-                          onChange={(e) =>
-                            setValues({
-                              ...values,
-                              [line.id]: {
-                                ...values[line.id],
-                                price: e.target.value,
-                              },
-                            })
-                          }
+                          onChange={price => setValues(current => ({...current,[line.id]:{...current[line.id],price}}))}
                         />
                       </td>
                       <td>{subtotal}</td>
