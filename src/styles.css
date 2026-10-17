@@ -493,3 +493,19 @@ td small { display: block; margin-top: 3px; font-size: 10px; color: var(--text-m
   .sidebar-nav-section nav { overflow: visible; }
   .topbar { gap: 10px; }
 }
+
+.dl-actions {display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+.dl-create {margin-top:20px}
+.dl-create > label {display:grid;gap:8px;margin:14px 0}
+.dl-editor .form-grid {margin:20px 0}
+.dl-budget-table {min-width:850px}
+.dl-budget-table input {min-width:90px;max-width:145px;width:100%}
+.dl-spec {display:block;white-space:normal;color:var(--muted);margin-top:6px}
+.dl-event {padding:16px 0;border-bottom:1px solid #dce5ef}
+.dl-budget-table input, .dl-create label input, .dl-create label select, .dl-stage-filter select {min-height:var(--control-height);border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px 11px;background:#fff;color:var(--text);font:inherit;font-size:12px}
+.dl-budget-table input:focus, .dl-create input:focus, .dl-create select:focus, .dl-stage-filter select:focus {border-color:var(--primary);box-shadow:var(--focus-ring);outline:none}
+.dl-budget-table input:disabled {background:var(--background-soft);color:var(--text-muted)}
+.dl-stage-filter {display:flex;gap:10px;align-items:center;margin:14px 0}
+dialog.dl-create {margin:auto}
+.dl-editor .panel-heading {flex-wrap:wrap}
+@media(max-width:650px) {.dl-actions {width:100%}.dl-actions button {flex:1}.dl-stage-filter select {min-width:0;max-width:100%}}

@@ -1,3 +1,4 @@
+import type { DLPlan } from "../types/dl";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { CyclePlanningLine, Item, ItemHistoryEntry, SupplyCycle } from "../types";
@@ -10,6 +11,7 @@ const tabs: { id: Tab; label: string }[] = [
 ];
 
 type Props = {
+  dlPlans?: DLPlan[];
   item: Item;
   history: ItemHistoryEntry[];
   cycleItems: CyclePlanningLine[];
@@ -19,7 +21,7 @@ type Props = {
   onClose: () => void;
 };
 
-export default function ItemDetailsDialog({ item, history, cycleItems, cycles, onChange, onSave, onClose }: Props) {
+export default function ItemDetailsDialog({ item, history, cycleItems, cycles, dlPlans = [], onChange, onSave, onClose }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [tab, setTab] = useState<Tab>("edit");
   useEffect(() => { dialogRef.current?.showModal(); }, []);
@@ -69,6 +71,8 @@ export default function ItemDetailsDialog({ item, history, cycleItems, cycles, o
           {associations.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum pedido ou DL associado a este item.</td></tr>}
         </tbody></table></div>
         <p className="form-note">Os vínculos e saldos aparecerão quando os módulos de pedidos e DLs estiverem conectados. Nenhum saldo é criado ou alterado nesta janela.</p>
+        <h3 className="item-related-heading">Planejamentos de DL associados</h3>
+        {dlPlans.filter(plan => plan.lines.some(line => line.itemId === item.id)).length ? <ul className="item-cycle-links">{dlPlans.filter(plan => plan.lines.some(line => line.itemId === item.id)).map(plan => {const line = plan.lines.find(line => line.itemId === item.id)!; return <li key={plan.id}><strong>{plan.code} · {plan.title}</strong><span>{plan.stage} · Planejado: {line.quantityMilli === null ? "A definir" : `${(line.quantityMilli / 1000).toLocaleString("pt-BR")} ${line.unit}`} · Ainda sem saldo contratado</span></li>;})}</ul> : <p className="muted">Nenhum planejamento de DL associado a este item.</p>}
         <h3 className="item-related-heading">Ciclos associados</h3>
         {linkedCycles.length ? <ul className="item-cycle-links">{linkedCycles.map(line => <li key={line.id}><strong>{cycles.find(cycle => cycle.id === line.cycleId)?.name ?? line.cycleId}</strong><span>Planejado: {line.plannedQuantity === null ? "A definir" : `${line.plannedQuantity.toLocaleString("pt-BR")} ${item.unit}`}</span></li>)}</ul> : <p className="muted">Nenhum ciclo associado a este item.</p>}
       </section>

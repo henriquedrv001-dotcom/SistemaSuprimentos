@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CycleRequestGroup, Item } from "../types";
 import { Search } from "lucide-react";
 export default function CycleItemPicker({
+  context = "cycle",
   items,
   existingIds,
   groups,
@@ -9,6 +10,7 @@ export default function CycleItemPicker({
   onAdd,
   onClose,
 }: {
+  context?: "cycle" | "dl";
   items: Item[];
   existingIds: string[];
   groups: CycleRequestGroup[];
@@ -83,10 +85,9 @@ export default function CycleItemPicker({
     >
       <div className="panel-heading">
         <div>
-          <h2 id="cycle-picker-title">Adicionar materiais ao ciclo</h2>
+          <h2 id="cycle-picker-title">Adicionar materiais {context === "dl" ? "à DL" : "ao ciclo"}</h2>
           <p>
-            Materiais ativos do cadastro MXM. Itens já incluídos neste ciclo não
-            aparecem novamente.
+            Materiais ativos do cadastro MXM. Itens já incluídos não aparecem novamente.
           </p>
         </div>
         <button className="secondary-button" onClick={onClose}>
@@ -132,7 +133,7 @@ export default function CycleItemPicker({
             ))}
           </select>
         </label>
-        <label>
+        {context === "cycle" && <label>
           Adicionar no grupo de solicitação
           <select
             aria-label="Adicionar no grupo de solicitação"
@@ -146,7 +147,7 @@ export default function CycleItemPicker({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
       </div>
       <div className="cycle-picker-summary">
         <label className="select-all-label">

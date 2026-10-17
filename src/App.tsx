@@ -1,3 +1,5 @@
+import type { DLPlan } from "./types/dl";
+import { dlWorkspaceKey, emptyDLWorkspace, readDLWorkspace, storeDLPlan } from "./services/dlPlanning";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Boxes, CalendarDays, CheckCircle2,
@@ -73,6 +75,13 @@ function App() {
     try { return { workspace: readCycleWorkspace(localStorage.getItem(cycleWorkspaceKey)), error: "" }; }
     catch (cause) { return { workspace: emptyCycleWorkspace(), error: cause instanceof Error ? cause.message : "Não foi possível ler o planejamento salvo. Os dados originais foram preservados." }; }
   });
+  const [dlState, setDLState] = useState(() => {
+    try { return { workspace: readDLWorkspace(localStorage.getItem(dlWorkspaceKey)), error: "" }; }
+    catch (cause) { return { workspace: emptyDLWorkspace(), error: cause instanceof Error ? cause.message : "Não foi possível ler as DLs salvas." }; }
+  });
+  const [dlPendingItems, setDLPendingItems] = useState<Item[] | null>(null);
+  const [dlDirty, setDLDirty] = useState(false);
+  const dlWorkspace = dlState.workspace;
   const cycleWorkspace = cycleState.workspace;
   const [cycleDestinationItems, setCycleDestinationItems] = useState<Item[] | null>(null);
   const [openCycleId, setOpenCycleId] = useState<string | null>(null);
@@ -143,7 +152,7 @@ function App() {
     return () => observer.disconnect();
   }, [filteredItems?.length, section, filterType, filterGroup]);
 
-  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace }), [items, cycles, history, cycleWorkspace]);
+  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace, dlWorkspace }), [items, cycles, history, cycleWorkspace, dlWorkspace]);
 
   function cancelImport() {
     importReadId.current++;
@@ -232,6 +241,7 @@ function App() {
 
   function deleteSelectedItems() {
     if (!selectedItemIds.length) return;
+    if (dlState.error || dlWorkspace.plans.some(plan => plan.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há vínculos com DLs ou dados que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
     if (cycleState.error) { window.alert("Não é possível conferir os vínculos dos ciclos agora. A exclusão foi bloqueada para preservar seus dados."); return; }
     if (cycleWorkspace.lines.some(line => selectedItemIds.includes(line.itemId))) {
       window.alert("Há materiais vinculados a ciclos nesta seleção. Para preservar os vínculos, retire-os dos ciclos antes de excluir ou use o status Inativo no cadastro."); return;
@@ -313,10 +323,35 @@ function App() {
     if (!selected.length) return;
     if (destination === "share") { setShareItems(selected); return; }
     if (destination === "cycle") { setCycleDestinationItems(selected); return; }
+    if (destination === "dl") {setDLPendingItems(selected); setSection("Planejamento DLs"); return;}
     const label = destination === "dl" ? "Planejamento DLs" : "Pedidos diretos";
     setBulkMessage(`${selected.length} item(ns) selecionado(s) encaminhado(s) para preparação em “${label}”. Nenhum ciclo, pedido ou saldo foi criado automaticamente.`);
     selected.forEach((item) => recordHistory(item, "Encaminhado para preparação", `Destino escolhido: ${label}.`));
     setSection(destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
+  }
+
+  function saveDLPlan(candidate: DLPlan, action: string) {
+    if (dlState.error) throw new Error(dlState.error);
+    if (JSON.stringify(readDLWorkspace(localStorage.getItem(dlWorkspaceKey))) !== JSON.stringify(dlWorkspace) || (localStorage.getItem("suprimentos:item-history:v1") !== null && localStorage.getItem("suprimentos:item-history:v1") !== JSON.stringify(history))) throw new Error("As DLs ou o histórico mudaram em outra aba. Recarregue antes de salvar.");
+    const previous = dlWorkspace.plans.find(plan => plan.id === candidate.id);
+    const changes: string[] = [];
+    for (const key of ["title", "category", "openedOn", "responsible", "justification", "notes", "stage"] as const) {
+      if (previous?.[key] !== candidate[key]) changes.push(`${({title:"Objeto", category:"Categoria", openedOn:"Abertura", responsible:"Responsável", justification:"Justificativa", notes:"Observações", stage:"Situação"})[key]}: ${previous?.[key] || "(vazio)"} → ${candidate[key] || "(vazio)"}`);
+    }
+    for (const key of Object.keys(candidate.request) as (keyof DLPlan["request"])[]) if (previous?.request[key] !== candidate.request[key] && (previous?.request[key] || candidate.request[key])) changes.push(`Requisição (${key}): ${previous?.request[key] || "(vazio)"} → ${candidate.request[key] || "(vazio)"}`);
+    const itemEvents: ItemHistoryEntry[] = [];
+    for (const itemId of new Set([...(previous?.lines ?? []).map(line => line.itemId), ...candidate.lines.map(line => line.itemId)])) {
+      const old = previous?.lines.find(line => line.itemId === itemId); const next = candidate.lines.find(line => line.itemId === itemId);
+      if (JSON.stringify(old) === JSON.stringify(next)) continue;
+      const item = items.find(item => item.id === itemId);
+      const details = `${candidate.code} · ${item?.code ?? itemId}: ${!old ? "Incluído no planejamento" : !next ? "Retirado do planejamento" : "Orçamento alterado"}. Quantidade: ${old?.quantityMilli == null ? "a definir" : old.quantityMilli / 1000} → ${next?.quantityMilli == null ? "a definir" : next.quantityMilli / 1000}. Preço previsto (R$): ${old?.estimatedPriceCents == null ? "a definir" : old.estimatedPriceCents / 100} → ${next?.estimatedPriceCents == null ? "a definir" : next.estimatedPriceCents / 100}. Unidade: ${next?.unit ?? old?.unit}.`;
+      changes.push(details); itemEvents.push({id:`hist-${crypto.randomUUID()}`,itemId,code:item?.code ?? itemId,action:"Planejamento de DL",details,timestamp:new Date().toISOString()});
+    }
+    if (previous && !changes.length) return previous;
+    const result = storeDLPlan(dlWorkspace,candidate,action,changes.join("\n"));
+    const nextHistory = [...itemEvents,...history];
+    writeLocalTransaction(localStorage,[[dlWorkspaceKey,JSON.stringify(result.workspace)],["suprimentos:item-history:v1",JSON.stringify(nextHistory)]]);
+    setDLState({workspace:result.workspace,error:""}); setHistory(nextHistory); setDLDirty(false); return result.plan;
   }
 
   function commitCycleChange(nextCycles: SupplyCycle[], nextWorkspace: CycleWorkspace, events: CycleItemEvent[]) {
@@ -355,7 +390,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <AppSidebar section={section} pendingOrders={pendingOrders} onNavigate={setSection} />
+      <AppSidebar section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL e mudar de tela?")) setSection(next);}} />
 
       <main className="main-area">
         <header className="topbar">
@@ -482,6 +517,7 @@ function App() {
                   key={editingItem.id}
                   item={editingItem}
                   history={history}
+                  dlPlans={dlWorkspace.plans}
                   cycleItems={cycleWorkspace.lines}
                   cycles={cycles}
                   onChange={setEditingItem}
@@ -489,7 +525,7 @@ function App() {
                   onClose={() => setEditingItem(null)}
                 />}
 
-                <p className="form-note">Importação nesta versão aceita CSV/TXT exportado do Excel. A importação .xlsx nativa ainda precisa de uma biblioteca específica. Exclusões afetam somente a demonstração local e não verificam vínculos com ciclos ou pedidos.</p>
+                <p className="form-note">Importação nesta versão aceita CSV/TXT exportado do Excel. A importação .xlsx nativa ainda precisa de uma biblioteca específica. Exclusões afetam o catálogo local. Itens ligados a ciclos ou planejamentos de DL ficam protegidos.</p>
               </section>
             </>
           )}
@@ -512,7 +548,7 @@ function App() {
             </>
           )}
 
-          {(section === "Planejamento DLs" || section === "Controle DLs") && <PlanejamentoControleDLs tab={section === "Controle DLs" ? "control" : "planning"} onChange={tab => setSection(tab === "control" ? "Controle DLs" : "Planejamento DLs")} />}
+          {(section === "Planejamento DLs" || section === "Controle DLs") && <PlanejamentoControleDLs items={items} workspace={dlWorkspace} error={dlState.error} onSave={saveDLPlan} pendingItems={dlPendingItems} onPendingClose={() => setDLPendingItems(null)} onDirtyChange={setDLDirty} tab={section === "Controle DLs" ? "control" : "planning"} onChange={tab => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL?")) setSection(tab === "control" ? "Controle DLs" : "Planejamento DLs");}} />}
 
           {section === "Acompanhamento de pedidos" && (
             <>

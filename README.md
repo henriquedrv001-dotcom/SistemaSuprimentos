@@ -52,3 +52,14 @@ Abra um ciclo para gerenciar suas necessidades. Adicione materiais pela própria
 O planejamento é salvo localmente em `suprimentos:cycle-planning:v1`; mantenha o mesmo endereço/navegador para conservar os dados. Pedidos e seus totais ainda não estão conectados. O código da tela está em `src/pages/estoque/CiclosSuprimento.tsx`, e as regras em `src/services/cyclePlanning.ts`.
 
 Novos materiais importados precisam ter a unidade preenchida (colunas como Unidade, UNID ou Unidade de medida). O sistema não assume UN quando falta esse dado. Para corrigir unidades em registros existentes, use Revisar atualizações → Selecionar somente unidades, confira as diferenças e confirme com backup e ATUALIZAR. Isso não converte automaticamente quantidades já planejadas nos ciclos.
+
+## Planejamento de DLs — primeira etapa
+Em Estoque → Planejamento e Controle DLs, crie uma DL, inclua materiais e preencha quantidades e preços previstos diretamente na tabela. Também é possível enviar materiais pelo Cadastro → Preparar seleção → Planejamento DLs, escolhendo um rascunho existente ou uma nova DL. Materiais repetidos mantêm o planejamento anterior.
+
+A sequência começa em **DL-0029**, conforme referência informada pelo usuário; nenhum registro fictício DL-0028 é criado. Cancelar o formulário não consome número. O código interno e os identificadores oficiais do MXM permanecem separados.
+
+Use **Salvar alterações** para guardar o rascunho e **Concluir planejamento** para validar e bloquear o orçamento. A reabertura é explícita. A aba Requisição e processo registra a referência MXM e a tramitação; o Histórico registra alterações e valores anteriores. Quantidades aceitam até três casas decimais; preços, duas, sem separadores de milhar. Campos em branco permanecem a definir, sem virar zero.
+
+Os dados são locais, na chave `suprimentos:dl-planning:v1`, incluída no backup JSON da importação. Há proteção contra sobrescrita entre abas, recuperação de gravações incompletas e bloqueio de dados salvos inválidos. Isso não substitui banco compartilhado nem autenticação. Planejamentos também aparecem nos detalhes individuais dos itens e impedem sua exclusão do catálogo.
+
+**Contratação, fornecedores finais, documentos, saldos e pedidos permanecem para a próxima etapa.** Concluir o planejamento não constitui saldo contratado. Nomenclatura confirmada: DL = aquisição; PCD = pedido ao CD ligado ao ciclo; PDL = pedido ao fornecedor ligado ao ciclo e saldo de DL; PFR = pedido emergencial, com ou sem ciclo. Registros demonstrativos antigos de pedidos não foram renomeados automaticamente.

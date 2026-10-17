@@ -135,3 +135,17 @@ Navegação extraída para `src/components/AppSidebar.tsx`, na ordem solicitada:
 Planejamento e Controle DLs é uma única entrada, com duas abas preservando os conteúdos das áreas anteriores. O encaminhamento do cadastro para Planejamento DLs continua abrindo a aba de planejamento. A localização no topo identifica setor e módulo; a entrada de DLs fica ativa em ambas as abas. Em telas pequenas, o menu tem rolagem própria e mantém os títulos dos setores.
 
 Validação: build e navegação no Chromium, ordem dos setores/itens, entradas futuras bloqueadas, duas abas de DLs, cadastro, ciclos, pedidos, localização e rolagem móvel. Nenhuma chave de dados locais foi alterada nesta reorganização.
+
+## Planejamento de DLs — rascunho, orçamento e requisição
+Primeira etapa implementada após a confirmação da nomenclatura DL/PCD/PDL/PFR e da próxima sequência DL-0029. A referência DL-0028 define apenas o ponto inicial; não foram inventados materiais ou processos anteriores.
+
+- Listagem pesquisável e filtro de situação; criação com ID estável, código sequencial e abertura automática em horário brasileiro.
+- Materiais associados ao cadastro central, seleção pela tela ou pelo Cadastro → Preparar seleção; inclusão em rascunho existente sem duplicar nem apagar valores.
+- Quantidades em milésimos e preços em centavos, arredondamento monetário por linha e orçamento automático; rascunhos incompletos identificados como parciais. Unidades são preservadas; mudanças posteriores no cadastro geram aviso, sem conversão implícita.
+- Identificação, justificativa, responsável, requisição MXM, datas e referências oficiais separados do número interno. Conclusão do planejamento exige dados completos e confirmação; reabertura explícita para alterar orçamento.
+- Histórico da DL com antes/depois; inclusão, retirada e orçamento também registrados no histórico individual dos itens. Detalhes do item mostram os planejamentos associados, separados de saldos e pedidos reais.
+- Salvamento local explícito, aviso de alterações não salvas, validação de revisão, conflito entre abas e gravação transacional com histórico. Exclusão de materiais vinculados bloqueada; backup de importação inclui o planejamento de DLs.
+
+Escopo seguinte: contratação e fornecedores finais, comparação de valores e liberação de saldo após definição das regras oficiais; documentos e conexão de pedidos também pendentes. Nenhum saldo, reserva ou recebimento é gerado pelo orçamento desta etapa. A permissão continua demonstrativa/local.
+
+Validação: 44 testes automatizados passaram e build de produção aprovado. Chromium verificou DL-0029/DL-0030, cancelamento sem consumir número, orçamento de R$975,00, unidade KG, persistência após recarregar, descarte protegido, conclusão/reabertura, exigência de dados MXM, envio pelo cadastro, histórico, proteção contra quota/conflito/corrupção e visualização móvel. Regressões de importação de unidades, confirmação de grupos e tabela compacta de ciclos também passaram.
