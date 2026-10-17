@@ -9,9 +9,9 @@
 /* ========== 1. BASE ========== */
 :root {
   /* Cores */
-  --primary: #004C99;
-  --primary-hover: #003B75;
-  --primary-light: #EAF2FA;
+  --primary: #BE185D;
+  --primary-hover: #9D174D;
+  --primary-light: #FCE7F3;
   --text: #172B3A;
   --text-secondary: #596A7A;
   --text-muted: #747678;
@@ -30,7 +30,7 @@
   --radius-sm: 7px;
   --radius: 8px;
   --radius-lg: 12px;
-  --focus-ring: 0 0 0 3px rgba(0, 76, 153, .15);
+  --focus-ring: 0 0 0 3px rgba(190, 24, 93, .15);
   --shadow-menu: 0 12px 30px rgba(16, 42, 67, .14);
   --font-body: "DM Sans", Inter, system-ui, sans-serif;
   --font-title: Manrope, sans-serif;
@@ -69,7 +69,7 @@ input[type="checkbox"] {
 input[type="checkbox"]::before { content: ""; width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) scale(0); }
 input[type="checkbox"]:checked { border-color: var(--primary); background: var(--primary); }
 input[type="checkbox"]:checked::before { transform: rotate(-45deg) scale(1); }
-input[type="checkbox"]:focus-visible { outline: 3px solid rgba(0, 76, 153, .2); outline-offset: 2px; }
+input[type="checkbox"]:focus-visible { outline: 3px solid rgba(190, 24, 93, .2); outline-offset: 2px; }
 
 /* ========== 2. ESTRUTURA DA PÁGINA ========== */
 .app-shell { min-height: 100vh; display: flex; }
