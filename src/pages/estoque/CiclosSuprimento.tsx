@@ -550,10 +550,11 @@ export default function CiclosSuprimento({
             </div>
             <p className="cycle-integration-note">
               Pedidos ainda não conectados. As colunas de solicitado, trânsito,
-              recebido e falta solicitar serão calculadas após a integração.
+              recebido e falta solicitar serão calculadas após a integração. O traço (—) indica que esses dados ainda não estão disponíveis.
             </p>
             <div className="table-wrap">
               <table className="cycle-materials-table">
+                <colgroup><col className="cycle-col-select" /><col className="cycle-col-code" /><col /><col className="cycle-col-unit" /><col className="cycle-col-planned" /><col className="cycle-col-group" /><col className="cycle-col-total" /><col className="cycle-col-total" /><col className="cycle-col-total" /><col className="cycle-col-pending" /></colgroup>
                 <thead>
                   <tr>
                     <th>Selecionar</th>
@@ -566,7 +567,6 @@ export default function CiclosSuprimento({
                     <th>Em trânsito</th>
                     <th>Recebido</th>
                     <th>Falta solicitar</th>
-                    <th>Ajustar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -626,26 +626,16 @@ export default function CiclosSuprimento({
                             "Sem grupo"}
                         </td>
                         {[0, 1, 2, 3].map((index) => (
-                          <td className="cycle-unconnected" key={index}>
-                            Não conectado
+                          <td className="cycle-unconnected" key={index} aria-label="Não conectado" title="Pedidos ainda não conectados">
+                            —
                           </td>
                         ))}
-                        <td>
-                          <button
-                            className="text-button"
-                            disabled={locked}
-                            aria-label={`Ajustar necessidade de ${item?.code ?? line.itemId}`}
-                            onClick={() => setLineForm(line)}
-                          >
-                            Ajustar
-                          </button>
-                        </td>
                       </tr>
                     );
                   })}
                   {!filtered.length && (
                     <tr>
-                      <td colSpan={11} className="empty-state">
+                      <td colSpan={10} className="empty-state">
                         {lines.length
                           ? "Nenhum material neste recorte. Ajuste a busca ou o grupo."
                           : "Este ciclo ainda não possui materiais. Use Adicionar materiais ou traga uma seleção do cadastro."}

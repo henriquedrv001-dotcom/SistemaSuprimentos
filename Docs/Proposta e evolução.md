@@ -122,3 +122,6 @@ Não foi feita correção automática dos dados no navegador do responsável: é
 
 ## Confirmação para trocar grupos em lote
 Aplicar grupo agora abre uma janela com a quantidade de materiais afetados, grupos de origem e destino. As opções são Não, manter grupo (foco inicial) e Sim, alterar grupo. Cancelar ou usar Escape não altera os dados nem o histórico; escolher o grupo atual também não gera alterações. Após confirmar, quantidades são preservadas e o histórico registra origem → destino. Build e teste de navegador dessas condições passaram.
+
+## Tabela de ciclos mais compacta
+A coluna e o botão Ajustar foram retirados; o código do material continua abrindo o mesmo formulário Planejar material, sem mudanças nos campos. Larguras foram reduzidas, cabeçalhos/descrições podem quebrar linha e os totais ainda não conectados usam — com legenda e identificação acessível, sem exibir zero. Validado no navegador: dez colunas cabem sem rolagem em 1366px; em telas pequenas a rolagem fica apenas na tabela. Build e teste de abertura pelo código passaram.
