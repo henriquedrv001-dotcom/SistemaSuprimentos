@@ -100,3 +100,9 @@ td small { display: block; color: #9aa69f; margin-top: 3px; font-size: 10px; }
 .rule-callout span { font-size: 11px; line-height: 1.6; color: #6f8077; }
 @media (max-width: 1100px) { .sidebar { width: 220px; } .content-grid { grid-template-columns: 1fr; } .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .date-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 720px) { .app-shell { display: block; } .sidebar { width: 100%; padding: 14px; } .brand { padding-bottom: 16px; } .nav-label, .sidebar-bottom { display: none; } nav { display: flex; overflow-x: auto; } .nav-item { width: auto; flex-shrink: 0; } .nav-item span { white-space: nowrap; } .topbar { padding: 0 16px; } .user-chip span { display: none; } .page-content { padding: 22px 14px 35px; } .page-heading { align-items: flex-start; flex-direction: column; } .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .metric-card { padding: 13px; } .metric-top { align-items: flex-start; flex-direction: column; } .metric-value { margin-top: 10px; } .panel { padding: 15px; } .toolbar { align-items: flex-start; flex-direction: column; } .search-box { width: 100%; min-width: 0; } .form-grid { grid-template-columns: 1fr; } }
+
+.catalog-context { font-size: 12px; color: #52665b; line-height: 1.6; }
+.demo-notice { border-left: 3px solid #bc8c35; background: #fff8e9; padding: 12px 14px; font-size: 12px; color: #77551a; line-height: 1.5; margin-bottom: 20px; }
+.catalog-feedback { padding: 12px 14px; border-radius: 8px; background: #e3f5e9; color: #236b4e; font-size: 12px; line-height: 1.5; }
+.catalog-error { color: #9e2929; font-size: 12px; margin: 14px 0 0; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #49816c; outline-offset: 3px; }
