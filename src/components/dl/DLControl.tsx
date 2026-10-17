@@ -1,3 +1,5 @@
+import DLSchedulePanel from "./DLSchedulePanel";
+import { emptyDLSchedule } from "../../services/dlSchedule";
 import { useState } from "react";
 import type { DLPlan, DLWorkspace } from "../../types/dl";
 import type { Item } from "../../types";
@@ -116,7 +118,12 @@ export default function DLControl({
               </h2>
               <p className="muted">
                 {contractStatus(selected, today)}
-                {selected.request.officialDLNumber && <> · Referência oficial: {selected.request.officialDLNumber}</>}
+                {selected.request.officialDLNumber && (
+                  <>
+                    {" "}
+                    · Referência oficial: {selected.request.officialDLNumber}
+                  </>
+                )}
               </p>
             </div>
             <button
@@ -130,6 +137,7 @@ export default function DLControl({
             {[
               ["overview", "Visão geral"],
               ["balances", "Materiais e saldos"],
+              ["schedule", "Cronograma"],
               ["orders", "Pedidos vinculados"],
               ["history", "Movimentações e histórico"],
             ].map(([id, label]) => (
@@ -215,6 +223,14 @@ export default function DLControl({
           )}
           {tab === "balances" && (
             <DLBalanceTable plan={selected} items={items} />
+          )}
+          {tab === "schedule" && (
+            <DLSchedulePanel
+              plan={selected}
+              value={selected.schedule ?? emptyDLSchedule()}
+              onChange={() => {}}
+              readOnly
+            />
           )}
           {tab === "orders" && (
             <p className="empty-state">

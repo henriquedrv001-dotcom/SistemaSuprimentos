@@ -26,7 +26,11 @@ export type DLPlanningProps = {
   onSave: (
     plan: DLPlan,
     action: string,
-    options?: { release?: boolean; reviewRequest?: boolean },
+    options?: {
+      release?: boolean;
+      reviewRequest?: boolean;
+      scheduleOnly?: boolean;
+    },
   ) => DLPlan;
   pendingItems: Item[] | null;
   onPendingClose: () => void;
@@ -190,7 +194,9 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                           </button>
                         </td>
                         <td>{plan.title}</td>
-                        <td>{plan.category?.toLocaleUpperCase("pt-BR") || "—"}</td>
+                        <td>
+                          {plan.category?.toLocaleUpperCase("pt-BR") || "—"}
+                        </td>
                         <td>{plan.openedOn.split("-").reverse().join("/")}</td>
                         <td>{plan.lines.length}</td>
                         <td>

@@ -66,7 +66,7 @@ Concluir somente o planejamento não constitui saldo contratado. A contratação
 
 
 ## Contratação e Controle de DLs — segunda etapa
-Na aba **Contratação e fornecedores**, registre um fornecedor por material, sua identificação (código MXM ou CNPJ), pedido de compra MXM e data, quantidade contratada e preço final. Os campos ficam em tabela, com edição direta e comparação entre orçamento previsto e contratação. Materiais sem contratação precisam de resultado e motivo; não geram saldo.
+Na aba **Contratação e fornecedores**, registre um fornecedor por material, pedido de compra MXM e preço final. A quantidade vem preenchida do planejamento e a data do pedido usa a data da contratação/emissão. Os campos ficam em tabela, com edição direta e comparação entre orçamento previsto e contratação. Materiais sem contratação precisam de resultado e motivo; não geram saldo.
 
 É possível salvar resultados incompletos e retomá-los. Após concluir o planejamento, preencha os dados oficiais da DL/requisição e a data da contratação. Informe a vigência quando aplicável. A ação **Concluir DL e disponibilizar no Controle** exige salvar antes, revisar o resumo, confirmar que os pedidos de compra MXM foram emitidos e os dados finais conferidos, e digitar **CONCLUIR**. A conclusão é única: protege os dados finais e mantém os IDs da DL e das origens, sem criar outra cópia do processo.
 
@@ -74,7 +74,7 @@ O Controle oferece pesquisa por DL, material, fornecedor ou pedido MXM, filtros 
 
 **Os saldos desta etapa são iniciais.** Reservas, recebimentos e consumos anteriores do MXM não estão conectados; a tela os identifica como Não conectado. Nenhum pedido é criado automaticamente. Documentos, movimentações e ajustes posteriores de contratos concluídos serão tratados nas próximas etapas, com histórico próprio. Permanecem o armazenamento local e a identificação demonstrativa de usuário da versão atual.
 
-Validação: `npm test` executa 61 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
+Validação: `npm test` executa 89 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
 
 ## Informações e fluxo da requisição MXM
 Em Materiais e orçamento, **Observação / Justificativa** reúne os textos usados no MXM. Observações antigas continuam preservadas; ao editar o campo unificado, o texto completo passa a ser salvo nele, com histórico. **Data de entrega** ocupa o antigo campo de observações e é exigida para iniciar o novo fluxo de requisição, sem bloquear a leitura de planejamentos antigos.
@@ -85,4 +85,16 @@ O resumo **Informações para gerar a requisição no MXM** mostra os dados salv
 
 **Tarefas e perfis funcionais ainda não foram implementados.** Nesta versão o fluxo é manual/local; nenhuma tarefa é enviada ao aprendiz. A futura distribuição de Gerar requisição ao aprendiz e da análise ao responsável usará estas informações. As situações antigas continuam legíveis, sem inventar responsáveis ou confirmações retroativas.
 
-Validação atual: 74 testes automatizados, build e fluxo completo no Chromium, incluindo preservação dos textos anteriores, entrega, mudança automática de etapa, conferência manual, reanálise, contratação e Controle.
+Validação atual: 89 testes automatizados, build e fluxo completo no Chromium, incluindo preservação dos textos anteriores, entrega, mudança automática de etapa, conferência manual, reanálise, contratação e Controle.
+
+
+## Vigência automática e Cronograma
+Em Contratação e fornecedores, informe **Data da contratação / Emissão do pedido** e **Vigência (meses)**. O vencimento é calculado por meses de calendário: 17/10/2026 + 3 = 17/01/2027. Para dias inexistentes no mês de destino, usa o último dia daquele mês (31/01 + 1 mês = 28/02, ou 29/02 em ano bissexto). Datas manuais antigas são preservadas; o botão Calcular por meses permite trocar o método explicitamente antes de salvar.
+
+A aba **Cronograma** separa período de abastecimento, autorização da gerência, requisição, processo, entrega e vigência. Padrões iniciais editáveis: processo de 1 mês e entrega em 10 dias. Escolha a contagem da entrega: corridos ou úteis. Dias úteis consideram segunda a sexta, sem feriados. As datas reais de requisição/contratação são lidas dos dados salvos nas outras abas. Os indicadores comparam prazos, sinalizam proximidade/atraso e mantêm as mudanças de previsão no histórico.
+
+A entrega realizada nesta aba é apenas acompanhamento: **não confirma recebimento, não reserva e não baixa saldo**. Mesmo após concluir a DL, o cronograma pode ser atualizado pelo Planejamento; contratação, valores, vigência e origens de saldo continuam protegidos. O Controle permite consultar o cronograma, sem editar seus campos.
+
+Observações da contratação, identificação do fornecedor por código/CNPJ e data individual do pedido saíram do formulário. Dados antigos permanecem armazenados. Novos salvamentos de contratação usam a data-base única nos itens; alterações são auditadas. Quantidades finais são preenchidas com a quantidade planejada e não precisam ser digitadas; valores já registrados em contratações são preservados.
+
+Próxima organização em **Configurações**: Fornecedores, Critérios de solicitação e outros cadastros simples. O campo Fornecedor futuramente abrirá um seletor de fornecedores cadastrados; nesta versão continua preenchido por texto. Essa tela de configurações e o seletor ainda não foram implementados.

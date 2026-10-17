@@ -1,3 +1,4 @@
+import { validateDLSchedule } from "./dlSchedule.ts";
 import { dlObservation, resolveDLRequestStage } from "./dlRequest.ts";
 import type { Item } from "../types";
 import type {
@@ -214,6 +215,7 @@ export function validateDLPlan(plan: DLPlan) {
       "Confirme a análise da requisição gerada antes de seguir em processo.",
     );
   validateDLContract(plan);
+  validateDLSchedule(plan);
   return plan;
 }
 export function readDLWorkspace(raw: string | null): DLWorkspace {
@@ -348,7 +350,11 @@ export function storeDLPlan(
   candidate: DLPlan,
   action: string,
   details: string,
-  options?: { release?: boolean; reviewRequest?: boolean },
+  options?: {
+    release?: boolean;
+    reviewRequest?: boolean;
+    scheduleOnly?: boolean;
+  },
 ) {
   const previous = workspace.plans.find((plan) => plan.id === candidate.id);
   candidate = resolveDLRequestStage(candidate, previous);
@@ -388,10 +394,19 @@ export function storeDLPlan(
     throw new Error(
       "O número sugerido foi usado por outra DL. Reabra a criação para usar o próximo número.",
     );
-  if (previous?.contract?.release)
-    throw new Error(
-      "A contratação concluída está protegida. Ajustes de saldo serão registrados em fluxo próprio, sem alterar a origem.",
-    );
+  if (previous?.contract?.release) {
+    const { schedule: oldSchedule, ...before } = previous;
+    const { schedule: newSchedule, ...after } = candidate;
+    void oldSchedule;
+    void newSchedule;
+    if (
+      !options?.scheduleOnly ||
+      JSON.stringify(before) !== JSON.stringify(after)
+    )
+      throw new Error(
+        "A contratação concluída está protegida. Somente o cronograma pode ser atualizado, sem alterar a origem dos saldos.",
+      );
+  }
   if (
     candidate.contract?.release &&
     !previous?.contract?.release &&

@@ -1,3 +1,5 @@
+import DLSchedulePanel from "./DLSchedulePanel";
+import { emptyDLSchedule } from "../../services/dlSchedule";
 import DLMoneyInput from "./DLMoneyInput";
 import {
   dlObservation,
@@ -50,13 +52,20 @@ export default function DLPlanningEditor({
     ),
   );
   const [tab, setTab] = useState("items");
+  const [scheduleDraft, setScheduleDraft] = useState(
+    () => plan.schedule ?? emptyDLSchedule(),
+  );
+  const scheduleDirty =
+    JSON.stringify(scheduleDraft) !==
+    JSON.stringify(plan.schedule ?? emptyDLSchedule());
   const [contractDraft, setContractDraft] = useState(() =>
-    contractInput(plan.contract),
+    contractInput(plan.contract, plan.lines),
   );
   const [releaseOpen, setReleaseOpen] = useState(false);
   useEffect(() => {
     setDraft(structuredClone(plan));
-    setContractDraft(contractInput(plan.contract));
+    setScheduleDraft(plan.schedule ?? emptyDLSchedule());
+    setContractDraft(contractInput(plan.contract, plan.lines));
     setValues(
       Object.fromEntries(
         plan.lines.map((line) => [
@@ -76,6 +85,7 @@ export default function DLPlanningEditor({
   const [picker, setPicker] = useState(false);
   const [error, setError] = useState("");
   const dirty =
+    scheduleDirty ||
     contractDirty ||
     JSON.stringify(draft) !== JSON.stringify(plan) ||
     draft.lines.some(
@@ -101,6 +111,7 @@ export default function DLPlanningEditor({
     return {
       ...draft,
       stage,
+      ...(plan.schedule || scheduleDirty ? { schedule: scheduleDraft } : {}),
       contract:
         plan.contract || contractDirty
           ? materializeContract(contractDraft)
@@ -132,11 +143,18 @@ export default function DLPlanningEditor({
   const editable = editableDLItems(plan);
   function save(stage = draft.stage, action = "Planejamento atualizado") {
     try {
-      const candidate = resolveDLRequestStage(materialize(stage), plan);
+      const scheduleOnly = released && tab === "schedule";
+      const candidate = scheduleOnly
+        ? { ...plan, schedule: scheduleDraft }
+        : resolveDLRequestStage(materialize(stage), plan);
       validateDLPlan(candidate);
-      const saved = onSave(candidate, action);
+      const saved = onSave(
+        candidate,
+        scheduleOnly ? "Cronograma atualizado" : action,
+        scheduleOnly ? { scheduleOnly: true } : undefined,
+      );
       setDraft(structuredClone(saved));
-      setContractDraft(contractInput(saved.contract));
+      setContractDraft(contractInput(saved.contract, saved.lines));
       setValues(
         Object.fromEntries(
           saved.lines.map((line) => [
@@ -184,7 +202,7 @@ export default function DLPlanningEditor({
         <div className="dl-actions">
           <button
             className="primary-button"
-            disabled={released}
+            disabled={released && tab !== "schedule"}
             onClick={() => save()}
           >
             Salvar alterações
@@ -232,6 +250,7 @@ export default function DLPlanningEditor({
           ["items", "Materiais e orçamento"],
           ["request", "Requisição e processo"],
           ["contract", "Contratação e fornecedores"],
+          ["schedule", "Cronograma"],
           ["history", "Histórico"],
         ].map(([id, label]) => (
           <button
@@ -247,6 +266,13 @@ export default function DLPlanningEditor({
         <p className="catalog-error" role="alert">
           {error}
         </p>
+      )}
+      {tab === "schedule" && (
+        <DLSchedulePanel
+          plan={plan}
+          value={scheduleDraft}
+          onChange={setScheduleDraft}
+        />
       )}
       {tab === "contract" && (
         <>
@@ -462,7 +488,12 @@ export default function DLPlanningEditor({
                           label={`Preço ${item?.code}`}
                           disabled={!editable}
                           value={values[line.id]?.price ?? ""}
-                          onChange={price => setValues(current => ({...current,[line.id]:{...current[line.id],price}}))}
+                          onChange={(price) =>
+                            setValues((current) => ({
+                              ...current,
+                              [line.id]: { ...current[line.id], price },
+                            }))
+                          }
                         />
                       </td>
                       <td>{subtotal}</td>

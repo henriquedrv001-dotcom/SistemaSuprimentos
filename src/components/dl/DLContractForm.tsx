@@ -1,4 +1,13 @@
-import type { DLContract, DLContractAward, DLPlan } from "../../types/dl";
+import {
+  automaticContractValidity,
+  exactValidityMonths,
+} from "../../services/dlDates";
+import type {
+  DLContract,
+  DLContractAward,
+  DLPlan,
+  DLPlanningLine,
+} from "../../types/dl";
 import type { Item } from "../../types";
 import { emptyDLContract, awardTotal } from "../../services/dlContract";
 import {
@@ -14,26 +23,43 @@ export type AwardInput = Omit<
 export type ContractInput = Omit<DLContract, "awards"> & {
   awards: AwardInput[];
 };
-export function contractInput(contract?: DLContract): ContractInput {
+export function contractInput(
+  contract?: DLContract,
+  plannedLines: DLPlanningLine[] = [],
+): ContractInput {
   const value = contract ?? emptyDLContract();
   return {
     ...value,
+    ...(!value.release ? { orderDatesFromContract: true as const } : {}),
+    ...(!value.validityMode && !value.validFrom && !value.validUntil
+      ? { validityMode: "automatic" as const, validityMonths: null }
+      : {}),
     awards: value.awards.map(({ quantityMilli, unitPriceCents, ...award }) => ({
       ...award,
-      quantity: decimalInput(quantityMilli, 3),
+      quantity: decimalInput(
+        quantityMilli ??
+          plannedLines.find((line) => line.id === award.lineId)
+            ?.quantityMilli ??
+          null,
+        3,
+      ),
       price: decimalInput(unitPriceCents, 2),
     })),
   };
 }
 export function materializeContract(value: ContractInput): DLContract {
-  return {
+  return automaticContractValidity({
     ...value,
     awards: value.awards.map(({ quantity, price, ...award }) => ({
       ...award,
+      orderDate:
+        value.orderDatesFromContract && value.signedOn
+          ? value.signedOn
+          : award.orderDate,
       quantityMilli: parseScaledInput(quantity, 3, "Quantidade contratada"),
       unitPriceCents: parseScaledInput(price, 2, "Preço final"),
     })),
-  };
+  });
 }
 export default function DLContractForm({
   plan,
@@ -112,23 +138,98 @@ export default function DLContractForm({
       </p>
       <fieldset disabled={readOnly} className="dl-contract-fields">
         <div className="form-grid">
-          {(
-            [
-              ["signedOn", "Data da contratação"],
-              ["validFrom", "Início da vigência (se aplicável)"],
-              ["validUntil", "Fim da vigência (se aplicável)"],
-              ["notes", "Observações da contratação"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key}>
-              {label}
-              <input
-                type={key === "notes" ? "text" : "date"}
-                value={value[key]}
-                onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-              />
-            </label>
-          ))}
+          <label>
+            Data da contratação / Emissão do pedido
+            <input
+              type="date"
+              value={value.signedOn}
+              onChange={(e) => onChange({ ...value, signedOn: e.target.value })}
+            />
+          </label>
+          {value.validityMode === "automatic" ? (
+            <>
+              <label>
+                Vigência (meses)
+                <input
+                  type="number"
+                  aria-label="Vigência (meses)"
+                  min="1"
+                  max="1200"
+                  step="1"
+                  value={value.validityMonths ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      validityMonths:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+                <small className="muted">
+                  Meses contados a partir da data da contratação/emissão do
+                  pedido.
+                </small>
+              </label>
+              <label>
+                Vencimento da vigência (automático)
+                <input
+                  type="text"
+                  readOnly
+                  value={(() => {
+                    try {
+                      const end = automaticContractValidity({
+                        ...value,
+                        awards: [],
+                      }).validUntil;
+                      return end ? end.split("-").reverse().join("/") : "";
+                    } catch {
+                      return "Revise a data ou os meses";
+                    }
+                  })()}
+                  placeholder="Informe a data-base e os meses"
+                />
+              </label>
+            </>
+          ) : (
+            <div className="dl-legacy-validity">
+              <strong>Vigência cadastrada</strong>
+              <p>
+                {value.validFrom
+                  ? value.validFrom.split("-").reverse().join("/")
+                  : "—"}{" "}
+                a{" "}
+                {value.validUntil
+                  ? value.validUntil.split("-").reverse().join("/")
+                  : "—"}
+              </p>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Substituir as datas manuais pelo cálculo a partir da data da contratação e dos meses? A alteração só será aplicada ao salvar.",
+                    )
+                  )
+                    onChange({
+                      ...value,
+                      validityMode: "automatic",
+                      validityMonths:
+                        value.signedOn === value.validFrom
+                          ? exactValidityMonths(
+                              value.validFrom,
+                              value.validUntil,
+                            )
+                          : null,
+                      validFrom: "",
+                      validUntil: "",
+                    });
+                }}
+              >
+                Calcular por meses
+              </button>
+            </div>
+          )}
         </div>
         <div className="table-wrap">
           <table className="dl-contract-table">
@@ -136,8 +237,8 @@ export default function DLContractForm({
               <tr>
                 <th>Código / material / previsto</th>
                 <th>Resultado</th>
-                <th>Fornecedor / identificação</th>
-                <th>Pedido MXM / data</th>
+                <th>Fornecedor</th>
+                <th>Pedido MXM</th>
                 <th>Quantidade final</th>
                 <th>Preço final (R$)</th>
                 <th>Total final</th>
@@ -188,6 +289,7 @@ export default function DLContractForm({
                           ? "decimal"
                           : undefined
                       }
+                      readOnly={key === "quantity"}
                       value={award[key]}
                       onChange={(e) =>
                         patchAward(award.id, { [key]: e.target.value })
@@ -241,7 +343,7 @@ export default function DLContractForm({
                               supplierReference: "",
                               mxmOrder: "",
                               orderDate: "",
-                              quantity: "",
+                              quantity: decimalInput(line.quantityMilli, 3),
                               price: "",
                             });
                           if (e.target.value === "not-awarded")
@@ -262,11 +364,6 @@ export default function DLContractForm({
                         <td>
                           <div className="dl-cell-fields">
                             {input("supplier", "Fornecedor", "Fornecedor")}
-                            {input(
-                              "supplierReference",
-                              "Identificação do fornecedor (código MXM ou CNPJ)",
-                              "Código MXM / CNPJ",
-                            )}
                           </div>
                         </td>
                         <td>
@@ -276,7 +373,6 @@ export default function DLContractForm({
                               "Pedido de compra MXM",
                               "Pedido MXM",
                             )}
-                            {input("orderDate", "Data do pedido MXM")}
                           </div>
                         </td>
                         <td>

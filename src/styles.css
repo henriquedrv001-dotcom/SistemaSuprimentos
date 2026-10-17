@@ -548,3 +548,13 @@ dialog.dl-create {margin:auto}
 .dl-request-brief .dl-overview dt {font-size:11px;font-weight:600;color:var(--text-secondary)}
 .dl-request-brief .dl-overview dd {font-size:12px;font-weight:500;color:var(--text);text-transform:uppercase;min-width:0}
 @media(max-width:650px) {.dl-request-brief .dl-overview {grid-template-columns:minmax(0,1fr);gap:5px}.dl-request-brief .dl-overview dd {margin-bottom:10px}}
+.dl-schedule-table {min-width:650px}
+.dl-schedule-table td {white-space:normal;vertical-align:top}
+.dl-schedule-table td:first-child {min-width:240px}
+.dl-schedule-validity {border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:18px 0;font-size:12px}
+.dl-schedule-validity p {margin:8px 0}
+.dl-legacy-validity {font-size:12px;align-self:center}
+.dl-contract-fields input[readonly] {background:var(--background-soft)}
+.dl-tag-late {background:#fcebea;color:#a12622}
+.dl-contract-table input[readonly] {background:var(--background-soft)}
+.dl-contract-fields label small {font-weight:400;line-height:1.5}

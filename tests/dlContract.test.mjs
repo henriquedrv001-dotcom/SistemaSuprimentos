@@ -96,12 +96,7 @@ test("conclusão exige conferência e texto exato", () => {
   assert.equal(contractOrigins(plan).length, 0);
 });
 test("todos os dados oficiais são exigidos antes da liberação", () => {
-  for (const key of [
-    "supplier",
-    "supplierReference",
-    "mxmOrder",
-    "orderDate",
-  ]) {
+  for (const key of ["supplier", "mxmOrder", "orderDate"]) {
     const plan = planWithResult();
     plan.contract.awards[0][key] = "";
     assert.throws(() => releaseDLPlan(plan, true, "CONCLUIR"), /Complete/);
@@ -112,13 +107,17 @@ test("todos os dados oficiais são exigidos antes da liberação", () => {
     assert.throws(() => releaseDLPlan(plan, true, "CONCLUIR"), /Complete/);
   }
   const plan = planWithResult();
+  plan.contract.awards.forEach((award) => (award.supplierReference = ""));
   plan.request.officialDLNumber = "";
   assert.equal(releaseDLPlan(plan, true, "CONCLUIR").stage, "Concluído");
   plan.request.mxmNumber = "";
   assert.throws(() => releaseDLPlan(plan, true, "CONCLUIR"), /requisição MXM/);
   plan.request.mxmNumber = "000123";
   plan.contract.signedOn = "";
-  assert.throws(() => releaseDLPlan(plan, true, "CONCLUIR"), /data da contratação/);
+  assert.throws(
+    () => releaseDLPlan(plan, true, "CONCLUIR"),
+    /data da contratação/,
+  );
 });
 test("rascunho de resultado aceita campos em branco e preço zero explícito", () => {
   const plan = planWithResult();

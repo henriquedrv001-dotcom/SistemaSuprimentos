@@ -331,7 +331,7 @@ function App() {
     setSection(destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
   }
 
-  function saveDLPlan(candidate: DLPlan, action: string, options?: {release?:boolean;reviewRequest?:boolean}) {
+  function saveDLPlan(candidate: DLPlan, action: string, options?: {release?:boolean;reviewRequest?:boolean;scheduleOnly?:boolean}) {
     if (dlState.error) throw new Error(dlState.error);
     if (JSON.stringify(readDLWorkspace(localStorage.getItem(dlWorkspaceKey))) !== JSON.stringify(dlWorkspace) || (localStorage.getItem("suprimentos:item-history:v1") !== null && localStorage.getItem("suprimentos:item-history:v1") !== JSON.stringify(history))) throw new Error("As DLs ou o histórico mudaram em outra aba. Recarregue antes de salvar.");
     const previous = dlWorkspace.plans.find(plan => plan.id === candidate.id);
@@ -342,6 +342,10 @@ function App() {
     }
     for (const key of Object.keys(candidate.request) as (keyof DLPlan["request"])[]) if (previous?.request[key] !== candidate.request[key] && (previous?.request[key] || candidate.request[key])) changes.push(`Requisição (${key}): ${previous?.request[key] || "(vazio)"} → ${candidate.request[key] || "(vazio)"}`);
     if (JSON.stringify(previous?.requestReview) !== JSON.stringify(candidate.requestReview)) changes.push(candidate.requestReview ? `Análise da requisição MXM ${candidate.requestReview.mxmNumber} confirmada em ${candidate.requestReview.timestamp}. Situação: Em processo. Identificação: ${candidate.requestReview.actor}.` : "Análise anterior invalidada após alteração do número ou data da requisição.");
+    if (JSON.stringify(previous?.schedule) !== JSON.stringify(candidate.schedule)) {
+      const labels = {coverageStart:"Início do abastecimento",coverageMonths:"Meses de abastecimento",plannedAuthorizationOn:"Previsão da autorização",authorizationRequestedOn:"Solicitação à gerência",authorizationGrantedOn:"Autorização recebida",plannedRequestOn:"Previsão da requisição",processMonths:"Prazo do processo em meses",deliveryDays:"Prazo da entrega em dias",deliveryDayBasis:"Contagem da entrega",deliveredOn:"Entrega realizada (acompanhamento)"};
+      for (const key of Object.keys(labels) as (keyof typeof labels)[]) if(previous?.schedule?.[key] !== candidate.schedule?.[key]) changes.push(`Cronograma · ${labels[key]}: ${previous?.schedule?.[key] ?? "(não informado)"} → ${candidate.schedule?.[key] ?? "(não informado)"}`);
+    }
     const itemEvents: ItemHistoryEntry[] = [];
     for (const itemId of new Set([...(previous?.lines ?? []).map(line => line.itemId), ...candidate.lines.map(line => line.itemId)])) {
       const old = previous?.lines.find(line => line.itemId === itemId); const next = candidate.lines.find(line => line.itemId === itemId);
@@ -353,7 +357,7 @@ function App() {
     if (JSON.stringify(previous?.contract) !== JSON.stringify(candidate.contract)) {
       const oldContract = previous?.contract; const nextContract = candidate.contract;
       const describe = (award: NonNullable<DLPlan["contract"]>["awards"][number] | undefined) => award ? `Fornecedor: ${award.supplier || "a definir"} (${award.supplierReference || "sem identificação"}); pedido MXM ${award.mxmOrder || "a definir"}, data ${award.orderDate || "a definir"}; quantidade ${award.quantityMilli === null ? "a definir" : award.quantityMilli/1000}; preço final R$ ${award.unitPriceCents === null ? "a definir" : award.unitPriceCents/100}` : "Sem contratação";
-      for (const key of ["signedOn","validFrom","validUntil","notes"] as const) if (oldContract?.[key] !== nextContract?.[key] && (oldContract?.[key] || nextContract?.[key])) changes.push(`Contratação (${({signedOn:"Data",validFrom:"Início da vigência",validUntil:"Fim da vigência",notes:"Observações"})[key]}): ${oldContract?.[key] || "(vazio)"} → ${nextContract?.[key] || "(vazio)"}`);
+      for (const key of ["signedOn","validFrom","validUntil","validityMode","validityMonths","orderDatesFromContract","notes"] as const) if (oldContract?.[key] !== nextContract?.[key] && (oldContract?.[key] || nextContract?.[key])) changes.push(`Contratação (${({signedOn:"Data da contratação / Emissão do pedido",orderDatesFromContract:"Data do pedido vinculada à contratação",validityMode:"Cálculo da vigência",validityMonths:"Vigência em meses",validFrom:"Início da vigência",validUntil:"Fim da vigência",notes:"Observações"})[key]}): ${oldContract?.[key] || "(vazio)"} → ${nextContract?.[key] || "(vazio)"}`);
       for (const line of candidate.lines) {
         const old = oldContract?.awards.find(award => award.lineId === line.id); const next = nextContract?.awards.find(award => award.lineId === line.id);
         const oldReason = oldContract?.notAwarded.find(result => result.lineId === line.id)?.reason; const nextReason = nextContract?.notAwarded.find(result => result.lineId === line.id)?.reason;

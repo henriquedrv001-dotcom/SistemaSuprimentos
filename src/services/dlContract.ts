@@ -1,3 +1,4 @@
+import { automaticContractValidity } from "./dlDates.ts";
 import type { DLContract, DLContractAward, DLPlan } from "../types/dl";
 export const emptyDLContract = (): DLContract => ({
   awards: [],
@@ -62,11 +63,39 @@ export function validateDLContract(
       );
     return;
   }
+  if (
+    contract.validityMode !== undefined &&
+    contract.validityMode !== "automatic"
+  )
+    throw new Error("Modo de vigência inválido.");
+  if (contract.validityMode === "automatic") {
+    const calculated = automaticContractValidity(contract);
+    if (
+      calculated.validFrom !== contract.validFrom ||
+      calculated.validUntil !== contract.validUntil
+    )
+      throw new Error(
+        "As datas de vigência não correspondem à data-base e aos meses informados.",
+      );
+  }
   if (!Array.isArray(contract.awards) || !Array.isArray(contract.notAwarded))
     throw new Error("Dados de contratação inválidos.");
   for (const field of ["signedOn", "validFrom", "validUntil", "notes"] as const)
     if (typeof contract[field] !== "string")
       throw new Error("Informações da contratação inválidas.");
+  if (
+    contract.orderDatesFromContract !== undefined &&
+    contract.orderDatesFromContract !== true
+  )
+    throw new Error("Origem da data do pedido inválida.");
+  if (
+    contract.orderDatesFromContract &&
+    contract.signedOn &&
+    contract.awards.some((award) => award.orderDate !== contract.signedOn)
+  )
+    throw new Error(
+      "A data dos pedidos deve ser a mesma da contratação/emissão do pedido.",
+    );
   const lineIds = new Set(plan.lines.map((line) => line.id));
   if (
     new Set(contract.awards.map((award) => award.lineId)).size !==
@@ -107,20 +136,22 @@ export function validateDLContract(
     if (
       complete &&
       (!award.supplier.trim() ||
-        !award.supplierReference.trim() ||
         !award.mxmOrder.trim() ||
         !dateOK(award.orderDate) ||
         award.quantityMilli === null ||
         award.unitPriceCents === null)
     )
       throw new Error(
-        "Complete fornecedor, identificação, pedido MXM, data, quantidade e preço final de todas as contratações.",
+        "Complete fornecedor, pedido MXM, quantidade, preço final e data da contratação/emissão do pedido.",
       );
   }
   const suppliersByOrder = new Map<string, string>();
   for (const award of contract.awards) {
     const order = award.mxmOrder.trim().toLocaleUpperCase("pt-BR");
-    const supplier = award.supplierReference.trim().toLocaleUpperCase("pt-BR");
+    const supplier = award.supplier
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLocaleUpperCase("pt-BR");
     if (order && supplier) {
       if (
         suppliersByOrder.has(order) &&

@@ -35,6 +35,7 @@ export interface DLPlan {
   deliveryDate?: string;
   stage: DLStage;
   contract?: DLContract;
+  schedule?: DLSchedule;
   requestWorkflow?: "mxm-review-v1";
   requestReview?: {
     timestamp: string;
@@ -93,6 +94,9 @@ export interface DLContract {
   awards: DLContractAward[];
   notAwarded: { lineId: string; reason: string }[];
   signedOn: string;
+  orderDatesFromContract?: true;
+  validityMode?: "automatic";
+  validityMonths?: number | null;
   validFrom: string;
   validUntil: string;
   notes: string;
@@ -102,4 +106,17 @@ export interface DLContract {
     reference: string;
     confirmedOn: string;
   };
+}
+
+export interface DLSchedule {
+  coverageStart: string;
+  coverageMonths: number | null;
+  plannedAuthorizationOn: string;
+  authorizationRequestedOn: string;
+  authorizationGrantedOn: string;
+  plannedRequestOn: string;
+  processMonths: number | null;
+  deliveryDays: number | null;
+  deliveryDayBasis: "" | "calendar" | "business";
+  deliveredOn: string;
 }
