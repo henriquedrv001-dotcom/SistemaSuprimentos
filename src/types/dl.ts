@@ -5,6 +5,7 @@ export const dlStages = [
   "Gerar requisição",
   "Analisar requisição gerada",
   "Em processo",
+  "Pedido gerado",
   "Requisição registrada",
   "Em tramitação",
   "Aguardando dados finais",
@@ -149,14 +150,19 @@ export interface DLSaveOptions {
 export interface DLProcessFlow {
   version: 1;
   justification?: { text: string; completedAt?: string };
-  purchaseOrder?: {
-    id: string;
-    name: string;
-    size: number;
-    type: string;
-    timestamp: string;
-    actor: string;
-  };
+  /** Legacy single attachment, preserved without rewriting existing records. */
+  purchaseOrder?: DLOrderDocument;
+  purchaseOrders?: DLOrderDocument[];
+  orderRegistered?: { timestamp: string; actor: string };
   suppliersSubmitted?: { timestamp: string; actor: string };
   suppliersReturn?: { timestamp: string; actor: string; reason: string };
+}
+
+export interface DLOrderDocument {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  timestamp: string;
+  actor: string;
 }

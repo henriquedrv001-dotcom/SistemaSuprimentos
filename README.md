@@ -74,7 +74,7 @@ O Controle oferece pesquisa por DL, material, fornecedor ou pedido MXM, filtros 
 
 **Os saldos desta etapa são iniciais.** Reservas, recebimentos e consumos anteriores do MXM não estão conectados; a tela os identifica como Não conectado. Nenhum pedido é criado automaticamente. Documentos compartilhados, movimentações e ajustes posteriores de contratos concluídos serão tratados nas próximas etapas, com histórico próprio. Permanecem o armazenamento local e a identificação demonstrativa de usuário da versão atual.
 
-Validação: `npm test` executa 99 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
+Validação: `npm test` executa 103 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
 
 ## Informações e fluxo da requisição MXM
 Em Materiais e orçamento, **Observação / Justificativa** reúne os textos usados no MXM. Observações antigas continuam preservadas; ao editar o campo unificado, o texto completo passa a ser salvo nele, com histórico. **Data de entrega** ocupa o antigo campo de observações e é exigida para iniciar o novo fluxo de requisição, sem bloquear a leitura de planejamentos antigos.
@@ -86,7 +86,7 @@ O resumo **Informações para gerar a requisição no MXM** mostra os dados salv
 
 **Tarefas e perfis funcionais ainda não foram implementados.** Nesta versão o fluxo é manual/local; nenhuma tarefa é enviada ao aprendiz. A futura distribuição de Gerar requisição ao aprendiz e da análise ao responsável usará estas informações. As situações antigas continuam legíveis, sem inventar responsáveis ou confirmações retroativas.
 
-Validação atual: 99 testes automatizados, build e fluxos no Chromium, incluindo envio explícito, devolução, aprovação, bloqueios, reabertura, falha de armazenamento, contratação, cronograma e apresentação móvel. Os bloqueios seguem o estado do processo; autorização por perfil depende da futura autenticação.
+Validação atual: 103 testes automatizados, build e fluxos no Chromium, incluindo envio explícito, devolução, aprovação, bloqueios, reabertura, falha de armazenamento, contratação, cronograma e apresentação móvel. Os bloqueios seguem o estado do processo; autorização por perfil depende da futura autenticação.
 
 
 ## Vigência automática e Cronograma
@@ -112,4 +112,9 @@ Após a análise, a compradora registra o pedido anexado. O aprendiz informa for
 
 Anexos PDF/PNG/JPG até 20 MB ficam no IndexedDB `suprimentos:documents:v1`, separados do workspace local. Os metadados ficam na DL e no histórico. Se a gravação da DL falhar, o arquivo recém-inserido é removido; nenhum saldo é criado. O arquivo persiste ao recarregar e pode ser baixado. Arquivos ausentes neste navegador bloqueiam o envio dos fornecedores e a abertura da aprovação até registrar novamente o pedido. **Os arquivos não acompanham o backup JSON nem a sincronização Git; baixe-os separadamente.** Compartilhamento entre compradora/aprendiz/gestor e restrições por perfil ainda dependem de backend, autenticação e armazenamento central.
 
-Validação: 99 testes automatizados e build; fluxo completo no Chromium com seis etapas, modelo da justificativa, número/data bloqueados, anexo inválido, falha de gravação com limpeza do arquivo, arquivo ausente, download/persistência, correção/reenvio, aprovação única e saldo somente ao concluir. Cadastro/unidades e apresentação compacta dos ciclos também conferidos.
+Validação: 103 testes automatizados e build; fluxo completo no Chromium com seis etapas, modelo da justificativa, número/data bloqueados, anexo inválido, falha de gravação com limpeza do arquivo, arquivo ausente, download/persistência, correção/reenvio, aprovação única e saldo somente ao concluir. Cadastro/unidades e apresentação compacta dos ciclos também conferidos.
+
+
+O registro do pedido aceita **múltiplos anexos** PDF/PNG/JPG, até 20 MB por arquivo. O botão Anexar arquivos mostra uma seleção revisável, com remoção dos arquivos ainda não registrados, e a lista salva oferece download individual. **Registrar pedido** muda a situação para **Pedido gerado**, registra o fechamento do processo de compra e mostra quando isso aconteceu. Esse fechamento não conclui a DL nem cria saldos: fornecedores e aprovação final continuam nas etapas 5 e 6. Novos anexos podem ser acrescentados antes do envio para aprovação, sem substituir os anteriores nem mudar a data do primeiro fechamento. Anexos antigos de arquivo único continuam disponíveis.
+
+A gravação de vários arquivos limpa todos os arquivos recém-inseridos se algum arquivo ou a gravação do workspace falhar. Um arquivo local ausente pode ser recuperado selecionando novamente o original com mesmo nome, formato e tamanho e registrando o pedido; seu identificador e metadados são preservados. Reabrir planejamento mantém os documentos, mas exige novo registro do fechamento após a nova análise antes de enviar os fornecedores. Validação: 103 testes, build e Chromium com anexos múltiplos, acréscimo posterior, recuperação de arquivo, persistência, rollback, Pedido gerado, etapas seguintes e saldo apenas na aprovação final.

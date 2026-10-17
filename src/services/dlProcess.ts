@@ -1,4 +1,10 @@
-import type { DLPlan, DLProcessFlow, DLSaveOptions } from "../types/dl";
+import { dlOrderDocuments } from "./dlOrderDocuments.ts";
+import type {
+  DLPlan,
+  DLProcessFlow,
+  DLSaveOptions,
+  DLOrderDocument,
+} from "../types/dl";
 import { validateDLContract } from "./dlContract.ts";
 const actor = "Sessão local · sem autenticação";
 const stamp = () => ({ timestamp: new Date().toISOString(), actor });
@@ -8,6 +14,7 @@ export function canRegisterDLOrder(plan: DLPlan) {
     !plan.contract?.release &&
     [
       "Em processo",
+      "Pedido gerado",
       "Aguardando dados finais",
       "Requisição registrada",
       "Em tramitação",
@@ -17,12 +24,51 @@ export function canRegisterDLOrder(plan: DLPlan) {
 export function processFlow(plan: DLPlan): DLProcessFlow {
   return plan.processFlow ?? { version: 1 };
 }
+export function registerDLOrder(
+  plan: DLPlan,
+  documents: DLOrderDocument[],
+): DLPlan {
+  if (!canRegisterDLOrder(plan) || plan.processFlow?.suppliersSubmitted)
+    throw new Error(
+      "O pedido só pode ser registrado após a análise e antes do envio dos fornecedores.",
+    );
+  if (!documents.length && !dlOrderDocuments(plan).length)
+    throw new Error("Anexe ao menos um documento para registrar o pedido.");
+  const existing = dlOrderDocuments(plan);
+  const additions = documents.filter((document) => {
+    const old = existing.find((old) => old.id === document.id);
+    if (old && json(old) !== json(document))
+      throw new Error(
+        "Preserve os dados do anexo original ao recuperar seu arquivo.",
+      );
+    return !old;
+  });
+  return {
+    ...plan,
+    stage: "Pedido gerado",
+    processFlow: {
+      ...processFlow(plan),
+      purchaseOrders: [
+        ...(plan.processFlow?.purchaseOrders ?? []),
+        ...additions,
+      ],
+      orderRegistered:
+        plan.stage === "Pedido gerado"
+          ? (plan.processFlow?.orderRegistered ?? stamp())
+          : stamp(),
+    },
+  };
+}
 export function submitDLSuppliers(plan: DLPlan): DLPlan {
-  if (!canRegisterDLOrder(plan) || !plan.processFlow?.purchaseOrder)
+  if (!canRegisterDLOrder(plan) || !dlOrderDocuments(plan).length)
     throw new Error(
       "Registre o pedido anexado antes de enviar os fornecedores para aprovação.",
     );
-  if (plan.processFlow.suppliersSubmitted)
+  if (plan.processFlow?.purchaseOrders && plan.stage !== "Pedido gerado")
+    throw new Error(
+      "Registre o pedido para fechar o processo antes de enviar os fornecedores.",
+    );
+  if (plan.processFlow?.suppliersSubmitted)
     throw new Error(
       "Os dados já foram enviados e estão bloqueados para aprovação.",
     );
@@ -49,7 +95,11 @@ export function returnDLSuppliers(plan: DLPlan, reason: string): DLPlan {
 }
 export function validateDLProcess(plan: DLPlan) {
   const flow = plan.processFlow;
-  if (!flow) return;
+  if (!flow) {
+    if (plan.stage === "Pedido gerado")
+      throw new Error("Registre o pedido para fechar o processo.");
+    return;
+  }
   if (flow.version !== 1) throw new Error("Fluxo de etapas da DL inválido.");
   if (
     flow.justification &&
@@ -58,22 +108,36 @@ export function validateDLProcess(plan: DLPlan) {
         !Number.isFinite(Date.parse(flow.justification.completedAt))))
   )
     throw new Error("Justificativa do processo inválida.");
+  if (flow.purchaseOrders !== undefined && !Array.isArray(flow.purchaseOrders))
+    throw new Error("Lista de anexos do pedido inválida.");
+  const documents = dlOrderDocuments(plan);
   if (
-    flow.purchaseOrder &&
-    (!flow.purchaseOrder.id ||
-      !flow.purchaseOrder.name?.trim() ||
-      !["application/pdf", "image/png", "image/jpeg"].includes(
-        flow.purchaseOrder.type,
-      ) ||
-      !Number.isSafeInteger(flow.purchaseOrder.size) ||
-      flow.purchaseOrder.size <= 0 ||
-      flow.purchaseOrder.size > 20 * 1024 * 1024)
+    new Set(documents.map((document) => document.id)).size !== documents.length
+  )
+    throw new Error("Há anexos repetidos no pedido.");
+  for (const document of documents) {
+    if (
+      !document.id ||
+      !document.name?.trim() ||
+      !["application/pdf", "image/png", "image/jpeg"].includes(document.type) ||
+      !Number.isSafeInteger(document.size) ||
+      document.size <= 0 ||
+      document.size > 20 * 1024 * 1024
+    )
+      throw new Error(
+        "Documento do pedido inválido. Use PDF, PNG ou JPG até 20 MB.",
+      );
+  }
+  if (
+    (plan.stage === "Pedido gerado" || flow.purchaseOrders !== undefined) &&
+    (!documents.length || !flow.orderRegistered)
   )
     throw new Error(
-      "Documento do pedido inválido. Use PDF, PNG ou JPG até 20 MB.",
+      "Registre o pedido e o fechamento do processo antes de seguir.",
     );
   for (const record of [
-    flow.purchaseOrder,
+    ...documents,
+    flow.orderRegistered,
     flow.suppliersSubmitted,
     flow.suppliersReturn,
   ]) {
@@ -85,13 +149,10 @@ export function validateDLProcess(plan: DLPlan) {
   }
   if (flow.suppliersReturn && !flow.suppliersReturn.reason?.trim())
     throw new Error("A devolução dos fornecedores exige observação.");
-  if (flow.suppliersSubmitted && !flow.purchaseOrder)
+  if (flow.suppliersSubmitted && !documents.length)
     throw new Error("Pedido anexado obrigatório para aprovar fornecedores.");
   if (flow.suppliersSubmitted) validateDLContract(plan, true);
-  if (
-    plan.contract?.release &&
-    (!flow.suppliersSubmitted || !flow.purchaseOrder)
-  )
+  if (plan.contract?.release && (!flow.suppliersSubmitted || !documents.length))
     throw new Error(
       "A conclusão exige pedido registrado e fornecedores enviados para aprovação.",
     );
@@ -104,6 +165,14 @@ export function guardDLProcess(
   const before = previous.processFlow;
   const after = next.processFlow;
   const changed = json(before) !== json(after);
+  if (
+    next.stage === "Pedido gerado" &&
+    previous.stage !== "Pedido gerado" &&
+    options?.processAction !== "registerOrder"
+  )
+    throw new Error(
+      "Use Registrar pedido para fechar o processo com status Pedido gerado.",
+    );
   if (changed && !options?.processAction && !options?.reopenPlanning)
     throw new Error("Use a ação da etapa para atualizar o fluxo do processo.");
   if (!options?.reopenPlanning && before && !after)
@@ -115,6 +184,11 @@ export function guardDLProcess(
     const { processFlow: newFlow, ...newData } = next;
     void oldFlow;
     void newFlow;
+    if (
+      options.processAction === "registerOrder" &&
+      next.stage === "Pedido gerado"
+    )
+      oldData.stage = "Pedido gerado";
     if (json(oldData) !== json(newData))
       throw new Error(
         "A ação da etapa não permite alterar os demais dados da DL.",
@@ -135,17 +209,39 @@ export function guardDLProcess(
           );
         expected.justification = after?.justification;
         break;
-      case "registerOrder":
-        if (
-          !canRegisterDLOrder(previous) ||
-          before?.suppliersSubmitted ||
-          !after?.purchaseOrder
-        )
+      case "registerOrder": {
+        if (!canRegisterDLOrder(previous) || before?.suppliersSubmitted)
           throw new Error(
             "O pedido só pode ser registrado após a análise e antes do envio dos fornecedores.",
           );
-        expected.purchaseOrder = after.purchaseOrder;
+        if (
+          next.stage !== "Pedido gerado" ||
+          !after?.orderRegistered ||
+          !dlOrderDocuments(next).length
+        )
+          throw new Error(
+            "Registrar o pedido deve fechar o processo com status Pedido gerado.",
+          );
+        const existing = dlOrderDocuments(previous);
+        const nextDocuments = dlOrderDocuments(next);
+        if (
+          existing.some(
+            (document) =>
+              !nextDocuments.some(
+                (nextDocument) => json(document) === json(nextDocument),
+              ),
+          )
+        )
+          throw new Error(
+            "Preserve os anexos já registrados ao adicionar novos documentos.",
+          );
+        expected.purchaseOrders = after.purchaseOrders;
+        expected.orderRegistered =
+          previous.stage === "Pedido gerado"
+            ? (before?.orderRegistered ?? after.orderRegistered)
+            : after.orderRegistered;
         break;
+      }
       case "submitSuppliers":
         submitDLSuppliers(previous);
         if (!after?.suppliersSubmitted)
@@ -170,7 +266,9 @@ export function guardDLProcess(
     !previous.contract?.release &&
     json(previous.contract) !== json(next.contract) &&
     !options?.release &&
-    (!canRegisterDLOrder(previous) || !before.purchaseOrder)
+    (!canRegisterDLOrder(previous) ||
+      !dlOrderDocuments(previous).length ||
+      (before.purchaseOrders && previous.stage !== "Pedido gerado"))
   )
     throw new Error(
       "Registre o pedido após a análise antes de preencher a contratação.",
@@ -197,7 +295,7 @@ export function guardDLProcess(
     !previous.contract?.release &&
     next.contract?.release &&
     after &&
-    (!after.purchaseOrder || !after.suppliersSubmitted)
+    (!dlOrderDocuments(next).length || !after.suppliersSubmitted)
   )
     throw new Error(
       "Registre o pedido e envie os fornecedores para aprovação antes de concluir.",

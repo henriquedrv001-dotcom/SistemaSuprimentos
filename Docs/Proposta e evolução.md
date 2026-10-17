@@ -210,3 +210,9 @@ Requisição e processo reúne Gerar justificativa (modelo básico sem IA), Gera
 Anexos locais PDF/PNG/JPG até 20 MB, IndexedDB separado do workspace, download e metadados auditados. Falha na gravação da DL limpa o arquivo novo. Documento ausente bloqueia envio/aprovação; o anexo precisa ser registrado novamente. Arquivos não entram no backup JSON ou Git e ainda não são compartilhados entre usuários. Perfis reais e armazenamento central ficam pendentes.
 
 Validados 99 testes, build e Chromium: seis etapas, rascunho/envio/análise, bloqueios, anexo inválido, falha de gravação, documento ausente, download, persistência, devolução/reenvio, resumo sem edição, aprovação única, saldos somente ao concluir, histórico e tela móvel. Regressões de unidades/importação e tabela compacta de ciclos conferidas.
+
+
+### Múltiplos anexos e fechamento do processo no registro do pedido — 17/10/2026
+Botão Anexar arquivos com ícone, seleção de vários documentos e lista com download individual. O botão permanece Registrar pedido, conforme ajuste do usuário. Registrar muda o status para Pedido gerado e identifica na tela/histórico a data do fechamento do processo. A definição de fornecedores e a aprovação final continuam; o fechamento não libera saldo. Acréscimos preservam os arquivos anteriores e a primeira data de fechamento; após envio para aprovação continuam bloqueados até devolução. Compatibilidade com anexo único legado preservada. Recuperação do arquivo local original mantém os IDs.
+
+Validação: 103 testes e build; Chromium cobre vários anexos, acréscimo sem perda, rollback de arquivos, arquivo ausente e recuperação, persistência/download, status Pedido gerado, bloqueios, correção/reenvio e aprovação final sem antecipar saldo.

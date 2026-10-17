@@ -603,3 +603,16 @@ dialog.dl-create {margin:auto}
 .dl-request-step input[type=file] {max-width:100%;white-space:normal}
 .dl-request-step .form-grid > .dl-full-row {grid-column:1/-1}
 @media(max-width:600px) {.dl-final-facts {grid-template-columns:minmax(0,1fr)}}
+
+.dl-order-upload {display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:16px 0}
+.dl-order-upload .secondary-button,.dl-order-files button {display:inline-flex;align-items:center;gap:7px}
+.dl-order-upload > span {font-size:11px}
+.dl-order-files {list-style:none;padding:0;margin:14px 0;display:grid;gap:8px}
+.dl-order-files li {display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--background-soft);border:1px solid var(--border);border-radius:var(--radius-sm);min-width:0}
+.dl-order-files li > svg {color:var(--primary);flex-shrink:0}
+.dl-order-files li > span {flex:1;min-width:0}
+.dl-order-files strong {display:block;font-size:12px;overflow-wrap:anywhere}
+.dl-order-files small {display:block;color:var(--text-muted);font-size:10px;margin-top:3px}
+.dl-order-files button {flex-shrink:0}
+.dl-order-pending li {background:transparent;border-style:dashed}
+.dl-order-closed {background:var(--background-soft);border-left:3px solid var(--primary);padding:12px;font-size:12px;line-height:1.6;border-radius:var(--radius-sm)}

@@ -1,3 +1,4 @@
+import { dlOrderDocuments } from "../src/services/dlOrderDocuments.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -14,6 +15,7 @@ import {
 } from "../src/services/dlContract.ts";
 import {
   processFlow,
+  registerDLOrder,
   submitDLSuppliers,
   returnDLSuppliers,
 } from "../src/services/dlProcess.ts";
@@ -232,4 +234,86 @@ test("arquivo inválido é rejeitado e registros antigos continuam legíveis sem
     readDLWorkspace(JSON.stringify(workspace(finished))).plans[0].stage,
     "Concluído",
   );
+});
+
+test("vários anexos registram Pedido gerado e fecham o processo sem liberar saldo", () => {
+  const p = fixture();
+  const documents = [
+    doc(),
+    { ...doc(), name: "Página 2.png", type: "image/png" },
+  ];
+  const next = registerDLOrder(p, documents);
+  const saved = storeDLPlan(workspace(p), next, "Pedido gerado", "", {
+    processAction: "registerOrder",
+  });
+  assert.equal(saved.plan.stage, "Pedido gerado");
+  assert(saved.plan.processFlow.orderRegistered.timestamp);
+  assert.deepEqual(dlOrderDocuments(saved.plan), documents);
+  assert.deepEqual(contractOrigins(saved.plan), []);
+  assert.deepEqual(
+    dlOrderDocuments(readDLWorkspace(JSON.stringify(saved.workspace)).plans[0]),
+    documents,
+  );
+  assert(submitDLSuppliers(saved.plan).processFlow.suppliersSubmitted);
+});
+test("registro preserva anexo antigo e novos anexos mantêm o primeiro fechamento", () => {
+  const p = registered();
+  const oldDocument = p.processFlow.purchaseOrder;
+  const first = storeDLPlan(
+    workspace(p),
+    registerDLOrder(p, [doc()]),
+    "Registrado",
+    "",
+    { processAction: "registerOrder" },
+  );
+  assert.deepEqual(first.plan.processFlow.purchaseOrder, oldDocument);
+  assert.equal(dlOrderDocuments(first.plan).length, 2);
+  const second = storeDLPlan(
+    first.workspace,
+    registerDLOrder(first.plan, [doc()]),
+    "Novo anexo",
+    "",
+    { processAction: "registerOrder" },
+  );
+  assert.equal(dlOrderDocuments(second.plan).length, 3);
+  assert.deepEqual(
+    second.plan.processFlow.orderRegistered,
+    first.plan.processFlow.orderRegistered,
+  );
+  assert.throws(
+    () => registerDLOrder(submitDLSuppliers(second.plan), [doc()]),
+    /antes do envio/,
+  );
+});
+test("não fecha sem anexos nem muda o status sem registrar; não permite apagar anexos anteriores", () => {
+  const p = fixture();
+  assert.throws(() => registerDLOrder(p, []), /ao menos um/);
+  const registeredPlan = registerDLOrder(p, [doc()]);
+  assert.throws(
+    () => storeDLPlan(workspace(p), registeredPlan, "Status manual", ""),
+    /Use Registrar pedido/,
+  );
+  const dropped = registerDLOrder(registeredPlan, [doc()]);
+  dropped.processFlow.purchaseOrders.shift();
+  assert.throws(
+    () =>
+      storeDLPlan(workspace(registeredPlan), dropped, "Apagar", "", {
+        processAction: "registerOrder",
+      }),
+    /Preserve os anexos/,
+  );
+});
+test("reabertura mantém anexos mas exige registrar novamente antes do novo envio dos fornecedores", () => {
+  const p = registerDLOrder(fixture(), [doc(), doc()]);
+  const reopened = reopenDLPlanning(p, true);
+  const saved = storeDLPlan(workspace(p), reopened, "Reaberto", "", {
+    reopenPlanning: true,
+  });
+  assert.equal(dlOrderDocuments(saved.plan).length, 2);
+  const reviewed = { ...saved.plan, stage: "Aguardando dados finais" };
+  assert.throws(() => submitDLSuppliers(reviewed), /fechar o processo/);
+  const registeredAgain = registerDLOrder(reviewed, []);
+  assert.equal(registeredAgain.stage, "Pedido gerado");
+  assert.equal(dlOrderDocuments(registeredAgain).length, 2);
+  assert(submitDLSuppliers(registeredAgain).processFlow.suppliersSubmitted);
 });

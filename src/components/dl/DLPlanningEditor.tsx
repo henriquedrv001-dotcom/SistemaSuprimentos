@@ -1,3 +1,4 @@
+import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import DLProcessStages, { DLJustificationStep } from "./DLProcessStages";
 import DLContractSummary from "./DLContractSummary";
 import { canRegisterDLOrder } from "../../services/dlProcess";
@@ -154,8 +155,8 @@ export default function DLPlanningEditor({
   const editable = editableDLItems(plan);
   const canEditContract =
     canRegisterDLOrder(plan) &&
-    !!plan.processFlow?.purchaseOrder &&
-    !plan.processFlow.suppliersSubmitted;
+    !!dlOrderDocuments(plan).length &&
+    !plan.processFlow?.suppliersSubmitted;
   const planningDirty =
     JSON.stringify({ ...draft, request: plan.request }) !==
       JSON.stringify(plan) ||
@@ -435,6 +436,7 @@ export default function DLPlanningEditor({
                       "Gerar requisição",
                       "Analisar requisição gerada",
                       "Em processo",
+                      "Pedido gerado",
                       "Requisição registrada",
                       "Em tramitação",
                       "Aguardando dados finais",

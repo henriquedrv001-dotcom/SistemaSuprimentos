@@ -156,6 +156,7 @@ export function validateDLPlan(plan: DLPlan) {
     "Gerar requisição",
     "Analisar requisição gerada",
     "Em processo",
+    "Pedido gerado",
     "Requisição registrada",
     "Em tramitação",
     "Aguardando dados finais",
@@ -169,6 +170,7 @@ export function validateDLPlan(plan: DLPlan) {
     [
       "Analisar requisição gerada",
       "Em processo",
+      "Pedido gerado",
       "Requisição registrada",
       "Em tramitação",
       "Aguardando dados finais",
@@ -199,7 +201,9 @@ export function validateDLPlan(plan: DLPlan) {
   if (
     (plan.stage === "Em processo" ||
       (plan.requestWorkflow &&
-        ["Aguardando dados finais", "Concluído"].includes(plan.stage))) &&
+        ["Pedido gerado", "Aguardando dados finais", "Concluído"].includes(
+          plan.stage,
+        ))) &&
     (!plan.deliveryDate ||
       !plan.requestReview ||
       plan.requestReview.mxmNumber !== plan.request.mxmNumber.trim() ||
@@ -224,6 +228,7 @@ export function validateDLPlan(plan: DLPlan) {
     [
       "Analisar requisição gerada",
       "Em processo",
+      "Pedido gerado",
       "Aguardando dados finais",
       "Concluído",
     ].includes(plan.stage) &&
@@ -483,7 +488,9 @@ export function storeDLPlan(
     ["Gerar requisição", "Analisar requisição gerada"].includes(
       previous.stage,
     ) &&
-    ["Aguardando dados finais", "Concluído"].includes(candidate.stage)
+    ["Pedido gerado", "Aguardando dados finais", "Concluído"].includes(
+      candidate.stage,
+    )
   )
     throw new Error(
       "Analise a requisição gerada e confirme Em processo antes de avançar à contratação.",

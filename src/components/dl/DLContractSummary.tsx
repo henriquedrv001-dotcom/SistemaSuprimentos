@@ -1,3 +1,4 @@
+import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import type { DLPlan } from "../../types/dl";
 import type { Item } from "../../types";
 import { contractTotal, awardTotal } from "../../services/dlContract";
@@ -68,10 +69,11 @@ export default function DLContractSummary({
           </dd>
         </div>
         <div>
-          <dt>Pedido anexado</dt>
+          <dt>Anexos do pedido</dt>
           <dd>
-            {plan.processFlow?.purchaseOrder?.name ||
-              "Não registrado nesta versão"}
+            {dlOrderDocuments(plan)
+              .map((document) => document.name)
+              .join(" · ") || "Não registrado nesta versão"}
           </dd>
         </div>
       </dl>

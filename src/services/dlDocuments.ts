@@ -1,3 +1,4 @@
+import type { DLOrderDocument } from "../types/dl";
 // Files stay in this browser until a shared document backend is connected.
 const databaseName = "suprimentos:documents:v1";
 function openDatabase(): Promise<IDBDatabase> {
@@ -39,34 +40,46 @@ async function transaction<T>(
     db.close();
   }
 }
-export async function saveDLDocument(file: File) {
+export async function saveDLDocument(file: File, recovery?: DLOrderDocument) {
   if (
     !["application/pdf", "image/png", "image/jpeg"].includes(file.type) ||
     !file.size ||
     file.size > 20 * 1024 * 1024
   )
     throw new Error("Use um arquivo PDF, PNG ou JPG com até 20 MB.");
-  const id = `dl-document-${crypto.randomUUID()}`;
+  if (
+    recovery &&
+    (file.name !== recovery.name ||
+      file.size !== recovery.size ||
+      file.type !== recovery.type)
+  )
+    throw new Error(
+      "Para recuperar um anexo, selecione o arquivo original com mesmo nome, formato e tamanho.",
+    );
+  const id = recovery?.id ?? `dl-document-${crypto.randomUUID()}`;
   await transaction("readwrite", (store) => store.add(file, id));
-  return {
-    id,
-    name: file.name,
-    type: file.type,
-    size: file.size,
-    timestamp: new Date().toISOString(),
-    actor: "Sessão local · sem autenticação",
-  };
+  return (
+    recovery ?? {
+      id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      timestamp: new Date().toISOString(),
+      actor: "Sessão local · sem autenticação",
+    }
+  );
 }
 export async function removeDLDocument(id: string) {
   await transaction("readwrite", (store) => store.delete(id));
 }
+export async function findDLDocument(id: string) {
+  return transaction<Blob | undefined>("readonly", (store) => store.get(id));
+}
 export async function requireDLDocument(id: string) {
-  const blob = await transaction<Blob | undefined>("readonly", (store) =>
-    store.get(id),
-  );
+  const blob = await findDLDocument(id);
   if (!blob)
     throw new Error(
-      "O arquivo não está neste navegador. Anexos locais não são sincronizados com outros dispositivos. Registre novamente o pedido antes de prosseguir.",
+      "O arquivo não está neste navegador. Anexos locais não são sincronizados com outros dispositivos. Anexe novamente o arquivo original e registre o pedido antes de prosseguir.",
     );
   return blob;
 }

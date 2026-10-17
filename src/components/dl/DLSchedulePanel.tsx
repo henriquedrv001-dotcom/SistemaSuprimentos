@@ -268,8 +268,8 @@ export default function DLSchedulePanel({
         registrados. Os avisos não bloqueiam o andamento do processo.
       </p>      <section className="dl-milestone-history" aria-label="Histórico de etapas">
         <h4>Histórico de etapas</h4>
-        {events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição/i.test(event.action)).length ? (
-          <ol>{events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição/i.test(event.action)).map(event => (
+        {events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição|pedido gerado/i.test(event.action)).length ? (
+          <ol>{events.filter(event => event.planId === plan.id && /conclu|aprova|análise|analis|devol|reab|requisição enviada|geração da requisição|pedido gerado/i.test(event.action)).map(event => (
             <li key={event.id}><span>{event.action}</span><small>{new Date(event.timestamp).toLocaleString("pt-BR")} · {event.actor}</small></li>
           ))}</ol>
         ) : <p className="muted">Nenhuma aprovação ou fechamento de etapa registrado.</p>}

@@ -1,3 +1,4 @@
+import { dlOrderDocuments } from "./dlOrderDocuments.ts";
 import { automaticContractValidity } from "./dlDates.ts";
 import type { DLContract, DLContractAward, DLPlan } from "../types/dl";
 export const emptyDLContract = (): DLContract => ({
@@ -293,7 +294,7 @@ export function releaseDLPlan(
     throw new Error(
       "Confirme os pedidos de compra MXM emitidos e digite CONCLUIR para disponibilizar no Controle.",
     );
-  if (plan.processFlow && (!plan.processFlow.purchaseOrder || !plan.processFlow.suppliersSubmitted)) throw new Error("Registre o pedido e envie os fornecedores para aprovação antes de concluir.");
+  if (plan.processFlow && (!dlOrderDocuments(plan).length || !plan.processFlow.suppliersSubmitted)) throw new Error("Registre o pedido e envie os fornecedores para aprovação antes de concluir.");
   validateDLContract(plan, true);
   const contract = plan.contract!;
   const saved: DLPlan = {

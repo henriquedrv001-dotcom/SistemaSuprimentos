@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { Paperclip, FileText, Download, X } from "lucide-react";
+import { dlOrderDocuments } from "../../services/dlOrderDocuments";
+import { useRef, useState } from "react";
 import type { DLPlan, DLSaveOptions } from "../../types/dl";
 import type { Item } from "../../types";
 import { dlObservation } from "../../services/dlRequest";
 import {
   canRegisterDLOrder,
   processFlow,
+  registerDLOrder,
   returnDLSuppliers,
   submitDLSuppliers,
 } from "../../services/dlProcess";
 import {
   downloadDLDocument,
+  findDLDocument,
   requireDLDocument,
   removeDLDocument,
   saveDLDocument,
@@ -179,46 +183,68 @@ export default function DLProcessStages({
   onSaveContract: () => void;
   onApprove: () => void;
 }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const eligible = canRegisterDLOrder(plan);
   const submitted = !!plan.processFlow?.suppliersSubmitted;
-  const attachment = plan.processFlow?.purchaseOrder;
+  const attachments = dlOrderDocuments(plan);
+  const hasAttachments = attachments.length > 0;
+  const processClosed =
+    plan.stage === "Pedido gerado" || !!plan.contract?.release;
   const locked = blocked || busy;
-  const canFill = eligible && !!attachment && !submitted;
+  const canFill =
+    eligible &&
+    hasAttachments &&
+    !submitted &&
+    (processClosed || !plan.processFlow?.purchaseOrders);
   const released = !!plan.contract?.release;
   async function register() {
-    if (!file) return;
+    if (!files.length && (!hasAttachments || processClosed)) return;
     if (
-      attachment &&
       !window.confirm(
-        "Substituir o anexo atual do pedido? A alteração ficará no histórico.",
+        processClosed
+          ? "Registrar os novos anexos? O processo permanece fechado com status Pedido gerado."
+          : "Registrar o pedido? O processo de compra será fechado com status Pedido gerado. Fornecedores e aprovação final continuam nas próximas etapas.",
       )
     )
       return;
     setBusy(true);
     setError("");
-    let uploaded: Awaited<ReturnType<typeof saveDLDocument>> | null = null;
+    const uploaded: Awaited<ReturnType<typeof saveDLDocument>>[] = [];
     try {
-      uploaded = await saveDLDocument(file);
+      for (const file of files) {
+        let recovery;
+        for (const document of attachments) {
+          if (
+            document.name === file.name &&
+            document.size === file.size &&
+            document.type === file.type &&
+            !(await findDLDocument(document.id))
+          ) {
+            recovery = document;
+            break;
+          }
+        }
+        uploaded.push(await saveDLDocument(file, recovery));
+      }
+      const candidate = registerDLOrder(plan, uploaded);
       onPersist(
-        {
-          ...plan,
-          processFlow: { ...processFlow(plan), purchaseOrder: uploaded },
-        },
-        `Pedido registrado: ${uploaded.name}`,
+        candidate,
+        `${processClosed ? "Anexos do pedido adicionados" : "Pedido gerado · processo fechado"}: ${dlOrderDocuments(
+          candidate,
+        )
+          .map((document) => document.name)
+          .join(", ")}`,
         { processAction: "registerOrder" },
       );
-      setFile(null);
+      setFiles([]);
+      if (fileInput.current) fileInput.current.value = "";
     } catch (cause) {
-      if (uploaded) {
-        try {
-          await removeDLDocument(uploaded.id);
-        } catch {
-          /* An unreferenced file must not mask the original failure. */
-        }
-      }
+      await Promise.allSettled(
+        uploaded.map((document) => removeDLDocument(document.id)),
+      );
       setError(
         cause instanceof Error
           ? cause.message
@@ -237,7 +263,9 @@ export default function DLProcessStages({
           )
         )
           return;
-        await requireDLDocument(attachment!.id);
+        await Promise.all(
+          attachments.map((document) => requireDLDocument(document.id)),
+        );
         onPersist(
           submitDLSuppliers(plan),
           "Fornecedores enviados para aprovação",
@@ -268,68 +296,169 @@ export default function DLProcessStages({
       <section className="dl-request-step" aria-labelledby="dl-order-title">
         <div className="panel-heading">
           <h3 id="dl-order-title">4. Registro do pedido</h3>
-          <span className={`tag ${attachment ? "tag-green" : "tag-neutral"}`}>
-            {attachment ? "Pedido registrado" : "Aguardando pedido"}
+          <span
+            className={`tag ${processClosed || hasAttachments ? "tag-green" : "tag-neutral"}`}
+          >
+            {processClosed
+              ? "Pedido gerado"
+              : hasAttachments
+                ? "Anexos registrados"
+                : "Aguardando pedido"}
           </span>
         </div>
         <p className="muted">
           A responsável pela compra anexa o pedido emitido no MXM para orientar
           o preenchimento dos dados finais.
         </p>
-        {attachment && (
-          <p>
-            <strong>{attachment.name}</strong> ·{" "}
-            {Math.max(1, Math.ceil(attachment.size / 1024)).toLocaleString(
-              "pt-BR",
-              { maximumFractionDigits: 0 },
-            )}{" "}
-            KB{" "}
-            <button
-              className="text-button"
-              onClick={async () => {
-                try {
-                  await downloadDLDocument(attachment.id, attachment.name);
-                  setError("");
-                } catch (cause) {
-                  setError(
-                    cause instanceof Error
-                      ? cause.message
-                      : "Não foi possível abrir o documento.",
-                  );
-                }
-              }}
-            >
-              Baixar pedido
-            </button>
+        {processClosed && plan.processFlow?.orderRegistered && (
+          <p className="dl-order-closed" role="status">
+            Processo de compra fechado ao registrar o pedido em{" "}
+            {new Date(
+              plan.processFlow.orderRegistered.timestamp,
+            ).toLocaleString("pt-BR")}
+            . A definição dos fornecedores e a aprovação final continuam abaixo.
           </p>
+        )}
+        {hasAttachments && (
+          <ul className="dl-order-files" aria-label="Anexos registrados">
+            {attachments.map((document) => (
+              <li key={document.id}>
+                <FileText size={17} aria-hidden="true" />
+                <span>
+                  <strong>{document.name}</strong>
+                  <small>
+                    {Math.max(
+                      1,
+                      Math.ceil(document.size / 1024),
+                    ).toLocaleString("pt-BR")}{" "}
+                    KB
+                  </small>
+                </span>
+                <button
+                  className="text-button"
+                  aria-label={`Baixar ${document.name}`}
+                  onClick={async () => {
+                    try {
+                      await downloadDLDocument(document.id, document.name);
+                      setError("");
+                    } catch (cause) {
+                      setError(
+                        cause instanceof Error
+                          ? cause.message
+                          : "Não foi possível baixar o documento.",
+                      );
+                    }
+                  }}
+                >
+                  <Download size={15} aria-hidden="true" />
+                  Baixar
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
         {!released && (
           <>
-            <div className="form-grid">
-              <label className="dl-full-row">
-                Anexar pedido MXM (PDF, PNG ou JPG até 20 MB)
-                <input
-                  type="file"
-                  accept="application/pdf,image/png,image/jpeg"
-                  disabled={!eligible || submitted || locked || contractDirty}
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
+            <div className="dl-order-upload">
+              <input
+                ref={fileInput}
+                className="sr-only"
+                type="file"
+                multiple
+                aria-label="Anexar pedidos MXM"
+                accept="application/pdf,image/png,image/jpeg"
+                disabled={!eligible || submitted || locked || contractDirty}
+                onChange={(event) => {
+                  const incoming = Array.from(event.target.files ?? []);
+                  setFiles((current) => {
+                    const next = [...current];
+                    for (const file of incoming)
+                      if (
+                        !next.some(
+                          (existing) =>
+                            existing.name === file.name &&
+                            existing.size === file.size &&
+                            existing.type === file.type &&
+                            existing.lastModified === file.lastModified,
+                        )
+                      )
+                        next.push(file);
+                    return next;
+                  });
+                  event.target.value = "";
+                }}
+              />
+              <button
+                className="secondary-button"
+                disabled={!eligible || submitted || locked || contractDirty}
+                onClick={() => fileInput.current?.click()}
+              >
+                <Paperclip size={17} aria-hidden="true" />
+                Anexar arquivos
+              </button>
+              <span className="muted">
+                PDF, PNG ou JPG · até 20 MB por arquivo
+              </span>
             </div>
+            {files.length > 0 && (
+              <ul
+                className="dl-order-files dl-order-pending"
+                aria-label="Arquivos a registrar"
+              >
+                {files.map((file, index) => (
+                  <li key={`${file.name}-${index}`}>
+                    <FileText size={17} aria-hidden="true" />
+                    <span>
+                      <strong>{file.name}</strong>
+                      <small>
+                        A registrar ·{" "}
+                        {Math.max(
+                          1,
+                          Math.ceil(file.size / 1024),
+                        ).toLocaleString("pt-BR")}{" "}
+                        KB
+                      </small>
+                    </span>
+                    <button
+                      className="text-button"
+                      aria-label={`Remover ${file.name} da seleção`}
+                      disabled={busy}
+                      onClick={() =>
+                        setFiles((current) =>
+                          current.filter((_, i) => i !== index),
+                        )
+                      }
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             <button
-              className="secondary-button"
+              className="primary-button"
               disabled={
-                !file || !eligible || submitted || locked || contractDirty
+                (!files.length && (!hasAttachments || processClosed)) ||
+                !eligible ||
+                submitted ||
+                locked ||
+                contractDirty
               }
               onClick={register}
             >
               {busy ? "Registrando…" : "Registrar pedido"}
             </button>
+            {!processClosed && (
+              <p className="muted">
+                Registrar o pedido fecha o processo de compra e muda o status
+                para Pedido gerado.
+              </p>
+            )}
           </>
         )}
         <p className="muted">
-          Anexo salvo somente neste navegador. Ainda não é compartilhado entre
-          usuários e não acompanha o backup JSON.
+          Anexos salvos somente neste navegador. Ainda não são compartilhados
+          entre usuários e não acompanham o backup JSON.
         </p>
       </section>
       <section className="dl-request-step" aria-labelledby="dl-suppliers-title">
@@ -350,11 +479,13 @@ export default function DLProcessStages({
           MXM, preços e vigência. Um fornecedor por item; as quantidades vêm do
           planejamento.
         </p>
-        {!attachment && !released && (
-          <p className="catalog-feedback">
-            Registre o pedido na etapa 4 para liberar o preenchimento.
-          </p>
-        )}
+        {(!hasAttachments ||
+          (!processClosed && !!plan.processFlow?.purchaseOrders)) &&
+          !released && (
+            <p className="catalog-feedback">
+              Registre o pedido na etapa 4 para liberar o preenchimento.
+            </p>
+          )}
         {plan.processFlow?.suppliersReturn && !submitted && !released && (
           <p className="dl-return-note">
             <strong>Correção solicitada:</strong>{" "}
@@ -419,7 +550,11 @@ export default function DLProcessStages({
               disabled={!submitted || !eligible || locked || contractDirty}
               onClick={async () => {
                 try {
-                  await requireDLDocument(attachment!.id);
+                  await Promise.all(
+                    attachments.map((document) =>
+                      requireDLDocument(document.id),
+                    ),
+                  );
                   validateDLContract(plan, true);
                   onApprove();
                 } catch (cause) {
