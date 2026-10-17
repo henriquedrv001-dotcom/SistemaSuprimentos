@@ -571,3 +571,5 @@ dialog.dl-create {margin:auto}
 .dl-validity-fields .dl-legacy-validity {grid-column:span 2;align-self:start}
 @media(max-width:900px) {.dl-validity-fields {grid-template-columns:minmax(0,1fr)}.dl-validity-fields .dl-legacy-validity {grid-column:auto}}
 .dl-return-note p,.dl-event p {overflow-wrap:anywhere}
+
+.dl-editor .form-grid > .dl-full-row { grid-column: 1 / -1; }

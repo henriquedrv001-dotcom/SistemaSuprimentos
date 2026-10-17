@@ -478,11 +478,11 @@ export default function DLPlanningEditor({
               [
                 ["title", "Objeto / título"],
                 ["category", "Categoria"],
-                ["openedOn", "Data de abertura"],
                 ["responsible", "Responsável pelo estoque"],
+                ["openedOn", "Data de abertura"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key}>
+              <label key={key} className={key === "responsible" ? "dl-full-row" : undefined}>
                 {label}
                 <input
                   disabled={!editable}
@@ -494,22 +494,6 @@ export default function DLPlanningEditor({
                 />
               </label>
             ))}
-            <label className="dl-observation-field">
-              Observação / Justificativa
-              <textarea
-                aria-label="Observação / Justificativa"
-                rows={2}
-                disabled={!editable}
-                value={dlObservation(draft)}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    justification: e.target.value,
-                    notes: "",
-                  })
-                }
-              />
-            </label>
             <label>
               Data de entrega
               <input
@@ -524,6 +508,22 @@ export default function DLPlanningEditor({
               <small className="muted">
                 Necessária para gerar a requisição MXM.
               </small>
+            </label>
+            <label className="dl-observation-field dl-full-row">
+              Observação / Justificativa
+              <textarea
+                aria-label="Observação / Justificativa"
+                rows={2}
+                disabled={!editable}
+                value={dlObservation(draft)}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    justification: e.target.value,
+                    notes: "",
+                  })
+                }
+              />
             </label>
           </div>
           <div className="panel-heading">
