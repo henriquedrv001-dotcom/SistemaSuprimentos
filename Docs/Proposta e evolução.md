@@ -18,7 +18,7 @@ O ZIP contém App.tsx, data.ts, main.tsx, styles.css, supabase.ts, types.ts e um
 ## Limitações verificadas na auditoria
 - Os 1.646 itens vistos no Codespace não fazem parte do ZIP: podem estar no armazenamento do navegador daquela prévia. Não limpar os dados desse navegador; exportar os dados em etapa própria antes de mudar o endereço de acesso.
 - Na base recuperada, Mostrar escolhia visíveis/ocultos/todos. A evolução local agora implementa Mostrar por tipos como filtro mestre, ao lado da busca; o controle antigo foi renomeado para Visibilidade.
-- A prévia de importação usa o texto 'Serão atualizados', mas a confirmação preserva códigos existentes sem sobrescrever. Corrigir a comunicação em entrega separada.
+- A importação foi revisada: novos e existentes com diferenças são tratados em ações separadas, com revisão explícita para atualizar.
 - Ainda não há segurança de servidor ou verificação de vínculos para exclusões locais.
 
 ## Forma de trabalhar
@@ -64,3 +64,15 @@ A interface passa a usar somente o Status Ativo/Inativo no interruptor do item e
 - Preparar seleção abre diretamente os três destinos (Ciclo de suprimento, Planejamento DLs, Preparação de pedido direto), substituindo o seletor Adicionar a. Sem itens selecionados, o botão fica desabilitado. A ação continua sendo preparação demonstrativa e não cria vínculos ou reservas reais.
 - Ordenar foi movido para a linha de ações ao lado de Preparar seleção, com ícone A–Z, opções Descrição/Código/Grupo e descrição e indicação da opção atual.
 - Altura dos controles do catálogo reduzida para 36px, mantendo o tema azul. Menus fecham por Escape ou clique fora; seleção de destino respeita os itens filtrados.
+
+
+## Importação protegida do MXM
+A importação CSV/TXT identifica itens pelo código MXM, preservando zeros à esquerda. XLSX ainda não é suportado. A prévia separa novos, existentes com diferenças e sem alteração. Arquivos com códigos repetidos, registros sem código/descrição, critérios desconhecidos ou colunas ambíguas são bloqueados antes de gravar qualquer item. Campos opcionais ausentes/vazios não apagam os dados atuais; itens ausentes na extração não são removidos ou inativados.
+
+Adicionar somente novos é uma ação independente, com a quantidade explícita no botão de confirmação. Ela não altera existentes. Revisar atualizações exige Editor demonstrativo: nenhum campo vem marcado; o responsável escolhe itens e diferenças de Descrição, Unidade, Tipo, Grupo e Critério. Código, ID, especificação técnica, status e associações não são substituídos. Campos não escolhidos permanecem como estão. Diferenças não aprovadas continuam pendentes, sem aplicação automática.
+
+Para atualizar, primeiro gerar o backup JSON para download e conferir se o navegador salvou o arquivo; em seguida digitar exatamente ATUALIZAR. O backup contém itens, ciclos e histórico anteriores à atualização, com versão de formato e data. Não há restauração automática do JSON nesta entrega. O sistema consegue verificar que gerou o download, mas não confirmar que o usuário conservou o arquivo no computador.
+
+Mudanças registram origem do arquivo e valores anteriores/novos no histórico do item. Falhas ao gravar o histórico desfazem a gravação dos itens antes de concluir; não se anuncia sucesso. Alterações nos dados persistidos por outra aba impedem a importação, solicitando recarga e nova revisão. Leituras antigas de arquivos não substituem uma seleção de arquivo mais recente.
+
+Validação: 15 testes automatizados (`npm test`, Node 24 validado), build e fluxo no Chromium. Cenário 1.600→1.608 preservou os 1.600 existentes e incluiu oito novos; revisão por campo, confirmação exata, backup JSON anterior à edição, proteção de especificações/status/vínculos, cancelamento, duplicados, falha simulada de armazenamento, bloqueio de alteração externa e recarga foram exercitados. Dados usados nos testes são fictícios e isolados do navegador do responsável.

@@ -20,7 +20,7 @@ npm run dev
 4. Abra o endereço mostrado no terminal. Normalmente: `http://127.0.0.1:5173`.
 
 ## Estado atual
-A interface é um protótipo de navegação com dados demonstrativos. O formulário de novo item altera somente o estado da página e não grava no banco. Os exemplos de PDL/pedido ERP são ilustrativos.
+A interface é um protótipo com dados demonstrativos. Itens, ciclos e histórico são salvos no armazenamento local do navegador, sem banco conectado. Os exemplos de PDL/pedido ERP são ilustrativos.
 
 O banco ainda não está conectado. O esquema SQL é um ponto de partida que precisa de revisão e complementação antes de ser aplicado ou usado em operações reais.
 
@@ -34,3 +34,14 @@ O banco ainda não está conectado. O esquema SQL é um ponto de partida que pre
 
 ## Segurança e produção
 Não use dados reais do Sesc nesta versão. Antes de produção, implementar autenticação, autorização/RLS, transações para controlar saldos e compromissos, testes, backups e revisão pela TI.
+
+
+## Importação de materiais MXM
+Importe CSV/TXT pelo Cadastro de itens. A prévia mostra novos, diferenças e itens sem alteração. **Adicionar somente novos** preserva os já cadastrados. Para atualizar existentes, ative o Editor demonstrativo, escolha os campos na revisão, baixe o backup JSON e digite **ATUALIZAR**. Especificações técnicas, status e vínculos ficam protegidos. Revise o arquivo baixado antes de continuar. Os dados permanecem locais ao navegador; o perfil Editor não substitui autenticação real.
+
+Para validar a importação (Node.js 24 foi usado na validação):
+
+```bash
+npm test
+npm run build
+```

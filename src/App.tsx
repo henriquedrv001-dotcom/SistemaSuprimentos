@@ -7,6 +7,9 @@ import {
 import { demoCycleItems, demoCycles, demoItems, demoOrders } from "./data";
 import type { Item, ItemHistoryEntry, SupplyCycle } from "./types";
 import ItemDetailsDialog from "./components/ItemDetailsDialog";
+import CatalogImportPreview from "./components/CatalogImportPreview";
+import { buildImportPreview, planImportUpdates } from "./services/catalogImport";
+import type { ImportPreview, ImportSelection } from "./services/catalogImport";
 import CatalogActionMenu from "./components/CatalogActionMenu";
 import CatalogTypeFilter, { readCatalogTypeView } from "./components/CatalogTypeFilter";
 
@@ -61,9 +64,12 @@ function App() {
   const [sortMode, setSortMode] = useState("description");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [importMessage, setImportMessage] = useState("");
-  const [importPreview, setImportPreview] = useState<{ newCount: number; updateCount: number; unchangedCount: number; rows: Item[] } | null>(null);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const importReadId = useRef(0);
   const [items, setItems] = useState<Item[]>(() => readLocalCollection("suprimentos:items:v1", demoItems));
+  const importCatalogRef = useRef(items);
+  importCatalogRef.current = items;
   const [cycles, setCycles] = useState<SupplyCycle[]>(() => readLocalCollection("suprimentos:cycles:v1", demoCycles));
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddCycle, setShowAddCycle] = useState(false);
@@ -135,73 +141,91 @@ function App() {
     return () => observer.disconnect();
   }, [filteredItems?.length, section, filterType, filterGroup]);
 
-  function parseDelimitedText(text: string): Record<string, string>[] {
-    const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
-    if (lines.length < 2) throw new Error("O arquivo precisa conter cabeçalho e pelo menos uma linha de item.");
-    const delimiter = [";", ",", "\t"].sort((a, b) => (lines[0].split(b).length - 1) - (lines[0].split(a).length - 1))[0];
-    const splitLine = (line: string) => {
-      const cells: string[] = []; let current = ""; let quoted = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"' && line[i + 1] === '"' && quoted) { current += '"'; i++; }
-        else if (ch === '"') quoted = !quoted;
-        else if (ch === delimiter && !quoted) { cells.push(current.trim()); current = ""; }
-        else current += ch;
-      }
-      cells.push(current.trim()); return cells;
-    };
-    const normalizeHeader = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const headers = splitLine(lines[0]).map(normalizeHeader);
-    const aliases: Record<string, string[]> = {
-      code: ["codigo", "codigomxm", "codigounicomxm", "codigounico", "item", "material"],
-      description: ["descricao", "descricaoitem", "descricaodoproduto", "produto", "materialdescricao"],
-      unit: ["unidade", "und", "un"],
-      group: ["grupo", "grupodemateriais", "grupodematerial"],
-      type: ["tipo", "tipodematerial", "categoria"],
-      criterion: ["criterio", "criteriodesolicitacao", "solicitacao", "tiposolicitacao"]
-    };
-    const indexes: Record<string, number> = {};
-    for (const key of Object.keys(aliases)) indexes[key] = headers.findIndex((h) => aliases[key].includes(h));
-    if (indexes.code < 0 || indexes.description < 0) throw new Error("Não encontrei as colunas obrigatórias Código e Descrição. Use esses cabeçalhos no Excel.");
-    return lines.slice(1).map((line) => {
-      const cells = splitLine(line); const row: Record<string, string> = {};
-      for (const key of Object.keys(indexes)) row[key] = indexes[key] < 0 ? "" : (cells[indexes[key]] ?? "").trim();
-      return row;
-    }).filter((r) => r.code && r.description);
+  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history }), [items, cycles, history]);
+
+  function cancelImport() {
+    importReadId.current++;
+    setImportPreview(null);
+    if (importInputRef.current) importInputRef.current.value = "";
   }
 
   async function handleImportFile(file?: File) {
     if (!file) return;
+    const readId = ++importReadId.current;
     setImportMessage(""); setImportPreview(null);
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (ext !== "csv" && ext !== "txt") {
-      setImportMessage("Por enquanto, importe CSV. No Excel, use Arquivo → Salvar como → CSV UTF-8 (delimitado por vírgulas). O arquivo .xlsx ainda não está habilitado nesta versão.");
-      return;
+      setImportMessage("Importe CSV ou TXT exportado do MXM/Excel. A leitura de XLSX ainda não está habilitada."); return;
     }
     try {
-      const parsed = parseDelimitedText(await file.text());
-      const existing = new Map(items.map((item) => [item.code.trim().toUpperCase(), item]));
-      const rows: Item[] = parsed.map((r, index) => {
-        const code = r.code.trim().toUpperCase(); const old = existing.get(code);
-        const criterionRaw = r.criterion.trim().toLowerCase();
-        const criterion: Item["criterion"] = criterionRaw === "entrada e saída" || criterionRaw === "entrada e saida" ? "Entrada e saída" : criterionRaw === "sob solicitação" || criterionRaw === "sob solicitacao" ? "Sob solicitação" : "Mensal";
-        return { id: old?.id ?? `import-${code}-${index}`, code, description: r.description.trim().toUpperCase(), unit: (r.unit || old?.unit || "UN").trim().toUpperCase(), type: (r.type || old?.type || "SEM TIPO").trim().toUpperCase(), group: (r.group || old?.group || "SEM GRUPO").trim().toUpperCase(), visible: old?.visible ?? true, criterion: r.criterion ? criterion : (old?.criterion ?? "Mensal"), active: old?.active ?? true } as Item;
-      });
-      const newCount = rows.filter((r) => !existing.has(r.code)).length;
-      const updateCount = rows.filter((r) => { const old = existing.get(r.code); return old && (old.description !== r.description || old.unit !== r.unit || old.group !== r.group || old.criterion !== r.criterion); }).length;
-      const unchangedCount = rows.length - newCount - updateCount;
-      setImportPreview({ newCount, updateCount, unchangedCount, rows });
-    } catch (error) { setImportMessage(error instanceof Error ? error.message : "Não foi possível ler o arquivo."); }
+      const text = await file.text();
+      if (readId !== importReadId.current) return;
+      if (items !== importCatalogRef.current) throw new Error("O cadastro mudou durante a leitura. Selecione o arquivo novamente.");
+      setImportPreview(buildImportPreview(text, items, file.name));
+    } catch (error) {
+      if (readId === importReadId.current) setImportMessage(error instanceof Error ? error.message : "Não foi possível ler o arquivo.");
+    } finally { if (readId === importReadId.current && importInputRef.current) importInputRef.current.value = ""; }
   }
 
-  function confirmImport() {
+  function persistImport(nextItems: Item[], events: ItemHistoryEntry[]) {
+    // Persist the catalog before committing React state; a quota/access failure must not report success.
+    const nextHistory = [...events, ...history];
+    const previousItems = localStorage.getItem("suprimentos:items:v1");
+    const previousHistory = localStorage.getItem("suprimentos:item-history:v1");
+    if ((previousItems !== null && previousItems !== JSON.stringify(items)) || (previousHistory !== null && previousHistory !== JSON.stringify(history))) {
+      throw new Error("Os dados foram alterados em outra aba. Recarregue a página e importe novamente antes de continuar.");
+    }
+    try {
+      localStorage.setItem("suprimentos:items:v1", JSON.stringify(nextItems));
+      localStorage.setItem("suprimentos:item-history:v1", JSON.stringify(nextHistory));
+    } catch {
+      if (previousItems === null) localStorage.removeItem("suprimentos:items:v1");
+      else localStorage.setItem("suprimentos:items:v1", previousItems);
+      throw new Error("Não foi possível salvar a importação no navegador. Nenhuma alteração foi aplicada. Verifique o espaço disponível.");
+    }
+    setItems(nextItems); setHistory(nextHistory);
+  }
+
+  function importEvent(item: Item, action: string, details: string): ItemHistoryEntry {
+    return { id: `hist-${crypto.randomUUID()}`, itemId: item.id, code: item.code, action, details, timestamp: new Date().toISOString() };
+  }
+
+  function addImportedItems() {
     if (!importPreview) return;
-    const known = new Set(items.map((item) => item.code.toUpperCase()));
-    const added = importPreview.rows.filter((row) => !known.has(row.code.toUpperCase()));
-    setItems((current) => [...current, ...added]);
-    added.forEach((item) => recordHistory(item, "Cadastro por importação", "Item novo incluído por arquivo CSV/TXT."));
-    setImportMessage(`Importação concluída: ${added.length} novos itens adicionados. ${importPreview.updateCount} códigos já existentes foram preservados sem sobrescrita.`);
-    setImportPreview(null); if (importInputRef.current) importInputRef.current.value = "";
+    try {
+      const known = new Set(items.map(item => item.code.trim().toUpperCase()));
+      const added = importPreview.newItems.filter(item => !known.has(item.code.trim().toUpperCase()));
+      if (!added.length) throw new Error("Esses códigos já foram incluídos. Importe a lista novamente para conferir.");
+      persistImport([...items, ...added], added.map(item => importEvent(item, "Cadastro por importação", `Item novo incluído pelo arquivo ${importPreview.filename}. Itens existentes preservados.`)));
+      setImportMessage(`${added.length} novos itens adicionados. Nenhum item existente foi alterado.`);
+      if (importPreview.updates.length) setImportPreview({ ...importPreview, newItems: [] }); else cancelImport();
+    } catch (error) { setImportMessage(error instanceof Error ? error.message : "Não foi possível adicionar os itens."); }
+  }
+
+  function downloadImportBackup() {
+    const data = JSON.stringify({ format: "suprimentos-catalog-backup-v1", createdAt: new Date().toISOString(), ...JSON.parse(importBackupVersion) }, null, 2);
+    const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    const link = document.createElement("a"); link.href = url;
+    link.download = `suprimentos-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.appendChild(link); link.click(); link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function updateImportedItems(selection: ImportSelection, confirmation: string, backupVersion: string) {
+    if (!importPreview || !editorMode) throw new Error("Ative o perfil Editor para atualizar existentes.");
+    if (confirmation !== "ATUALIZAR") throw new Error("Digite exatamente ATUALIZAR para confirmar.");
+    if (backupVersion !== importBackupVersion) throw new Error("Os dados mudaram. Gere um novo backup antes de continuar.");
+    const result = planImportUpdates(importPreview, selection, items);
+    if (!result.updated.length) throw new Error("Selecione ao menos um campo para atualizar.");
+    persistImport(result.items, result.updated.map(entry => importEvent(entry.item, "Atualização por importação", `Arquivo: ${importPreview.filename}\n${entry.changes.map(change => `${change.label}: ${change.before || "(vazio)"} → ${change.after}`).join("\n")}`)));
+    setImportMessage(`${result.updated.length} itens atualizados somente nos campos escolhidos. Especificações, status e vínculos foram preservados.`);
+    // Retain unapproved changes for a later review, without applying them implicitly.
+    const remaining = importPreview.updates.flatMap(entry => {
+      const applied = result.updated.find(updated => updated.item.id === entry.before.id);
+      const changes = entry.changes.filter(change => !applied?.changes.some(done => done.field === change.field));
+      return changes.length ? [{ before: applied?.item ?? entry.before, changes }] : [];
+    });
+    if (remaining.length || importPreview.newItems.length) setImportPreview({ ...importPreview, updates: remaining }); else cancelImport();
   }
 
   function deleteSelectedItems() {
@@ -389,7 +413,7 @@ function App() {
                 </div>
               </div>
               {importMessage && <div className="notice"><AlertTriangle size={17} /><span>{importMessage}</span></div>}
-              {importPreview && <section className="panel form-panel"><h2>Conferir importação antes de aplicar</h2><p>Novos: <strong>{importPreview.newCount}</strong> · Serão atualizados: <strong>{importPreview.updateCount}</strong> · Sem alteração: <strong>{importPreview.unchangedCount}</strong></p><p className="form-note">A correspondência é feita pelo Código. Itens novos serão adicionados; códigos existentes serão preservados sem sobrescrita. Para alterar um item existente, use Editar no cadastro.</p><div className="form-actions"><button className="secondary-button" onClick={() => { setImportPreview(null); if (importInputRef.current) importInputRef.current.value = ""; }}>Cancelar importação</button><button className="primary-button" onClick={confirmImport}>Confirmar importação</button></div></section>}
+              {importPreview && <CatalogImportPreview preview={importPreview} canUpdate={editorMode} backupVersion={importBackupVersion} onAdd={addImportedItems} onUpdate={updateImportedItems} onBackup={downloadImportBackup} onCancel={cancelImport} />}
               {showAddItem && <section className="panel form-panel">
                 <h2>Novo item</h2>
                 <div className="form-grid">
