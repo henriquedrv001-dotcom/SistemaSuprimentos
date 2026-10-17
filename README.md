@@ -62,4 +62,16 @@ Use **Salvar alterações** para guardar o rascunho e **Concluir planejamento** 
 
 Os dados são locais, na chave `suprimentos:dl-planning:v1`, incluída no backup JSON da importação. Há proteção contra sobrescrita entre abas, recuperação de gravações incompletas e bloqueio de dados salvos inválidos. Isso não substitui banco compartilhado nem autenticação. Planejamentos também aparecem nos detalhes individuais dos itens e impedem sua exclusão do catálogo.
 
-**Contratação, fornecedores finais, documentos, saldos e pedidos permanecem para a próxima etapa.** Concluir o planejamento não constitui saldo contratado. Nomenclatura confirmada: DL = aquisição; PCD = pedido ao CD ligado ao ciclo; PDL = pedido ao fornecedor ligado ao ciclo e saldo de DL; PFR = pedido emergencial, com ou sem ciclo. Registros demonstrativos antigos de pedidos não foram renomeados automaticamente.
+Concluir somente o planejamento não constitui saldo contratado. A contratação e o Controle foram acrescentados na segunda etapa descrita abaixo; documentos e integração de pedidos permanecem pendentes. Nomenclatura confirmada: DL = aquisição; PCD = pedido ao CD ligado ao ciclo; PDL = pedido ao fornecedor ligado ao ciclo e saldo de DL; PFR = pedido emergencial, com ou sem ciclo. Registros demonstrativos antigos de pedidos não foram renomeados automaticamente.
+
+
+## Contratação e Controle de DLs — segunda etapa
+Na aba **Contratação e fornecedores**, registre um fornecedor por material, sua identificação (código MXM ou CNPJ), pedido de compra MXM e data, quantidade contratada e preço final. Os campos ficam em tabela, com edição direta e comparação entre orçamento previsto e contratação. Materiais sem contratação precisam de resultado e motivo; não geram saldo.
+
+É possível salvar resultados incompletos e retomá-los. Após concluir o planejamento, preencha os dados oficiais da DL/requisição e a data da contratação. Informe a vigência quando aplicável. A ação **Concluir DL e disponibilizar no Controle** exige salvar antes, revisar o resumo, confirmar que os pedidos de compra MXM foram emitidos e os dados finais conferidos, e digitar **CONCLUIR**. A conclusão é única: protege os dados finais e mantém os IDs da DL e das origens, sem criar outra cópia do processo.
+
+O Controle oferece pesquisa por DL, material, fornecedor ou pedido MXM, filtros de situação/fornecedor/categoria, totais iniciais e detalhes com visão geral, materiais/saldos e histórico. Contratações do mesmo material em DLs diferentes permanecem separadas. Os detalhes individuais dos itens também mostram essas origens e o histórico da contratação.
+
+**Os saldos desta etapa são iniciais.** Reservas, recebimentos e consumos anteriores do MXM não estão conectados; a tela os identifica como Não conectado. Nenhum pedido é criado automaticamente. Documentos, movimentações e ajustes posteriores de contratos concluídos serão tratados nas próximas etapas, com histórico próprio. Permanecem o armazenamento local e a identificação demonstrativa de usuário da versão atual.
+
+Validação: `npm test` executa 61 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.

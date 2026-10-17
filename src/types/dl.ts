@@ -5,6 +5,7 @@ export const dlStages = [
   "Requisição registrada",
   "Em tramitação",
   "Aguardando dados finais",
+  "Concluído",
   "Suspenso",
   "Cancelado",
   "Não contratado",
@@ -28,6 +29,7 @@ export interface DLPlan {
   justification: string;
   notes: string;
   stage: DLStage;
+  contract?: DLContract;
   lines: DLPlanningLine[];
   request: {
     mxmNumber: string;
@@ -62,4 +64,29 @@ export interface DLIdentityDraft {
   responsible: string;
   justification: string;
   notes: string;
+}
+
+export interface DLContractAward {
+  id: string;
+  lineId: string;
+  supplier: string;
+  supplierReference: string;
+  mxmOrder: string;
+  orderDate: string;
+  quantityMilli: number | null;
+  unitPriceCents: number | null;
+}
+export interface DLContract {
+  awards: DLContractAward[];
+  notAwarded: { lineId: string; reason: string }[];
+  signedOn: string;
+  validFrom: string;
+  validUntil: string;
+  notes: string;
+  release?: {
+    timestamp: string;
+    actor: string;
+    reference: string;
+    confirmedOn: string;
+  };
 }

@@ -1,3 +1,4 @@
+import { contractOrigins } from "../services/dlContract";
 import type { DLPlan } from "../types/dl";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
@@ -28,6 +29,7 @@ export default function ItemDetailsDialog({ item, history, cycleItems, cycles, d
   const events = history.filter(entry => entry.itemId === item.id).slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   const associations = item.associations ?? [];
   const linkedCycles = cycleItems.filter(line => line.itemId === item.id);
+  const dlOrigins = dlPlans.flatMap(plan => contractOrigins(plan).filter(origin => origin.itemId === item.id).map(origin => ({...origin,code:plan.code})));
 
   function changeTab(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next = index;
@@ -68,11 +70,12 @@ export default function ItemDetailsDialog({ item, history, cycleItems, cycles, d
         <p className="muted">Cada origem aparece separadamente, com sua referência MXM e seu saldo.</p>
         <div className="table-wrap item-links-table"><table><thead><tr><th scope="col">PDL / processo</th><th scope="col">Pedido</th><th scope="col">Item</th><th scope="col">Pedido MXM</th><th scope="col">Fornecedor</th><th scope="col" className="numeric-cell">Saldo</th></tr></thead><tbody>
           {associations.map(link => <tr key={link.id}><td>{link.processNumber || "—"}</td><td>{link.orderNumber || "—"}</td><td>{item.description}</td><td>{link.erpOrderNumber || "—"}</td><td>{link.supplierName || "—"}</td><td className="numeric-cell">{link.availableBalance == null ? "Não informado" : `${link.availableBalance.toLocaleString("pt-BR")} ${link.unit || item.unit}`}</td></tr>)}
-          {associations.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum pedido ou DL associado a este item.</td></tr>}
+          {dlOrigins.map(origin => <tr key={origin.id}><td>{origin.code}</td><td>Contratação concluída</td><td>{item.description}</td><td>{origin.mxmOrder}</td><td>{origin.supplier}</td><td className="numeric-cell">{(origin.quantityMilli/1000).toLocaleString("pt-BR")} {origin.unit} (inicial)</td></tr>)}
+          {associations.length === 0 && dlOrigins.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum pedido ou DL associado a este item.</td></tr>}
         </tbody></table></div>
-        <p className="form-note">Os vínculos e saldos aparecerão quando os módulos de pedidos e DLs estiverem conectados. Nenhum saldo é criado ou alterado nesta janela.</p>
+        <p className="form-note">Contratações concluídas exibem o saldo inicial. Reservas e recebimentos dos pedidos ainda serão conectados. Nenhum saldo é alterado nesta janela.</p>
         <h3 className="item-related-heading">Planejamentos de DL associados</h3>
-        {dlPlans.filter(plan => plan.lines.some(line => line.itemId === item.id)).length ? <ul className="item-cycle-links">{dlPlans.filter(plan => plan.lines.some(line => line.itemId === item.id)).map(plan => {const line = plan.lines.find(line => line.itemId === item.id)!; return <li key={plan.id}><strong>{plan.code} · {plan.title}</strong><span>{plan.stage} · Planejado: {line.quantityMilli === null ? "A definir" : `${(line.quantityMilli / 1000).toLocaleString("pt-BR")} ${line.unit}`} · Ainda sem saldo contratado</span></li>;})}</ul> : <p className="muted">Nenhum planejamento de DL associado a este item.</p>}
+        {dlPlans.filter(plan => plan.lines.some(line => line.itemId === item.id)).length ? <ul className="item-cycle-links">{dlPlans.filter(plan => plan.lines.some(line => line.itemId === item.id)).map(plan => {const line = plan.lines.find(line => line.itemId === item.id)!; return <li key={plan.id}><strong>{plan.code} · {plan.title}</strong><span>{plan.stage} · Planejado: {line.quantityMilli === null ? "A definir" : `${(line.quantityMilli / 1000).toLocaleString("pt-BR")} ${line.unit}`} · {plan.contract?.release ? (plan.contract.awards.some(award => award.lineId === line.id) ? "Contratação concluída; consulte a origem acima" : "Material não contratado nesta DL") : "Ainda sem saldo contratado"}</span></li>;})}</ul> : <p className="muted">Nenhum planejamento de DL associado a este item.</p>}
         <h3 className="item-related-heading">Ciclos associados</h3>
         {linkedCycles.length ? <ul className="item-cycle-links">{linkedCycles.map(line => <li key={line.id}><strong>{cycles.find(cycle => cycle.id === line.cycleId)?.name ?? line.cycleId}</strong><span>Planejado: {line.plannedQuantity === null ? "A definir" : `${line.plannedQuantity.toLocaleString("pt-BR")} ${item.unit}`}</span></li>)}</ul> : <p className="muted">Nenhum ciclo associado a este item.</p>}
       </section>

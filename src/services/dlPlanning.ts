@@ -5,6 +5,7 @@ import type {
   DLPlanningLine,
   DLWorkspace,
 } from "../types/dl";
+import { validateDLContract } from "./dlContract.ts";
 import { dlStages } from "../types/dl.ts";
 
 export const dlWorkspaceKey = "suprimentos:dl-planning:v1";
@@ -131,6 +132,7 @@ export function validateDLPlan(plan: DLPlan) {
     "Requisição registrada",
     "Em tramitação",
     "Aguardando dados finais",
+    "Concluído",
   ].includes(plan.stage);
   if (requiresBudget && (!plan.lines.length || budget.incomplete))
     throw new Error(
@@ -141,6 +143,7 @@ export function validateDLPlan(plan: DLPlan) {
       "Requisição registrada",
       "Em tramitação",
       "Aguardando dados finais",
+      "Concluído",
     ].includes(plan.stage) &&
     (!plan.request.mxmNumber.trim() || !validDate(plan.request.date))
   )
@@ -157,6 +160,7 @@ export function validateDLPlan(plan: DLPlan) {
     throw new Error(
       "Registre o motivo nas observações para suspender, cancelar ou indicar que não foi contratado.",
     );
+  validateDLContract(plan);
   return plan;
 }
 export function readDLWorkspace(raw: string | null): DLWorkspace {
@@ -193,6 +197,11 @@ export function readDLWorkspace(raw: string | null): DLWorkspace {
     throw new Error(
       "Há números ou identificadores de DL repetidos. Revise os dados salvos.",
     );
+  const originIds = value.plans.flatMap(
+    (plan) => plan.contract?.awards.map((award) => award.id) ?? [],
+  );
+  if (new Set(originIds).size !== originIds.length)
+    throw new Error("Há identificadores de contratação repetidos entre DLs.");
   if (
     value.events.some(
       (event) =>
@@ -285,6 +294,7 @@ export function storeDLPlan(
   candidate: DLPlan,
   action: string,
   details: string,
+  options?: { release?: boolean },
 ) {
   const previous = workspace.plans.find((plan) => plan.id === candidate.id);
   if (
@@ -304,6 +314,25 @@ export function storeDLPlan(
     throw new Error(
       "O número sugerido foi usado por outra DL. Reabra a criação para usar o próximo número.",
     );
+  if (previous?.contract?.release)
+    throw new Error(
+      "A contratação concluída está protegida. Ajustes de saldo serão registrados em fluxo próprio, sem alterar a origem.",
+    );
+  if (
+    candidate.contract?.release &&
+    !previous?.contract?.release &&
+    !options?.release
+  )
+    throw new Error(
+      "Use a confirmação de conclusão para disponibilizar a DL no Controle.",
+    );
+  const otherOrigins = new Set(
+    workspace.plans
+      .filter((plan) => plan.id !== candidate.id)
+      .flatMap((plan) => plan.contract?.awards.map((award) => award.id) ?? []),
+  );
+  if (candidate.contract?.awards.some((award) => otherOrigins.has(award.id)))
+    throw new Error("Identificador de contratação já utilizado por outra DL.");
   const now = new Date().toISOString();
   const saved = validateDLPlan({
     ...candidate,

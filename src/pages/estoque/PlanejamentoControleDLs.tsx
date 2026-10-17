@@ -1,3 +1,5 @@
+import { contractTotal } from "../../services/dlContract";
+import DLControl from "../../components/dl/DLControl";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Item } from "../../types";
@@ -21,7 +23,11 @@ export type DLPlanningProps = {
   items: Item[];
   workspace: DLWorkspace;
   error: string;
-  onSave: (plan: DLPlan, action: string) => DLPlan;
+  onSave: (
+    plan: DLPlan,
+    action: string,
+    options?: { release?: boolean },
+  ) => DLPlan;
   pendingItems: Item[] | null;
   onPendingClose: () => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -93,20 +99,17 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
         </p>
       )}
       {props.tab === "control" ? (
-        <section className="panel">
-          <h2>Contratação e saldos</h2>
-          <p>
-            O orçamento de uma DL é uma previsão. Os saldos serão
-            disponibilizados após registrarmos os dados finais da contratação.
-          </p>
-          <p className="muted">
-            Os pedidos PDL serão vinculados ao ciclo e ao saldo de uma DL. Esta
-            primeira etapa organiza o planejamento e a requisição.
-          </p>
-        </section>
+        <DLControl
+          workspace={props.workspace}
+          items={props.items}
+          onOpenPlanning={(id) => {
+            setActive(id);
+            props.onChange("planning");
+          }}
+        />
       ) : plan ? (
         <DLPlanningEditor
-          key={`${plan.id}:${plan.revision}`}
+          key={plan.id}
           {...props}
           plan={plan}
           onBack={() => setActive(null)}
@@ -161,6 +164,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                   <th>Abertura</th>
                   <th>Materiais</th>
                   <th>Orçamento previsto</th>
+                  <th>Contratação final</th>
                   <th>Situação</th>
                 </tr>
               </thead>
@@ -195,13 +199,30 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                             <small className="muted"> · parcial</small>
                           )}
                         </td>
+                        <td>
+                          {plan.contract?.awards.length ? (
+                            <>
+                              {formatMoney(
+                                contractTotal(plan.contract).totalCents,
+                              )}
+                              {!plan.contract.release && (
+                                <small className="muted">
+                                  {" "}
+                                  · em conferência
+                                </small>
+                              )}
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
                         <td>{plan.stage}</td>
                       </tr>
                     );
                   })}
                 {!props.workspace.plans.length && (
                   <tr>
-                    <td colSpan={7} className="empty-state">
+                    <td colSpan={8} className="empty-state">
                       Crie sua primeira DL para começar o planejamento.
                     </td>
                   </tr>

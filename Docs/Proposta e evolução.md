@@ -149,3 +149,19 @@ Primeira etapa implementada após a confirmação da nomenclatura DL/PCD/PDL/PFR
 Escopo seguinte: contratação e fornecedores finais, comparação de valores e liberação de saldo após definição das regras oficiais; documentos e conexão de pedidos também pendentes. Nenhum saldo, reserva ou recebimento é gerado pelo orçamento desta etapa. A permissão continua demonstrativa/local.
 
 Validação: 44 testes automatizados passaram e build de produção aprovado. Chromium verificou DL-0029/DL-0030, cancelamento sem consumir número, orçamento de R$975,00, unidade KG, persistência após recarregar, descarte protegido, conclusão/reabertura, exigência de dados MXM, envio pelo cadastro, histórico, proteção contra quota/conflito/corrupção e visualização móvel. Regressões de importação de unidades, confirmação de grupos e tabela compacta de ciclos também passaram.
+
+
+## Contratação e Controle de DLs — segunda etapa
+Regras confirmadas pelo usuário: um único fornecedor por material em cada DL; liberação apenas com pedido de compra MXM emitido e dados finais conferidos. A mesma DL pode conter materiais contratados com fornecedores diferentes; o mesmo material continua podendo participar de outras DLs.
+
+Aba Contratação e fornecedores implementada em tabela compacta, com identificação do fornecedor, pedido/data MXM, quantidades e preços finais, data da contratação, vigência opcional, observações e resultados não contratados com motivo. Orçamento e contratação mantêm valores independentes e comparação absoluta/percentual. Resultados incompletos podem ser salvos sem gerar origens de saldo.
+
+A conclusão exige resultados para todos os itens, pelo menos uma contratação válida, requisição MXM com data, referência oficial da DL e data da contratação. Quantidades finais podem diferir das previstas, com resumo explícito para conferência. A janela de conclusão exige confirmação dos pedidos emitidos e texto CONCLUIR; cancelamento e falha de armazenamento preservam os dados anteriores. Finalização repetida não duplica origens; dados concluídos ficam protegidos contra edição direta/reabertura. Ajustes posteriores requererão fluxo específico auditado.
+
+O Controle consulta o mesmo registro de DL, sem cópia independente. IDs de contratação identificam as origens por DL/material/fornecedor/pedido MXM. Há visão geral, saldos iniciais, pedidos ainda não conectados e histórico. Filtros por situação, fornecedor e categoria; busca por DL/material/pedido; vigência futura, encerrada e aviso de até 30 dias para vencimento. Cadastros anteriores permanecem compatíveis, sem migração destrutiva da chave v1.
+
+Recebimentos e reservas aparecem como Não conectado, não como quantidades operacionais conhecidas. Os saldos exibidos são iniciais da contratação registrada e não incorporam consumos anteriores do ERP. Integração de pedidos PDL, reservas, baixas, documentos e ajustes contratuais permanecem pendentes. Nenhuma movimentação real do ERP foi executada.
+
+Histórico individual dos materiais registra fornecedor, pedido, quantidades/preços anteriores e novos, resultados sem contratação e conferência da conclusão. O vínculo também aparece na aba Pedidos e DLs do item. Backup da importação já inclui a chave de DLs inteira, agora também com resultados e conclusão.
+
+Validação: 61 testes automatizados e build de produção aprovados. Chromium verificou orçamento de R$975,00 versus final de R$924,00, resumo e confirmação, cancelamento sem saldo, gravação transacional com recuperação após falha, origem protegida e persistente, compatibilidade de dados legados, referências no catálogo, filtros, contratos separados do mesmo material, decimal 1,125 KG e rolagem local em tela móvel. Regressões de ciclo completo, tabela compacta e importação de unidades também passaram. O roteiro antigo de ciclos foi atualizado apenas para conferir a apresentação já aprovada de —/aria-label Não conectado.

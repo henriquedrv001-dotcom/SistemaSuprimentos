@@ -509,3 +509,30 @@ td small { display: block; margin-top: 3px; font-size: 10px; color: var(--text-m
 dialog.dl-create {margin:auto}
 .dl-editor .panel-heading {flex-wrap:wrap}
 @media(max-width:650px) {.dl-actions {width:100%}.dl-actions button {flex:1}.dl-stage-filter select {min-width:0;max-width:100%}}
+
+.dl-contract-summary {display:flex;flex-wrap:wrap;gap:14px;margin:18px 0}
+.dl-contract-summary > div {flex:1;min-width:160px;padding:14px;background:var(--background-soft);border:1px solid var(--border);border-radius:var(--radius)}
+.dl-contract-summary span,.dl-contract-summary strong {display:block}
+.dl-contract-summary span {color:var(--text-muted);font-size:12px;margin-bottom:8px}
+.dl-contract-summary strong {font-size:18px}
+.dl-contract-fields {border:0;padding:0;margin:0;min-width:0}
+.dl-result-reason {display:grid;gap:8px}
+.dl-result-reason input {min-height:var(--control-height);border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px 11px;background:#fff;color:var(--text);font:inherit;font-size:12px}
+.dl-result-reason {margin:18px 0}
+.dl-release-dialog {width:min(980px,calc(100% - 32px))}
+.dl-release-dialog .select-all-label {align-items:flex-start;white-space:normal;line-height:1.6}
+.dl-overview {display:grid;grid-template-columns:180px 1fr;gap:15px;margin-top:22px}
+.dl-overview dt {font-weight:600;color:var(--text-muted)}
+.dl-overview dd {margin:0;overflow-wrap:anywhere}
+.dl-control .form-grid {margin:16px 0}
+.dl-control .tabs {flex-wrap:wrap}
+.dl-balance-table {min-width:1000px}
+@media(max-width:650px) {.dl-overview {grid-template-columns:1fr;gap:8px}.dl-overview dd {margin-bottom:12px}.dl-editor .tabs {flex-wrap:wrap}.dl-contract-summary > div {min-width:140px}}
+.dl-contract-table {table-layout:fixed;min-width:1040px;width:100%}
+.dl-contract-table th:nth-child(1){width:21%}.dl-contract-table th:nth-child(2){width:14%}.dl-contract-table th:nth-child(3){width:18%}.dl-contract-table th:nth-child(4){width:17%}.dl-contract-table th:nth-child(5){width:10%}.dl-contract-table th:nth-child(6){width:10%}.dl-contract-table th:nth-child(7){width:10%}
+.dl-contract-table td {vertical-align:top;white-space:normal;overflow-wrap:anywhere;padding:12px 9px}
+.dl-contract-table input,.dl-contract-table select {width:100%;min-width:0;min-height:34px;padding:7px 8px;border:1px solid var(--border-strong);border-radius:var(--radius);font:inherit;font-size:11px;background:#fff;color:var(--text)}
+.dl-contract-table input:focus,.dl-contract-table select:focus {outline:none;border-color:var(--primary);box-shadow:var(--focus-ring)}
+.dl-contract-table input:disabled,.dl-contract-table select:disabled {background:var(--background-soft);color:var(--text-muted)}
+.dl-cell-fields {display:grid;gap:8px}
+.dl-contract-table .dl-result-reason {margin:0}

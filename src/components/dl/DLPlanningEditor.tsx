@@ -1,3 +1,9 @@
+import DLContractForm, {
+  contractInput,
+  materializeContract,
+} from "./DLContractForm";
+import DLReleaseDialog from "./DLReleaseDialog";
+import { releaseDLPlan, validateDLContract } from "../../services/dlContract";
 import { useEffect, useState } from "react";
 import type { DLPlan } from "../../types/dl";
 import { dlStages } from "../../types/dl";
@@ -37,9 +43,33 @@ export default function DLPlanningEditor({
     ),
   );
   const [tab, setTab] = useState("items");
+  const [contractDraft, setContractDraft] = useState(() =>
+    contractInput(plan.contract),
+  );
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  useEffect(() => {
+    setDraft(structuredClone(plan));
+    setContractDraft(contractInput(plan.contract));
+    setValues(
+      Object.fromEntries(
+        plan.lines.map((line) => [
+          line.id,
+          {
+            quantity: decimalInput(line.quantityMilli, 3),
+            price: decimalInput(line.estimatedPriceCents, 2),
+          },
+        ]),
+      ),
+    );
+  }, [plan]);
+  const released = !!plan.contract?.release;
+  const contractDirty =
+    JSON.stringify(contractDraft) !==
+    JSON.stringify(contractInput(plan.contract));
   const [picker, setPicker] = useState(false);
   const [error, setError] = useState("");
   const dirty =
+    contractDirty ||
     JSON.stringify(draft) !== JSON.stringify(plan) ||
     draft.lines.some(
       (line) =>
@@ -64,6 +94,10 @@ export default function DLPlanningEditor({
     return {
       ...draft,
       stage,
+      contract:
+        plan.contract || contractDirty
+          ? materializeContract(contractDraft)
+          : undefined,
       lines: draft.lines.map((line) => ({
         ...line,
         quantityMilli: parseScaledInput(
@@ -95,6 +129,7 @@ export default function DLPlanningEditor({
       validateDLPlan(candidate);
       const saved = onSave(candidate, action);
       setDraft(structuredClone(saved));
+      setContractDraft(contractInput(saved.contract));
       setValues(
         Object.fromEntries(
           saved.lines.map((line) => [
@@ -140,10 +175,14 @@ export default function DLPlanningEditor({
           </p>
         </div>
         <div className="dl-actions">
-          <button className="primary-button" onClick={() => save()}>
+          <button
+            className="primary-button"
+            disabled={released}
+            onClick={() => save()}
+          >
             Salvar alterações
           </button>
-          {editable ? (
+          {released ? null : editable ? (
             <button
               className="secondary-button"
               onClick={() => {
@@ -185,6 +224,7 @@ export default function DLPlanningEditor({
         {[
           ["items", "Materiais e orçamento"],
           ["request", "Requisição e processo"],
+          ["contract", "Contratação e fornecedores"],
           ["history", "Histórico"],
         ].map(([id, label]) => (
           <button
@@ -200,6 +240,70 @@ export default function DLPlanningEditor({
         <p className="catalog-error" role="alert">
           {error}
         </p>
+      )}
+      {tab === "contract" && (
+        <>
+          <DLContractForm
+            plan={plan}
+            items={items}
+            value={contractDraft}
+            onChange={setContractDraft}
+            readOnly={
+              released ||
+              editable ||
+              ["Cancelado", "Suspenso", "Não contratado"].includes(plan.stage)
+            }
+          />
+          {!released && (
+            <div className="form-actions">
+              <span className="muted">
+                {dirty
+                  ? "Salve as alterações para conferir a conclusão."
+                  : "A conclusão exige pedidos MXM emitidos e dados finais conferidos."}
+              </span>
+              <button
+                className="primary-button"
+                disabled={
+                  dirty ||
+                  editable ||
+                  ["Cancelado", "Suspenso", "Não contratado"].includes(
+                    plan.stage,
+                  )
+                }
+                onClick={() => {
+                  try {
+                    validateDLContract(plan, true);
+                    setReleaseOpen(true);
+                    setError("");
+                  } catch (cause) {
+                    setError(
+                      cause instanceof Error
+                        ? cause.message
+                        : "Revise a contratação.",
+                    );
+                  }
+                }}
+              >
+                Concluir DL e disponibilizar no Controle
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      {releaseOpen && (
+        <DLReleaseDialog
+          plan={plan}
+          items={items}
+          onClose={() => setReleaseOpen(false)}
+          onConfirm={(checked, text) => {
+            onSave(
+              releaseDLPlan(plan, checked, text),
+              "DL concluída e disponibilizada no Controle",
+              { release: true },
+            );
+            setReleaseOpen(false);
+          }}
+        />
       )}
       {tab === "items" && (
         <>
@@ -217,6 +321,7 @@ export default function DLPlanningEditor({
               <label key={key}>
                 {label}
                 <input
+                  disabled={released}
                   type={key === "openedOn" ? "date" : "text"}
                   value={draft[key]}
                   onChange={(e) =>
@@ -371,6 +476,7 @@ export default function DLPlanningEditor({
             <label>
               Situação
               <select
+                disabled={released}
                 value={draft.stage}
                 onChange={(e) =>
                   setDraft({ ...draft, stage: e.target.value as DLStage })
@@ -380,15 +486,16 @@ export default function DLPlanningEditor({
                   .filter(
                     (stage) =>
                       stage === draft.stage ||
-                      (editable
-                        ? [
-                            "Rascunho",
-                            "Em planejamento",
-                            "Suspenso",
-                            "Cancelado",
-                            "Não contratado",
-                          ].includes(stage)
-                        : !["Rascunho", "Em planejamento"].includes(stage)),
+                      (stage !== "Concluído" &&
+                        (editable
+                          ? [
+                              "Rascunho",
+                              "Em planejamento",
+                              "Suspenso",
+                              "Cancelado",
+                              "Não contratado",
+                            ].includes(stage)
+                          : !["Rascunho", "Em planejamento"].includes(stage))),
                   )
                   .map((stage) => (
                     <option key={stage}>{stage}</option>
@@ -409,6 +516,7 @@ export default function DLPlanningEditor({
                 {label}
                 <input
                   type={key === "date" ? "date" : "text"}
+                  disabled={released}
                   value={draft.request[key]}
                   onChange={(e) =>
                     setDraft({

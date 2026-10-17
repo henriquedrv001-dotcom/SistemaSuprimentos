@@ -330,7 +330,7 @@ function App() {
     setSection(destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
   }
 
-  function saveDLPlan(candidate: DLPlan, action: string) {
+  function saveDLPlan(candidate: DLPlan, action: string, options?: {release?:boolean}) {
     if (dlState.error) throw new Error(dlState.error);
     if (JSON.stringify(readDLWorkspace(localStorage.getItem(dlWorkspaceKey))) !== JSON.stringify(dlWorkspace) || (localStorage.getItem("suprimentos:item-history:v1") !== null && localStorage.getItem("suprimentos:item-history:v1") !== JSON.stringify(history))) throw new Error("As DLs ou o histórico mudaram em outra aba. Recarregue antes de salvar.");
     const previous = dlWorkspace.plans.find(plan => plan.id === candidate.id);
@@ -347,8 +347,23 @@ function App() {
       const details = `${candidate.code} · ${item?.code ?? itemId}: ${!old ? "Incluído no planejamento" : !next ? "Retirado do planejamento" : "Orçamento alterado"}. Quantidade: ${old?.quantityMilli == null ? "a definir" : old.quantityMilli / 1000} → ${next?.quantityMilli == null ? "a definir" : next.quantityMilli / 1000}. Preço previsto (R$): ${old?.estimatedPriceCents == null ? "a definir" : old.estimatedPriceCents / 100} → ${next?.estimatedPriceCents == null ? "a definir" : next.estimatedPriceCents / 100}. Unidade: ${next?.unit ?? old?.unit}.`;
       changes.push(details); itemEvents.push({id:`hist-${crypto.randomUUID()}`,itemId,code:item?.code ?? itemId,action:"Planejamento de DL",details,timestamp:new Date().toISOString()});
     }
+    if (JSON.stringify(previous?.contract) !== JSON.stringify(candidate.contract)) {
+      const oldContract = previous?.contract; const nextContract = candidate.contract;
+      const describe = (award: NonNullable<DLPlan["contract"]>["awards"][number] | undefined) => award ? `Fornecedor: ${award.supplier || "a definir"} (${award.supplierReference || "sem identificação"}); pedido MXM ${award.mxmOrder || "a definir"}, data ${award.orderDate || "a definir"}; quantidade ${award.quantityMilli === null ? "a definir" : award.quantityMilli/1000}; preço final R$ ${award.unitPriceCents === null ? "a definir" : award.unitPriceCents/100}` : "Sem contratação";
+      for (const key of ["signedOn","validFrom","validUntil","notes"] as const) if (oldContract?.[key] !== nextContract?.[key] && (oldContract?.[key] || nextContract?.[key])) changes.push(`Contratação (${({signedOn:"Data",validFrom:"Início da vigência",validUntil:"Fim da vigência",notes:"Observações"})[key]}): ${oldContract?.[key] || "(vazio)"} → ${nextContract?.[key] || "(vazio)"}`);
+      for (const line of candidate.lines) {
+        const old = oldContract?.awards.find(award => award.lineId === line.id); const next = nextContract?.awards.find(award => award.lineId === line.id);
+        const oldReason = oldContract?.notAwarded.find(result => result.lineId === line.id)?.reason; const nextReason = nextContract?.notAwarded.find(result => result.lineId === line.id)?.reason;
+        if (JSON.stringify(old) === JSON.stringify(next) && oldReason === nextReason && !nextContract?.release) continue;
+        const item = items.find(item => item.id === line.itemId);
+        const details = `${candidate.code} · ${item?.code ?? line.itemId}: ${describe(old)}${oldReason !== undefined ? `; Não contratado: ${oldReason}` : ""} → ${describe(next)}${nextReason !== undefined ? `; Não contratado: ${nextReason}` : ""}.${nextContract?.release ? ` Conclusão confirmada: ${nextContract.release.reference}. Saldo inicial ${next?.quantityMilli === null || !next ? 0 : next.quantityMilli/1000} ${line.unit}.` : ""}`;
+        changes.push(details); itemEvents.push({id:`hist-${crypto.randomUUID()}`,itemId:line.itemId,code:item?.code ?? line.itemId,action:nextContract?.release?"DL concluída e saldo inicial registrado":"Resultado de contratação alterado",details,timestamp:new Date().toISOString()});
+      }
+      if (!changes.length) changes.push("Rascunho da contratação atualizado.");
+    }
+    if(options?.release && candidate.lines.some(line => !items.some(item => item.id === line.itemId))) throw new Error("Há um material sem cadastro válido. Revise antes de concluir a DL.");
     if (previous && !changes.length) return previous;
-    const result = storeDLPlan(dlWorkspace,candidate,action,changes.join("\n"));
+    const result = storeDLPlan(dlWorkspace,candidate,action,changes.join("\n"),options);
     const nextHistory = [...itemEvents,...history];
     writeLocalTransaction(localStorage,[[dlWorkspaceKey,JSON.stringify(result.workspace)],["suprimentos:item-history:v1",JSON.stringify(nextHistory)]]);
     setDLState({workspace:result.workspace,error:""}); setHistory(nextHistory); setDLDirty(false); return result.plan;
