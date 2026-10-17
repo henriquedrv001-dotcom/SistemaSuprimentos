@@ -76,3 +76,13 @@ Para atualizar, primeiro gerar o backup JSON para download e conferir se o naveg
 Mudanças registram origem do arquivo e valores anteriores/novos no histórico do item. Falhas ao gravar o histórico desfazem a gravação dos itens antes de concluir; não se anuncia sucesso. Alterações nos dados persistidos por outra aba impedem a importação, solicitando recarga e nova revisão. Leituras antigas de arquivos não substituem uma seleção de arquivo mais recente.
 
 Validação: 15 testes automatizados (`npm test`, Node 24 validado), build e fluxo no Chromium. Cenário 1.600→1.608 preservou os 1.600 existentes e incluiu oito novos; revisão por campo, confirmação exata, backup JSON anterior à edição, proteção de especificações/status/vínculos, cancelamento, duplicados, falha simulada de armazenamento, bloqueio de alteração externa e recarga foram exercitados. Dados usados nos testes são fictícios e isolados do navegador do responsável.
+
+## Compartilhar com requisitante
+A opção fica em Preparar seleção e usa somente os itens selecionados ainda presentes no resultado filtrado, na ordem exibida. Abre uma janela de preparação, sem enviar mensagens ou alterar o cadastro.
+
+- Copiar texto: código MXM, descrição, unidade, critério e grupo; se o navegador bloquear a área de transferência, seleciona o texto e orienta a cópia manual.
+- Baixar PNG: tabela com tema azul, os mesmos campos, quantidade total, página e data/hora de geração em America/Sao_Paulo. O arquivo não inclui especificações internas, histórico ou vínculos.
+- Listas longas são paginadas e baixadas uma página por vez. Descrições longas são quebradas em linhas, com continuação quando necessário, sem truncamento. Não há envio automático ao requisitante.
+- Modal funciona no modo Consulta, preserva a seleção ao fechar e não grava eventos de envio, porque apenas preparar/copiar/baixar não comprova que houve envio.
+
+Validação: 19 testes automatizados totais e build; navegador verificou seleção de três itens sem vazamento do quarto, cópia real para clipboard, fallback manual, PNG válido, paginação, Escape, largura móvel e preservação dos dados. O PNG gerado também foi inspecionado visualmente.

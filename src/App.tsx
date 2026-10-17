@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { demoCycleItems, demoCycles, demoItems, demoOrders } from "./data";
 import type { Item, ItemHistoryEntry, SupplyCycle } from "./types";
+import ShareItemsDialog from "./components/ShareItemsDialog";
 import ItemDetailsDialog from "./components/ItemDetailsDialog";
 import CatalogImportPreview from "./components/CatalogImportPreview";
 import { buildImportPreview, planImportUpdates } from "./services/catalogImport";
@@ -53,6 +54,7 @@ function App() {
   const [filterCriterion, setFilterCriterion] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
   const [editorMode, setEditorMode] = useState(false);
+  const [shareItems, setShareItems] = useState<Item[] | null>(null);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [bulkMessage, setBulkMessage] = useState("");
   const catalogWrapRef = useRef<HTMLDivElement>(null);
@@ -300,9 +302,10 @@ function App() {
   }
 
   function prepareBulkAction(destination: string) {
-    if (!["cycle", "dl", "order"].includes(destination)) return;
+    if (!["cycle", "dl", "order", "share"].includes(destination)) return;
     const selected = filteredItems.filter((item) => selectedItemIds.includes(item.id));
     if (!selected.length) return;
+    if (destination === "share") { setShareItems(selected); return; }
     const label = destination === "cycle" ? "Ciclos de suprimento" : destination === "dl" ? "Planejamento DLs" : "Pedidos diretos";
     setBulkMessage(`${selected.length} item(ns) selecionado(s) encaminhado(s) para preparação em “${label}”. Nenhum ciclo, pedido ou saldo foi criado automaticamente.`);
     selected.forEach((item) => recordHistory(item, "Encaminhado para preparação", `Destino escolhido: ${label}.`));
@@ -442,6 +445,7 @@ function App() {
                       { value: "cycle", label: "Ciclo de suprimento" },
                       { value: "dl", label: "Planejamento DLs" },
                       { value: "order", label: "Preparação de pedido direto" },
+                      { value: "share", label: "Compartilhar com requisitante" },
                     ]} onSelect={prepareBulkAction} />
                     <CatalogActionMenu label="Ordenar" icon={<ArrowDownAZ size={16} aria-hidden="true" />} selected={sortMode} options={[
                       { value: "description", label: "Descrição (A–Z)" },
@@ -468,6 +472,7 @@ function App() {
                   {filteredItems.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum item corresponde aos filtros.</td></tr>}
                 </tbody></table></div>
                 <div className="catalog-fixed-scroll" ref={fixedScrollRef} onScroll={(e) => { if (syncingScroll.current || !catalogWrapRef.current) return; syncingScroll.current = true; catalogWrapRef.current.scrollLeft = e.currentTarget.scrollLeft; syncingScroll.current = false; }}><div ref={fixedScrollInnerRef} style={{ width: `${catalogWidth}px`, height: 1 }} /></div>
+                {shareItems && <ShareItemsDialog items={shareItems} onClose={() => setShareItems(null)} />}
                 {editingItem && editorMode && <ItemDetailsDialog
                   key={editingItem.id}
                   item={editingItem}

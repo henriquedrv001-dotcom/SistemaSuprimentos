@@ -414,3 +414,13 @@ td small { display: block; margin-top: 3px; font-size: 10px; color: var(--text-m
 .import-update-confirmation { border-top: 1px solid var(--border); padding-top: 12px; font-size: 12px; }
 .import-confirmation-label { display: grid; gap: 7px; max-width: 350px; margin-top: 14px; color: var(--text-secondary); }
 .import-confirmation-label input { border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 10px; color: var(--text); background: white; }
+
+.share-items-dialog { width: min(850px, calc(100% - 32px)); }
+.share-text-label { display: grid; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.share-text-label textarea { width: 100%; resize: vertical; min-height: 180px; max-height: 45dvh; padding: 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--background-soft); color: var(--text); font: inherit; line-height: 1.7; }
+.share-text-label textarea:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+.share-pagination { margin-top: 14px; font-size: 12px; color: var(--text-secondary); }
+.share-pagination > div { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.share-status { color: var(--primary); font-size: 12px; line-height: 1.6; }
+.share-status:empty { display: none; }
+.share-items-dialog .form-actions { flex-wrap: wrap; }
