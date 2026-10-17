@@ -380,7 +380,7 @@ function App() {
           {section === "Cadastro de itens" && (
             <>
               <div className="page-heading">
-                <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Catálogo mestre de materiais. Importe, filtre, ordene e selecione vários itens.</p></div>
+                <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Catálogo geral de materiais MXM. Importe, filtre, ordene e selecione vários itens..</p></div>
                 <div className="form-actions">
                   <input ref={importInputRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={(e) => void handleImportFile(e.target.files?.[0])} />
                   <button className="secondary-button" onClick={downloadTemplate}><Download size={17} /> Modelo CSV</button>
