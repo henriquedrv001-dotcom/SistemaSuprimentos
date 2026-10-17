@@ -553,7 +553,6 @@ export default function DLPlanningEditor({
               [
                 ["mxmNumber", "Número da requisição MXM"],
                 ["date", "Data da requisição"],
-                ["processNumber", "Número do processo"],
                 ["officialDLNumber", "Referência oficial da DL"],
                 ["responsible", "Responsável pela tramitação"],
                 ["notes", "Observações / motivo da situação"],
