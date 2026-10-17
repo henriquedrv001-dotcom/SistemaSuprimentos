@@ -330,8 +330,9 @@ td small { display: block; margin-top: 3px; font-size: 10px; color: var(--text-m
 .item-detail-heading h2 { font-size: 19px; }
 .item-detail-heading > div:first-child { min-width: 0; }
 .item-detail-heading .muted { overflow-wrap: anywhere; }
-.item-detail-controls { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
-.item-status-control { display: grid; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+.item-detail-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.item-status-control { display: grid; justify-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.item-status-control.is-active > span { color: var(--success); }
 .item-status-switch { display: inline-flex; gap: 8px; align-items: center; border: 0; background: transparent; padding: 2px 0; color: var(--text-secondary); font: inherit; font-weight: 700; }
 .item-status-switch.is-active { color: var(--success); }
 .switch-track { width: 36px; height: 21px; padding: 3px; border-radius: 20px; background: var(--text-muted); display: inline-flex; align-items: center; }
@@ -356,7 +357,7 @@ td small { display: block; margin-top: 3px; font-size: 10px; color: var(--text-m
 .item-detail-footer { border-top: 1px solid var(--border); padding-top: 16px; align-items: center; flex-wrap: wrap; }
 .item-detail-footer > span { margin-right: auto; }
 .item-status-switch:focus-visible, .item-detail-tabs .tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-@media (max-width: 600px) { .item-detail-heading { flex-direction: column; } .item-detail-controls { width: 100%; justify-content: space-between; } .item-detail-footer > span { flex-basis: 100%; } .item-edit-dialog { padding: 18px; } }
+@media (max-width: 600px) { .item-detail-heading { flex-direction: column; } .item-detail-controls { width: 100%; justify-content: flex-end; } .item-detail-footer > span { flex-basis: 100%; } .item-edit-dialog { padding: 18px; } }
 
 .catalog-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; flex-wrap: wrap; }
 .catalog-search, .type-search-box { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: #fff; color: var(--text-secondary); }

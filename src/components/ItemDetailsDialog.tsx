@@ -42,7 +42,7 @@ export default function ItemDetailsDialog({ item, history, cycleItems, cycles, o
     <div className="item-detail-heading">
       <div><h2 id="edit-item-title">Item {item.code}</h2><p className="muted">{item.description}</p></div>
       <div className="item-detail-controls">
-        <div className="item-status-control"><span>Status</span><button type="button" role="switch" aria-label="Item ativo" aria-checked={item.active !== false} className={`item-status-switch ${item.active !== false ? "is-active" : ""}`} onClick={() => onChange({ ...item, active: item.active === false })}><span className="switch-track" aria-hidden="true"><span /></span>{item.active !== false ? "Ativo" : "Inativo"}</button></div>
+        <div className={`item-status-control ${item.active !== false ? "is-active" : ""}`}><span>{item.active !== false ? "Ativo" : "Inativo"}</span><button type="button" role="switch" aria-label="Item ativo" aria-checked={item.active !== false} className={`item-status-switch ${item.active !== false ? "is-active" : ""}`} onClick={() => onChange({ ...item, active: item.active === false })}><span className="switch-track" aria-hidden="true"><span /></span></button></div>
         <button type="button" className="secondary-button" onClick={onClose}>Fechar</button>
       </div>
     </div>
