@@ -1,3 +1,4 @@
+import { guardDLProcess, validateDLProcess } from "./dlProcess.ts";
 import { validateDLSchedule } from "./dlSchedule.ts";
 import { dlObservation, resolveDLRequestStage } from "./dlRequest.ts";
 import type { Item } from "../types";
@@ -235,6 +236,7 @@ export function validateDLPlan(plan: DLPlan) {
     );
   validateDLContract(plan);
   validateDLSchedule(plan);
+  validateDLProcess(plan);
   return plan;
 }
 export function readDLWorkspace(raw: string | null): DLWorkspace {
@@ -374,6 +376,7 @@ export function storeDLPlan(
   const previous = workspace.plans.find((plan) => plan.id === candidate.id);
   candidate = resolveDLRequestStage(candidate, previous);
   if (previous) {
+    guardDLProcess(previous, candidate, options);
     const planningData = (plan: DLPlan) =>
       JSON.stringify({
         title: plan.title,

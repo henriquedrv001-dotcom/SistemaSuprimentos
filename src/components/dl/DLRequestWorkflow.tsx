@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { DLPlan, DLPlanEvent } from "../../types/dl";
 import type { Item } from "../../types";
 import DLRequestBrief from "./DLRequestBrief";
@@ -20,6 +21,8 @@ export default function DLRequestWorkflow({
   onAction,
   otherChanges,
   events,
+  prelude,
+  finalSteps,
 }: {
   plan: DLPlan;
   items: Item[];
@@ -28,6 +31,8 @@ export default function DLRequestWorkflow({
   onAction: (action: RequestAction, reason?: string) => void;
   otherChanges: boolean;
   events: DLPlanEvent[];
+  prelude?: ReactNode;
+  finalSteps?: ReactNode;
 }) {
   const generating =
     plan.stage === "Gerar requisição" && !plan.contract?.release;
@@ -44,12 +49,13 @@ export default function DLRequestWorkflow({
       !plan.contract?.release);
   return (
     <div className="dl-request-steps">
+      {prelude}
       <section
         className="dl-request-step"
         aria-labelledby="dl-generation-title"
       >
         <div className="panel-heading">
-          <h3 id="dl-generation-title">1. Gerar requisição</h3>
+          <h3 id="dl-generation-title">2. Gerar requisição</h3>
           <span className={`tag ${generating ? "tag-green" : "tag-neutral"}`}>
             {generating ? "Preenchimento liberado" : "Somente consulta"}
           </span>
@@ -72,7 +78,7 @@ export default function DLRequestWorkflow({
             Data da requisição
             <input
               type="date"
-              disabled={!generating}
+              disabled={!generating || otherChanges}
               value={request.date}
               onChange={(e) => onChange({ ...request, date: e.target.value })}
             />
@@ -80,7 +86,7 @@ export default function DLRequestWorkflow({
           <label>
             Número da requisição MXM
             <input
-              disabled={!generating}
+              disabled={!generating || otherChanges}
               value={request.mxmNumber}
               onChange={(e) =>
                 onChange({ ...request, mxmNumber: e.target.value })
@@ -132,7 +138,7 @@ export default function DLRequestWorkflow({
       </section>
       <section className="dl-request-step" aria-labelledby="dl-analysis-title">
         <div className="panel-heading">
-          <h3 id="dl-analysis-title">2. Analisar requisição</h3>
+          <h3 id="dl-analysis-title">3. Analisar requisição</h3>
           <span className={`tag ${analyzing ? "tag-amber" : "tag-neutral"}`}>
             {analyzing
               ? "Aguardando análise"
@@ -154,9 +160,9 @@ export default function DLRequestWorkflow({
         </p>
         <div className="form-grid">
           <label>
-            Responsável pela compra
+            Responsável pelo estoque
             <input
-              disabled={!canEditBuyer}
+              disabled={!canEditBuyer || otherChanges}
               value={request.responsible}
               onChange={(e) =>
                 onChange({ ...request, responsible: e.target.value })
@@ -204,7 +210,7 @@ export default function DLRequestWorkflow({
             disabled={otherChanges}
             onClick={() => onAction("saveBuyer")}
           >
-            Salvar responsável pela compra
+            Salvar responsável pelo estoque
           </button>
         )}
         {[
@@ -249,10 +255,10 @@ export default function DLRequestWorkflow({
           </p>
         )}
       </section>
+      {finalSteps}
       {otherChanges && (
         <p className="catalog-feedback">
-          Salve as alterações nas outras abas antes de executar as ações da
-          requisição.
+          Salve as alterações pendentes na etapa em edição antes de continuar.
         </p>
       )}
       <details className="dl-request-history">

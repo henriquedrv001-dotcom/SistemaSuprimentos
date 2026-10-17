@@ -593,3 +593,13 @@ dialog.dl-create {margin:auto}
 .dl-planning-dates {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:start}
 .dl-planning-dates > label {align-content:start}
 @media(max-width:600px) {.dl-planning-dates {grid-template-columns:minmax(0,1fr)}}
+
+.dl-final-facts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0}
+.dl-final-facts div {min-width:0}
+.dl-final-facts dt {font-size:11px;color:var(--text-secondary);margin-bottom:6px}
+.dl-final-facts dd {margin:0;font-size:12px;overflow-wrap:anywhere}
+.dl-material-name {display:block;white-space:normal;min-width:180px;max-width:400px;margin-top:5px}
+.dl-request-step details > summary {cursor:pointer;color:var(--primary);font-size:12px;font-weight:600}
+.dl-request-step input[type=file] {max-width:100%;white-space:normal}
+.dl-request-step .form-grid > .dl-full-row {grid-column:1/-1}
+@media(max-width:600px) {.dl-final-facts {grid-template-columns:minmax(0,1fr)}}

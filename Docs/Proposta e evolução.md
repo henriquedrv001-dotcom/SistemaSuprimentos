@@ -202,3 +202,11 @@ Validação: 89 testes automatizados e build aprovados. Chromium verificou vigê
 Salvar rascunho não envia a requisição. Número e data ficam abaixo das informações MXM; Enviar para análise bloqueia os campos. Aprovar segue para Em processo; devolver exige observação e libera correção. Planejamento concluído protege metadados e materiais; reabertura explícita invalida envio e análise anteriores. Histórico integrado usa os mesmos eventos, com atalho visível para Cronograma. Perfis e distribuição de tarefas continuam pendentes.
 
 Contratação: data-base, vigência e vencimento alinhados na mesma linha, explicação abaixo e disposição vertical em telas pequenas. Validados 92 testes, build e fluxos Chromium de envio/correção/aprovação/reabertura, contratação e cronograma; coordenadas e alturas dos três campos conferidas no navegador.
+
+
+### Seis etapas da requisição à aprovação final — 17/10/2026
+Requisição e processo reúne Gerar justificativa (modelo básico sem IA), Gerar requisição, Analisar requisição (Responsável pelo estoque), Registro do pedido anexado, Definição de fornecedores e Aprovação. Preenchimento final saiu de Contratação e fornecedores, agora resumo de consulta. Envio de fornecedores valida os dados e bloqueia edição até devolução com observação; somente a aprovação final libera as origens no Controle. Reabrir planejamento invalida envio da requisição/análise e envio de fornecedores, preservando dados e documento. Registros legados continuam legíveis.
+
+Anexos locais PDF/PNG/JPG até 20 MB, IndexedDB separado do workspace, download e metadados auditados. Falha na gravação da DL limpa o arquivo novo. Documento ausente bloqueia envio/aprovação; o anexo precisa ser registrado novamente. Arquivos não entram no backup JSON ou Git e ainda não são compartilhados entre usuários. Perfis reais e armazenamento central ficam pendentes.
+
+Validados 99 testes, build e Chromium: seis etapas, rascunho/envio/análise, bloqueios, anexo inválido, falha de gravação, documento ausente, download, persistência, devolução/reenvio, resumo sem edição, aprovação única, saldos somente ao concluir, histórico e tela móvel. Regressões de unidades/importação e tabela compacta de ciclos conferidas.

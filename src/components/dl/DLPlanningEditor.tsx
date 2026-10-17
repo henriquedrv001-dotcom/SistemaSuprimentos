@@ -1,3 +1,6 @@
+import DLProcessStages, { DLJustificationStep } from "./DLProcessStages";
+import DLContractSummary from "./DLContractSummary";
+import { canRegisterDLOrder } from "../../services/dlProcess";
 import { CalendarDays, CircleCheck, Clock3 } from "lucide-react";
 import DLHistory from "./DLHistory";
 import DLRequestWorkflow from "./DLRequestWorkflow";
@@ -13,12 +16,9 @@ import {
   returnDLRequest,
   reopenDLPlanning,
 } from "../../services/dlRequest";
-import DLContractForm, {
-  contractInput,
-  materializeContract,
-} from "./DLContractForm";
+import { contractInput, materializeContract } from "./DLContractForm";
 import DLReleaseDialog from "./DLReleaseDialog";
-import { releaseDLPlan, validateDLContract } from "../../services/dlContract";
+import { releaseDLPlan } from "../../services/dlContract";
 import { useEffect, useState } from "react";
 import type { DLPlan } from "../../types/dl";
 import type { DLPlanningProps } from "../../pages/estoque/PlanejamentoControleDLs";
@@ -65,9 +65,15 @@ export default function DLPlanningEditor({
   const [contractDraft, setContractDraft] = useState(() =>
     contractInput(plan.contract, plan.lines),
   );
+  const [justificationText, setJustificationText] = useState(
+    plan.processFlow?.justification?.text ?? "",
+  );
+  const justificationDirty =
+    justificationText !== (plan.processFlow?.justification?.text ?? "");
   const [releaseOpen, setReleaseOpen] = useState(false);
   useEffect(() => {
     setDraft(structuredClone(plan));
+    setJustificationText(plan.processFlow?.justification?.text ?? "");
     setScheduleDraft(plan.schedule ?? emptyDLSchedule());
     setContractDraft(contractInput(plan.contract, plan.lines));
     setValues(
@@ -89,6 +95,7 @@ export default function DLPlanningEditor({
   const [picker, setPicker] = useState(false);
   const [error, setError] = useState("");
   const dirty =
+    justificationDirty ||
     scheduleDirty ||
     contractDirty ||
     JSON.stringify(draft) !== JSON.stringify(plan) ||
@@ -146,15 +153,9 @@ export default function DLPlanningEditor({
   }
   const editable = editableDLItems(plan);
   const canEditContract =
-    !released &&
-    !editable &&
-    ![
-      "Gerar requisição",
-      "Analisar requisição gerada",
-      "Cancelado",
-      "Suspenso",
-      "Não contratado",
-    ].includes(plan.stage);
+    canRegisterDLOrder(plan) &&
+    !!plan.processFlow?.purchaseOrder &&
+    !plan.processFlow.suppliersSubmitted;
   const planningDirty =
     JSON.stringify({ ...draft, request: plan.request }) !==
       JSON.stringify(plan) ||
@@ -163,7 +164,33 @@ export default function DLPlanningEditor({
         values[line.id]?.quantity !== decimalInput(line.quantityMilli, 3) ||
         values[line.id]?.price !== decimalInput(line.estimatedPriceCents, 2),
     );
-  const otherRequestChanges = planningDirty || scheduleDirty || contractDirty;
+  const requestDirty =
+    JSON.stringify(draft.request) !== JSON.stringify(plan.request);
+  const processBlocked =
+    planningDirty || scheduleDirty || requestDirty || justificationDirty;
+  const otherRequestChanges =
+    planningDirty || scheduleDirty || contractDirty || justificationDirty;
+  function saveContract() {
+    try {
+      if (!canEditContract || processBlocked)
+        throw new Error(
+          "Salve as outras alterações e registre o pedido antes de preencher fornecedores.",
+        );
+      const candidate = {
+        ...plan,
+        contract: materializeContract(contractDraft),
+      };
+      validateDLPlan(candidate);
+      onSave(candidate, "Fornecedores e valores salvos");
+      setError("");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível salvar os fornecedores.",
+      );
+    }
+  }
   function requestAction(action: RequestAction, reason = "") {
     try {
       if (otherRequestChanges)
@@ -213,7 +240,7 @@ export default function DLPlanningEditor({
                 : "Não contratado";
           candidate.request.notes = reason.trim();
           label = `Processo ${candidate.stage.toLocaleLowerCase("pt-BR")}: ${reason.trim()}`;
-        } else label = "Responsável pela compra atualizado";
+        } else label = "Responsável pelo estoque atualizado";
       }
       validateDLPlan(candidate);
       onSave(candidate, label, options);
@@ -229,6 +256,8 @@ export default function DLPlanningEditor({
 
   function save(stage = draft.stage, action = "Planejamento atualizado") {
     try {
+      if (justificationDirty)
+        throw new Error("Salve a justificativa na etapa 1 antes de continuar.");
       if (tab === "request") {
         requestAction(
           plan.stage === "Gerar requisição" ? "saveDraft" : "saveBuyer",
@@ -304,11 +333,12 @@ export default function DLPlanningEditor({
           <button
             className="primary-button"
             disabled={
-              tab === "items"
+              justificationDirty ||
+              (tab === "items"
                 ? !editable
-                : tab === "contract"
-                  ? !canEditContract
-                  : tab === "history" || (released && tab !== "schedule")
+                : tab === "contract" || tab === "request"
+                  ? true
+                  : tab === "history" || (released && tab !== "schedule"))
             }
             onClick={() => save()}
           >
@@ -317,6 +347,7 @@ export default function DLPlanningEditor({
           {released ? null : editable ? (
             <button
               className="secondary-button"
+              disabled={justificationDirty}
               onClick={() => {
                 try {
                   validateDLPlan(materialize("Planejamento concluído"));
@@ -379,13 +410,52 @@ export default function DLPlanningEditor({
           <button
             className={`tab ${tab === id ? "active" : ""}`}
             key={id}
-            title={id === "items" ? (editable ? "Etapa aguardando" : "Planejamento fechado") : id === "request" ? (plan.requestReview ? "Etapa concluída" : "Etapa aguardando") : id === "contract" ? (plan.contract?.release ? "Etapa concluída" : "Etapa aguardando") : label}
+            title={
+              id === "items"
+                ? editable
+                  ? "Etapa aguardando"
+                  : "Planejamento fechado"
+                : id === "request"
+                  ? plan.requestReview
+                    ? "Etapa concluída"
+                    : "Etapa aguardando"
+                  : id === "contract"
+                    ? plan.contract?.release
+                      ? "Etapa concluída"
+                      : "Etapa aguardando"
+                    : label
+            }
             onClick={() => setTab(id)}
           >
             {id === "items" || id === "request" || id === "contract" ? (
-              (id === "items" ? ["Planejamento concluído", "Gerar requisição", "Analisar requisição gerada", "Em processo", "Requisição registrada", "Em tramitação", "Aguardando dados finais", "Concluído"].includes(plan.stage) : id === "request" ? Boolean(plan.requestReview) : Boolean(plan.contract?.release))
-                ? <CircleCheck size={15} className="dl-step-complete" aria-hidden="true" />
-                : <Clock3 size={15} className="dl-step-pending" aria-hidden="true" />
+              (
+                id === "items"
+                  ? [
+                      "Planejamento concluído",
+                      "Gerar requisição",
+                      "Analisar requisição gerada",
+                      "Em processo",
+                      "Requisição registrada",
+                      "Em tramitação",
+                      "Aguardando dados finais",
+                      "Concluído",
+                    ].includes(plan.stage)
+                  : id === "request"
+                    ? Boolean(plan.requestReview)
+                    : Boolean(plan.contract?.release)
+              ) ? (
+                <CircleCheck
+                  size={15}
+                  className="dl-step-complete"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Clock3
+                  size={15}
+                  className="dl-step-pending"
+                  aria-hidden="true"
+                />
+              )
             ) : null}
             {label}
           </button>
@@ -402,67 +472,10 @@ export default function DLPlanningEditor({
           value={scheduleDraft}
           events={workspace.events}
           onChange={setScheduleDraft}
+          readOnly={justificationDirty}
         />
       )}
-      {tab === "contract" && (
-        <>
-          <DLContractForm
-            plan={plan}
-            items={items}
-            value={contractDraft}
-            onChange={setContractDraft}
-            readOnly={
-              released ||
-              editable ||
-              [
-                "Gerar requisição",
-                "Analisar requisição gerada",
-                "Cancelado",
-                "Suspenso",
-                "Não contratado",
-              ].includes(plan.stage)
-            }
-          />
-          {!released && (
-            <div className="form-actions">
-              <span className="muted">
-                {dirty
-                  ? "Salve as alterações para conferir a conclusão."
-                  : "A conclusão exige pedidos MXM emitidos e dados finais conferidos."}
-              </span>
-              <button
-                className="primary-button"
-                disabled={
-                  dirty ||
-                  editable ||
-                  [
-                    "Gerar requisição",
-                    "Analisar requisição gerada",
-                    "Cancelado",
-                    "Suspenso",
-                    "Não contratado",
-                  ].includes(plan.stage)
-                }
-                onClick={() => {
-                  try {
-                    validateDLContract(plan, true);
-                    setReleaseOpen(true);
-                    setError("");
-                  } catch (cause) {
-                    setError(
-                      cause instanceof Error
-                        ? cause.message
-                        : "Revise a contratação.",
-                    );
-                  }
-                }}
-              >
-                Concluir DL e disponibilizar no Controle
-              </button>
-            </div>
-          )}
-        </>
-      )}
+      {tab === "contract" && <DLContractSummary plan={plan} items={items} />}
       {releaseOpen && (
         <DLReleaseDialog
           plan={plan}
@@ -490,7 +503,7 @@ export default function DLPlanningEditor({
               <label key={key}>
                 {label}
                 <input
-                  disabled={!editable}
+                  disabled={!editable || justificationDirty}
                   type="text"
                   value={draft[key]}
                   onChange={(e) =>
@@ -500,21 +513,29 @@ export default function DLPlanningEditor({
               </label>
             ))}
             <div className="dl-full-row dl-planning-dates">
-              {([
-                ["openedOn", "Data de abertura"],
-                ["deliveryDate", "Data de entrega"],
-                ["responsible", "Solicitante"],
-              ] as const).map(([key, label]) => (
+              {(
+                [
+                  ["openedOn", "Data de abertura"],
+                  ["deliveryDate", "Data de entrega"],
+                  ["responsible", "Solicitante"],
+                ] as const
+              ).map(([key, label]) => (
                 <label key={key}>
                   {label}
                   <input
                     aria-label={label}
-                    disabled={!editable}
+                    disabled={!editable || justificationDirty}
                     type={key === "responsible" ? "text" : "date"}
                     value={draft[key] ?? ""}
-                    onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, [key]: e.target.value })
+                    }
                   />
-                  {key === "deliveryDate" && <small className="muted">Necessária para gerar a requisição MXM.</small>}
+                  {key === "deliveryDate" && (
+                    <small className="muted">
+                      Necessária para gerar a requisição MXM.
+                    </small>
+                  )}
                 </label>
               ))}
             </div>
@@ -523,7 +544,7 @@ export default function DLPlanningEditor({
               <textarea
                 aria-label="Observação / Justificativa"
                 rows={2}
-                disabled={!editable}
+                disabled={!editable || justificationDirty}
                 value={dlObservation(draft)}
                 onChange={(e) =>
                   setDraft({
@@ -545,7 +566,7 @@ export default function DLPlanningEditor({
             </div>
             <button
               className="secondary-button"
-              disabled={!editable}
+              disabled={!editable || justificationDirty}
               onClick={() => setPicker(true)}
             >
               Adicionar materiais
@@ -602,7 +623,7 @@ export default function DLPlanningEditor({
                         <input
                           aria-label={`Quantidade ${item?.code}`}
                           inputMode="decimal"
-                          disabled={!editable}
+                          disabled={!editable || justificationDirty}
                           value={values[line.id]?.quantity ?? ""}
                           onChange={(e) =>
                             setValues({
@@ -618,7 +639,7 @@ export default function DLPlanningEditor({
                       <td>
                         <DLMoneyInput
                           label={`Preço ${item?.code}`}
-                          disabled={!editable}
+                          disabled={!editable || justificationDirty}
                           value={values[line.id]?.price ?? ""}
                           onChange={(price) =>
                             setValues((current) => ({
@@ -632,7 +653,7 @@ export default function DLPlanningEditor({
                       <td>
                         <button
                           className="text-button"
-                          disabled={!editable}
+                          disabled={!editable || justificationDirty}
                           onClick={() => {
                             if (
                               window.confirm(
@@ -679,6 +700,34 @@ export default function DLPlanningEditor({
           onAction={requestAction}
           otherChanges={otherRequestChanges}
           events={workspace.events}
+          prelude={
+            <DLJustificationStep
+              plan={plan}
+              text={justificationText}
+              onTextChange={setJustificationText}
+              blocked={
+                planningDirty || scheduleDirty || contractDirty || requestDirty
+              }
+              onPersist={(candidate, label, options) => {
+                onSave(candidate, label, options);
+              }}
+            />
+          }
+          finalSteps={
+            <DLProcessStages
+              plan={plan}
+              items={items}
+              value={contractDraft}
+              onChange={setContractDraft}
+              contractDirty={contractDirty}
+              blocked={processBlocked}
+              onPersist={(candidate, label, options) => {
+                onSave(candidate, label, options);
+              }}
+              onSaveContract={saveContract}
+              onApprove={() => setReleaseOpen(true)}
+            />
+          }
         />
       )}
       {tab === "history" && (

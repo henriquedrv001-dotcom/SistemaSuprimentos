@@ -35,6 +35,7 @@ export interface DLPlan {
   deliveryDate?: string;
   stage: DLStage;
   contract?: DLContract;
+  processFlow?: DLProcessFlow;
   schedule?: DLSchedule;
   requestWorkflow?: "mxm-review-v1" | "mxm-review-v2";
   requestSubmission?: {
@@ -142,4 +143,20 @@ export interface DLSaveOptions {
   returnRequest?: boolean;
   reopenPlanning?: boolean;
   startRequest?: boolean;
+  processAction?: "justification" | "registerOrder" | "submitSuppliers" | "returnSuppliers";
+}
+
+export interface DLProcessFlow {
+  version: 1;
+  justification?: { text: string; completedAt?: string };
+  purchaseOrder?: {
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    timestamp: string;
+    actor: string;
+  };
+  suppliersSubmitted?: { timestamp: string; actor: string };
+  suppliersReturn?: { timestamp: string; actor: string; reason: string };
 }

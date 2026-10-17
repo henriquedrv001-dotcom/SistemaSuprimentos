@@ -62,19 +62,19 @@ Use **Salvar alterações** para guardar o rascunho e **Concluir planejamento** 
 
 Os dados são locais, na chave `suprimentos:dl-planning:v1`, incluída no backup JSON da importação. Há proteção contra sobrescrita entre abas, recuperação de gravações incompletas e bloqueio de dados salvos inválidos. Isso não substitui banco compartilhado nem autenticação. Planejamentos também aparecem nos detalhes individuais dos itens e impedem sua exclusão do catálogo.
 
-Concluir somente o planejamento não constitui saldo contratado. A contratação e o Controle foram acrescentados na segunda etapa descrita abaixo; documentos e integração de pedidos permanecem pendentes. Nomenclatura confirmada: DL = aquisição; PCD = pedido ao CD ligado ao ciclo; PDL = pedido ao fornecedor ligado ao ciclo e saldo de DL; PFR = pedido emergencial, com ou sem ciclo. Registros demonstrativos antigos de pedidos não foram renomeados automaticamente.
+Concluir somente o planejamento não constitui saldo contratado. A contratação e o Controle foram acrescentados na segunda etapa descrita abaixo; documentos compartilhados e integração de pedidos permanecem pendentes. Nomenclatura confirmada: DL = aquisição; PCD = pedido ao CD ligado ao ciclo; PDL = pedido ao fornecedor ligado ao ciclo e saldo de DL; PFR = pedido emergencial, com ou sem ciclo. Registros demonstrativos antigos de pedidos não foram renomeados automaticamente.
 
 
 ## Contratação e Controle de DLs — segunda etapa
-Na aba **Contratação e fornecedores**, registre um fornecedor por material, pedido de compra MXM e preço final. A quantidade vem preenchida do planejamento e a data do pedido usa a data da contratação/emissão. Os campos ficam em tabela, com edição direta e comparação entre orçamento previsto e contratação. Materiais sem contratação precisam de resultado e motivo; não geram saldo.
+Em **Requisição e processo → 5. Definição de fornecedores**, registre um fornecedor por material, pedido de compra MXM e preço final. A aba **Contratação e fornecedores** é somente consulta dos dados salvos. A quantidade vem preenchida do planejamento e a data do pedido usa a data da contratação/emissão. Os campos ficam em tabela, com edição direta e comparação entre orçamento previsto e contratação. Materiais sem contratação precisam de resultado e motivo; não geram saldo.
 
-É possível salvar resultados incompletos e retomá-los. Após concluir o planejamento, preencha os dados oficiais da DL/requisição e a data da contratação. Informe a vigência quando aplicável. A ação **Concluir DL e disponibilizar no Controle** exige salvar antes, revisar o resumo, confirmar que os pedidos de compra MXM foram emitidos e os dados finais conferidos, e digitar **CONCLUIR**. A conclusão é única: protege os dados finais e mantém os IDs da DL e das origens, sem criar outra cópia do processo.
+É possível salvar resultados incompletos e retomá-los. Após concluir o planejamento, preencha os dados oficiais da DL/requisição e a data da contratação. Informe a vigência quando aplicável. A ação **6. Aprovação → Aprovar e concluir DL** exige registrar o pedido anexado, salvar e enviar os fornecedores para aprovação, revisar o resumo, confirmar que os pedidos de compra MXM foram emitidos e os dados finais conferidos, e digitar **CONCLUIR**. A conclusão é única: protege os dados finais e mantém os IDs da DL e das origens, sem criar outra cópia do processo.
 
 O Controle oferece pesquisa por DL, material, fornecedor ou pedido MXM, filtros de situação/fornecedor/categoria, totais iniciais e detalhes com visão geral, materiais/saldos e histórico. Contratações do mesmo material em DLs diferentes permanecem separadas. Os detalhes individuais dos itens também mostram essas origens e o histórico da contratação.
 
-**Os saldos desta etapa são iniciais.** Reservas, recebimentos e consumos anteriores do MXM não estão conectados; a tela os identifica como Não conectado. Nenhum pedido é criado automaticamente. Documentos, movimentações e ajustes posteriores de contratos concluídos serão tratados nas próximas etapas, com histórico próprio. Permanecem o armazenamento local e a identificação demonstrativa de usuário da versão atual.
+**Os saldos desta etapa são iniciais.** Reservas, recebimentos e consumos anteriores do MXM não estão conectados; a tela os identifica como Não conectado. Nenhum pedido é criado automaticamente. Documentos compartilhados, movimentações e ajustes posteriores de contratos concluídos serão tratados nas próximas etapas, com histórico próprio. Permanecem o armazenamento local e a identificação demonstrativa de usuário da versão atual.
 
-Validação: `npm test` executa 89 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
+Validação: `npm test` executa 99 testes; `npm run build` gera a versão de produção. Fluxos também conferidos no Chromium, incluindo compatibilidade dos planejamentos anteriores, conclusão/cancelamento, falha no salvamento, filtros, unidades decimais, tela móvel e preservação do cadastro/ciclos.
 
 ## Informações e fluxo da requisição MXM
 Em Materiais e orçamento, **Observação / Justificativa** reúne os textos usados no MXM. Observações antigas continuam preservadas; ao editar o campo unificado, o texto completo passa a ser salvo nele, com histórico. **Data de entrega** ocupa o antigo campo de observações e é exigida para iniciar o novo fluxo de requisição, sem bloquear a leitura de planejamentos antigos.
@@ -86,7 +86,7 @@ O resumo **Informações para gerar a requisição no MXM** mostra os dados salv
 
 **Tarefas e perfis funcionais ainda não foram implementados.** Nesta versão o fluxo é manual/local; nenhuma tarefa é enviada ao aprendiz. A futura distribuição de Gerar requisição ao aprendiz e da análise ao responsável usará estas informações. As situações antigas continuam legíveis, sem inventar responsáveis ou confirmações retroativas.
 
-Validação atual: 92 testes automatizados, build e fluxos no Chromium, incluindo envio explícito, devolução, aprovação, bloqueios, reabertura, falha de armazenamento, contratação, cronograma e apresentação móvel. Os bloqueios seguem o estado do processo; autorização por perfil depende da futura autenticação.
+Validação atual: 99 testes automatizados, build e fluxos no Chromium, incluindo envio explícito, devolução, aprovação, bloqueios, reabertura, falha de armazenamento, contratação, cronograma e apresentação móvel. Os bloqueios seguem o estado do processo; autorização por perfil depende da futura autenticação.
 
 
 ## Vigência automática e Cronograma
@@ -101,3 +101,15 @@ Observações da contratação, identificação do fornecedor por código/CNPJ e
 Próxima organização em **Configurações**: Fornecedores, Critérios de solicitação e outros cadastros simples. O campo Fornecedor futuramente abrirá um seletor de fornecedores cadastrados; nesta versão continua preenchido por texto. Essa tela de configurações e o seletor ainda não foram implementados.
 
 O editor abre em **Cronograma**, primeira aba. Os campos principais usam três colunas em telas maiores; início do planejamento vem da abertura da DL. Datas reais de autorização ficam em seção expansível. Ao final, o histórico resumido mostra aprovações, envios, devoluções e fechamento/reabertura de etapas, a partir do histórico existente. Nas abas de etapas, relógio cinza indica pendência e check azul indica conclusão registrada; Cronograma e Histórico são consultas, sem conclusão artificial.
+
+
+## Processo da DL em seis etapas
+Em **Requisição e processo**, o fluxo é: **1. Gerar justificativa → 2. Gerar requisição → 3. Analisar requisição → 4. Registro do pedido → 5. Definição de fornecedores → 6. Aprovação**.
+
+A justificativa tem modelo básico revisável, texto salvo e cópia para documentação. É independente da Observação / Justificativa do MXM e não exige IA. O envio e a devolução da requisição mantêm as regras anteriores; a análise informa **Responsável pelo estoque**, distinto do Solicitante da DL.
+
+Após a análise, a compradora registra o pedido anexado. O aprendiz informa fornecedores, pedidos MXM, preços e vigência na etapa 5; quantidades planejadas continuam preenchidas e fixas. Salvar dados não libera saldo. **Enviar para aprovação** valida todos os resultados e bloqueia edição e substituição do anexo. A devolução exige observação e permite correção/reenvio. A aprovação final mantém a confirmação de pedido emitido e o texto CONCLUIR, criando uma única origem por item contratado. A aba Contratação e fornecedores apresenta somente resumo, orçamento versus valor final, vigência e tabela dos dados salvos. Registros antigos e contratações já concluídas continuam legíveis sem exigir anexos retroativos.
+
+Anexos PDF/PNG/JPG até 20 MB ficam no IndexedDB `suprimentos:documents:v1`, separados do workspace local. Os metadados ficam na DL e no histórico. Se a gravação da DL falhar, o arquivo recém-inserido é removido; nenhum saldo é criado. O arquivo persiste ao recarregar e pode ser baixado. Arquivos ausentes neste navegador bloqueiam o envio dos fornecedores e a abertura da aprovação até registrar novamente o pedido. **Os arquivos não acompanham o backup JSON nem a sincronização Git; baixe-os separadamente.** Compartilhamento entre compradora/aprendiz/gestor e restrições por perfil ainda dependem de backend, autenticação e armazenamento central.
+
+Validação: 99 testes automatizados e build; fluxo completo no Chromium com seis etapas, modelo da justificativa, número/data bloqueados, anexo inválido, falha de gravação com limpeza do arquivo, arquivo ausente, download/persistência, correção/reenvio, aprovação única e saldo somente ao concluir. Cadastro/unidades e apresentação compacta dos ciclos também conferidos.

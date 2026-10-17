@@ -85,6 +85,10 @@ export function reopenDLPlanning(plan: DLPlan, confirmed: boolean): DLPlan {
   const result: DLPlan = { ...plan, stage: "Em planejamento" };
   delete result.requestReview;
   delete result.requestSubmission;
+  if (result.processFlow) {
+    result.processFlow = { ...result.processFlow };
+    delete result.processFlow.suppliersSubmitted;
+  }
   return result;
 }
 export function reviewDLRequest(plan: DLPlan, confirmed: boolean): DLPlan {

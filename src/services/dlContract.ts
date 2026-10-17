@@ -293,6 +293,7 @@ export function releaseDLPlan(
     throw new Error(
       "Confirme os pedidos de compra MXM emitidos e digite CONCLUIR para disponibilizar no Controle.",
     );
+  if (plan.processFlow && (!plan.processFlow.purchaseOrder || !plan.processFlow.suppliersSubmitted)) throw new Error("Registre o pedido e envie os fornecedores para aprovação antes de concluir.");
   validateDLContract(plan, true);
   const contract = plan.contract!;
   const saved: DLPlan = {
