@@ -73,3 +73,24 @@ export interface ItemAssociation {
   availableBalance?: number;
   unit?: string;
 }
+
+// Planning is separate from ERP stock and from the legacy demonstration totals.
+export interface CyclePlanningLine {
+  id: string;
+  cycleId: string;
+  itemId: string;
+  requestGroupId: string | null;
+  plannedQuantity: number | null;
+  forecastBasis: "Estimativa" | "Consumo anterior" | "Demanda do setor" | "";
+  notes: string;
+  orderReferences?: string[];
+}
+export interface CycleRequestGroup { id: string; cycleId: string; name: string }
+export interface CycleGroupTemplate { id: string; name: string; itemIds: string[] }
+export interface CycleWorkspace {
+  version: 1;
+  lines: CyclePlanningLine[];
+  groups: CycleRequestGroup[];
+  templates: CycleGroupTemplate[];
+}
+export interface CycleItemEvent { itemId: string; action: string; details: string }

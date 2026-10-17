@@ -4,8 +4,11 @@ import {
   ChevronDown, ClipboardList, FileText, LayoutDashboard, PackageSearch,
   Search, Truck, WalletCards, FileUp, Trash2, Download, ArrowDownAZ
 } from "lucide-react";
-import { demoCycleItems, demoCycles, demoItems, demoOrders } from "./data";
-import type { Item, ItemHistoryEntry, SupplyCycle } from "./types";
+import { demoCycles, demoItems, demoOrders } from "./data";
+import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
+import CiclosSuprimento from "./pages/estoque/CiclosSuprimento";
+import CycleDestinationDialog from "./components/CycleDestinationDialog";
+import { addPlanningItems, cycleWorkspaceKey, emptyCycleWorkspace, readCycleWorkspace, validateCycle, writeLocalTransaction } from "./services/cyclePlanning";
 import ShareItemsDialog from "./components/ShareItemsDialog";
 import ItemDetailsDialog from "./components/ItemDetailsDialog";
 import CatalogImportPreview from "./components/CatalogImportPreview";
@@ -74,9 +77,14 @@ function App() {
   importCatalogRef.current = items;
   const [cycles, setCycles] = useState<SupplyCycle[]>(() => readLocalCollection("suprimentos:cycles:v1", demoCycles));
   const [showAddItem, setShowAddItem] = useState(false);
-  const [showAddCycle, setShowAddCycle] = useState(false);
+  const [cycleState, setCycleState] = useState(() => {
+    try { return { workspace: readCycleWorkspace(localStorage.getItem(cycleWorkspaceKey)), error: "" }; }
+    catch (cause) { return { workspace: emptyCycleWorkspace(), error: cause instanceof Error ? cause.message : "Não foi possível ler o planejamento salvo. Os dados originais foram preservados." }; }
+  });
+  const cycleWorkspace = cycleState.workspace;
+  const [cycleDestinationItems, setCycleDestinationItems] = useState<Item[] | null>(null);
+  const [openCycleId, setOpenCycleId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ code: "", description: "", unit: "KG", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" as Item["criterion"] });
-  const [newCycle, setNewCycle] = useState<Omit<SupplyCycle, "id">>({ name: "", solicitationStart: "", firstDelivery: "", lastDelivery: "", closingDate: "", status: "Planejamento" });
 
   useEffect(() => writeLocalCollection("suprimentos:items:v1", items), [items]);
   useEffect(() => writeLocalCollection("suprimentos:cycles:v1", cycles), [cycles]);
@@ -143,7 +151,7 @@ function App() {
     return () => observer.disconnect();
   }, [filteredItems?.length, section, filterType, filterGroup]);
 
-  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history }), [items, cycles, history]);
+  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace }), [items, cycles, history, cycleWorkspace]);
 
   function cancelImport() {
     importReadId.current++;
@@ -232,6 +240,10 @@ function App() {
 
   function deleteSelectedItems() {
     if (!selectedItemIds.length) return;
+    if (cycleState.error) { window.alert("Não é possível conferir os vínculos dos ciclos agora. A exclusão foi bloqueada para preservar seus dados."); return; }
+    if (cycleWorkspace.lines.some(line => selectedItemIds.includes(line.itemId))) {
+      window.alert("Há materiais vinculados a ciclos nesta seleção. Para preservar os vínculos, retire-os dos ciclos antes de excluir ou use o status Inativo no cadastro."); return;
+    }
     const confirmation = window.prompt(`Você selecionou ${selectedItemIds.length} item(ns). Para confirmar a exclusão, digite EXCLUIR em maiúsculas.`);
     if (confirmation !== "EXCLUIR") { window.alert("Exclusão cancelada. O texto precisa ser exatamente EXCLUIR."); return; }
     const selected = new Set(selectedItemIds);
@@ -248,7 +260,7 @@ function App() {
   }
 
   const activeCycle = cycles[0] ?? demoCycles[0];
-  const cycleRows = demoCycleItems.filter((line) => line.cycleId === activeCycle.id);
+  const cycleRows = cycleWorkspace.lines.filter((line) => line.cycleId === activeCycle.id);
   const pendingOrders = demoOrders.filter((order) => order.status !== "Concluído").length;
   const directOrders = demoOrders.filter((order) => order.type === "PCD");
 
@@ -306,30 +318,45 @@ function App() {
     const selected = filteredItems.filter((item) => selectedItemIds.includes(item.id));
     if (!selected.length) return;
     if (destination === "share") { setShareItems(selected); return; }
-    const label = destination === "cycle" ? "Ciclos de suprimento" : destination === "dl" ? "Planejamento DLs" : "Pedidos diretos";
+    if (destination === "cycle") { setCycleDestinationItems(selected); return; }
+    const label = destination === "dl" ? "Planejamento DLs" : "Pedidos diretos";
     setBulkMessage(`${selected.length} item(ns) selecionado(s) encaminhado(s) para preparação em “${label}”. Nenhum ciclo, pedido ou saldo foi criado automaticamente.`);
     selected.forEach((item) => recordHistory(item, "Encaminhado para preparação", `Destino escolhido: ${label}.`));
-    setSection(destination === "cycle" ? "Ciclos de suprimento" : destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
+    setSection(destination === "dl" ? "Planejamento DLs" : "Pedidos diretos");
   }
 
-  function addCycle() {
-    const dates = [newCycle.solicitationStart, newCycle.firstDelivery, newCycle.lastDelivery, newCycle.closingDate];
-    if (!newCycle.name.trim() || dates.some((date) => !date)) {
-      window.alert("Preencha o nome e todas as datas do ciclo.");
-      return;
+  function commitCycleChange(nextCycles: SupplyCycle[], nextWorkspace: CycleWorkspace, events: CycleItemEvent[]) {
+    if (cycleState.error) throw new Error(cycleState.error);
+    const storedCycles = localStorage.getItem("suprimentos:cycles:v1");
+    const storedHistory = localStorage.getItem("suprimentos:item-history:v1");
+    if ((storedCycles !== null && storedCycles !== JSON.stringify(cycles)) || (storedHistory !== null && storedHistory !== JSON.stringify(history)) || JSON.stringify(readCycleWorkspace(localStorage.getItem(cycleWorkspaceKey))) !== JSON.stringify(cycleWorkspace)) {
+      throw new Error("O planejamento ou histórico mudou em outra aba. Recarregue antes de continuar.");
     }
-    if (dates.some((date, index) => index > 0 && date < dates[index - 1])) {
-      window.alert("Confira a ordem das datas: solicitações, primeira entrega, última entrega e fechamento.");
-      return;
-    }
-    if (cycles.some((cycle) => cycle.name.toLocaleLowerCase("pt-BR") === newCycle.name.trim().toLocaleLowerCase("pt-BR"))) {
-      window.alert("Já existe um ciclo com esse nome.");
-      return;
-    }
+    const now = new Date().toISOString();
+    const nextHistory = [...events.map(event => ({ ...event, id: `hist-${crypto.randomUUID()}`, code: items.find(item => item.id === event.itemId)?.code ?? event.itemId, timestamp: now })), ...history];
+    writeLocalTransaction(localStorage, [[cycleWorkspaceKey, JSON.stringify(nextWorkspace)], ["suprimentos:cycles:v1", JSON.stringify(nextCycles)], ["suprimentos:item-history:v1", JSON.stringify(nextHistory)]]);
+    setCycles(nextCycles); setCycleState({ workspace: nextWorkspace, error: "" }); setHistory(nextHistory);
+  }
 
-    setCycles((current) => [...current, { ...newCycle, name: newCycle.name.trim(), id: `cycle-local-${crypto.randomUUID()}` }]);
-    setNewCycle({ name: "", solicitationStart: "", firstDelivery: "", lastDelivery: "", closingDate: "", status: "Planejamento" });
-    setShowAddCycle(false);
+  function saveCycle(draft: Omit<SupplyCycle, "id">, id?: string) {
+    const validated = validateCycle(draft, cycles, id);
+    if (id && !cycles.some(cycle => cycle.id === id)) throw new Error("O ciclo não foi encontrado.");
+    const saved = { ...validated, id: id ?? `cycle-${crypto.randomUUID()}` };
+    const old = cycles.find(cycle => cycle.id === id);
+    const changed = old && (["name", "solicitationStart", "firstDelivery", "lastDelivery", "closingDate", "status"] as const).some(key => old[key] !== saved[key]);
+    const events = old && changed ? cycleWorkspace.lines.filter(line => line.cycleId === id).map(line => ({ itemId: line.itemId, action: "Dados do ciclo alterados", details: `Ciclo: ${old.name} → ${saved.name}. Situação: ${old.status} → ${saved.status}. Solicitações: ${old.solicitationStart} → ${saved.solicitationStart}. Primeira entrega: ${old.firstDelivery} → ${saved.firstDelivery}. Última entrega: ${old.lastDelivery} → ${saved.lastDelivery}. Fechamento: ${old.closingDate} → ${saved.closingDate}.` })) : [];
+    commitCycleChange(id ? cycles.map(cycle => cycle.id === id ? saved : cycle) : [...cycles, saved], cycleWorkspace, events);
+    return saved.id;
+  }
+
+  function addCatalogSelectionToCycle(cycleId: string, groupId: string | null) {
+    if (!cycleDestinationItems) return;
+    const result = addPlanningItems(cycleWorkspace, cycles, items, cycleId, cycleDestinationItems.map(item => item.id), groupId);
+    const cycle = cycles.find(cycle => cycle.id === cycleId)!;
+    const group = cycleWorkspace.groups.find(group => group.id === groupId)?.name ?? "Sem grupo";
+    commitCycleChange(cycles, result.workspace, result.added.map(item => ({ itemId: item.id, action: "Inclusão em ciclo pelo cadastro", details: `Ciclo: ${cycle.name}. Grupo: ${group}. Quantidade a definir.` })));
+    setBulkMessage(`${result.added.length} materiais adicionados a ${cycle.name}; ${result.duplicateCount} já estavam no ciclo e foram preservados; ${result.unavailableCount} indisponíveis ou inativos.`);
+    setOpenCycleId(cycleId); setCycleDestinationItems(null); setSection("Ciclos de suprimento");
   }
 
   return (
@@ -387,7 +414,7 @@ function App() {
                     <table><thead><tr><th>Item</th><th>Planejado</th><th>Comprometido</th><th>Recebido</th></tr></thead>
                       <tbody>{cycleRows.map((line) => {
                         const item = items.find((candidate) => candidate.id === line.itemId);
-                        return <tr key={line.id}><td><strong>{item?.description ?? "Item removido"}</strong><small>{item?.code}</small></td><td>{line.plannedQuantity} {item?.unit}</td><td>{line.committedQuantity} {item?.unit}</td><td>{line.receivedQuantity} {item?.unit}</td></tr>;
+                        return <tr key={line.id}><td><strong>{item?.description ?? "Item removido"}</strong><small>{item?.code}</small></td><td>{line.plannedQuantity === null ? "A definir" : `${line.plannedQuantity} ${item?.unit ?? ""}`}</td><td>Não conectado</td><td>Não conectado</td></tr>;
                       })}</tbody>
                     </table>
                   </div>
@@ -472,12 +499,13 @@ function App() {
                   {filteredItems.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum item corresponde aos filtros.</td></tr>}
                 </tbody></table></div>
                 <div className="catalog-fixed-scroll" ref={fixedScrollRef} onScroll={(e) => { if (syncingScroll.current || !catalogWrapRef.current) return; syncingScroll.current = true; catalogWrapRef.current.scrollLeft = e.currentTarget.scrollLeft; syncingScroll.current = false; }}><div ref={fixedScrollInnerRef} style={{ width: `${catalogWidth}px`, height: 1 }} /></div>
+                {cycleDestinationItems && <CycleDestinationDialog count={cycleDestinationItems.length} cycles={cycles} groups={cycleWorkspace.groups} onConfirm={addCatalogSelectionToCycle} onClose={() => setCycleDestinationItems(null)} onOpenCycles={() => { setCycleDestinationItems(null); setOpenCycleId(null); setSection("Ciclos de suprimento"); }} />}
                 {shareItems && <ShareItemsDialog items={shareItems} onClose={() => setShareItems(null)} />}
                 {editingItem && editorMode && <ItemDetailsDialog
                   key={editingItem.id}
                   item={editingItem}
                   history={history}
-                  cycleItems={demoCycleItems}
+                  cycleItems={cycleWorkspace.lines}
                   cycles={cycles}
                   onChange={setEditingItem}
                   onSave={saveEditedItem}
@@ -489,28 +517,10 @@ function App() {
             </>
           )}
 
-          {section === "Ciclos de suprimento" && (
-            <>
-              <div className="page-heading"><div><p className="eyebrow">PLANEJAMENTO</p><h1>Ciclos de suprimento</h1><p className="muted">Períodos de planejamento conectados ao cadastro mestre de itens.</p></div><button className="secondary-button" onClick={() => setShowAddCycle((current) => !current)}>{showAddCycle ? "Cancelar" : "Novo ciclo"} <CalendarDays size={17} /></button></div>
-              {showAddCycle && <section className="panel form-panel">
-                <h2>Novo ciclo</h2>
-                <div className="form-grid">
-                  <label>Nome do ciclo<input value={newCycle.name} onChange={(event) => setNewCycle({ ...newCycle, name: event.target.value })} placeholder="Ex.: Janeiro 2027" /></label>
-                  <label>Início das solicitações<input type="date" value={newCycle.solicitationStart} onChange={(event) => setNewCycle({ ...newCycle, solicitationStart: event.target.value })} /></label>
-                  <label>Primeira entrega<input type="date" value={newCycle.firstDelivery} onChange={(event) => setNewCycle({ ...newCycle, firstDelivery: event.target.value })} /></label>
-                  <label>Última entrega<input type="date" value={newCycle.lastDelivery} onChange={(event) => setNewCycle({ ...newCycle, lastDelivery: event.target.value })} /></label>
-                  <label>Fechamento<input type="date" value={newCycle.closingDate} onChange={(event) => setNewCycle({ ...newCycle, closingDate: event.target.value })} /></label>
-                  <label>Status<select value={newCycle.status} onChange={(event) => setNewCycle({ ...newCycle, status: event.target.value as SupplyCycle["status"] })}><option>Planejamento</option><option>Em execução</option><option>Encerrado</option></select></label>
-                </div>
-                <div className="form-actions"><button className="secondary-button" onClick={() => setShowAddCycle(false)}>Cancelar</button><button className="primary-button" onClick={addCycle}>Criar ciclo</button></div>
-                <p className="form-note">O ciclo fica salvo neste navegador. Ainda não será salvo no banco de dados.</p>
-              </section>}
-              <div className="cycle-list">{cycles.map((cycle) => {
-                const lines = demoCycleItems.filter((line) => line.cycleId === cycle.id);
-                return <section className="panel cycle-card" key={cycle.id}><div className="panel-heading"><div><p className="eyebrow">{cycle.id}</p><h2>{cycle.name}</h2></div><span className={`tag ${cycle.status === "Em execução" ? "tag-green" : "tag-neutral"}`}>{cycle.status}</span></div><div className="date-grid"><DateInfo label="Solicitações" value={cycle.solicitationStart} /><DateInfo label="1ª entrega" value={cycle.firstDelivery} /><DateInfo label="Última entrega" value={cycle.lastDelivery} /><DateInfo label="Fechamento" value={cycle.closingDate} /></div><div className="panel-footer"><span>{lines.length} itens vinculados no protótipo</span><span className="muted">Edição será conectada ao banco</span></div></section>;
-              })}</div>
-            </>
-          )}
+          {section === "Ciclos de suprimento" && <>
+            {bulkMessage && <p role="status" className="catalog-feedback">{bulkMessage}</p>}
+            <CiclosSuprimento items={items} cycles={cycles} workspace={cycleWorkspace} storageError={cycleState.error} initialCycleId={openCycleId} onSaveCycle={saveCycle} onCommit={(next, events) => commitCycleChange(cycles, next, events)} />
+          </>}
 
           {section === "Pedidos diretos" && (
             <>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import type { CycleItem, Item, ItemHistoryEntry, SupplyCycle } from "../types";
+import type { CyclePlanningLine, Item, ItemHistoryEntry, SupplyCycle } from "../types";
 
 type Tab = "edit" | "links" | "history";
 const tabs: { id: Tab; label: string }[] = [
@@ -12,7 +12,7 @@ const tabs: { id: Tab; label: string }[] = [
 type Props = {
   item: Item;
   history: ItemHistoryEntry[];
-  cycleItems: CycleItem[];
+  cycleItems: CyclePlanningLine[];
   cycles: SupplyCycle[];
   onChange: (item: Item) => void;
   onSave: () => void;
@@ -70,7 +70,7 @@ export default function ItemDetailsDialog({ item, history, cycleItems, cycles, o
         </tbody></table></div>
         <p className="form-note">Os vínculos e saldos aparecerão quando os módulos de pedidos e DLs estiverem conectados. Nenhum saldo é criado ou alterado nesta janela.</p>
         <h3 className="item-related-heading">Ciclos associados</h3>
-        {linkedCycles.length ? <ul className="item-cycle-links">{linkedCycles.map(line => <li key={line.id}><strong>{cycles.find(cycle => cycle.id === line.cycleId)?.name ?? line.cycleId}</strong><span>Planejado: {line.plannedQuantity.toLocaleString("pt-BR")} {item.unit}</span></li>)}</ul> : <p className="muted">Nenhum ciclo associado a este item.</p>}
+        {linkedCycles.length ? <ul className="item-cycle-links">{linkedCycles.map(line => <li key={line.id}><strong>{cycles.find(cycle => cycle.id === line.cycleId)?.name ?? line.cycleId}</strong><span>Planejado: {line.plannedQuantity === null ? "A definir" : `${line.plannedQuantity.toLocaleString("pt-BR")} ${item.unit}`}</span></li>)}</ul> : <p className="muted">Nenhum ciclo associado a este item.</p>}
       </section>
       <section role="tabpanel" id="item-panel-history" aria-labelledby="item-tab-history" hidden={tab !== "history"} tabIndex={0}>
         <h3>Histórico deste item</h3><p className="muted">Eventos registrados neste navegador, do mais recente para o mais antigo.</p>

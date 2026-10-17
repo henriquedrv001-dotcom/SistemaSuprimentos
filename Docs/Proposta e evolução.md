@@ -86,3 +86,29 @@ A opção fica em Preparar seleção e usa somente os itens selecionados ainda p
 - Modal funciona no modo Consulta, preserva a seleção ao fechar e não grava eventos de envio, porque apenas preparar/copiar/baixar não comprova que houve envio.
 
 Validação: 19 testes automatizados totais e build; navegador verificou seleção de três itens sem vazamento do quarto, cópia real para clipboard, fallback manual, PNG válido, paginação, Escape, largura móvel e preservação dos dados. O PNG gerado também foi inspecionado visualmente.
+
+## Primeira versão funcional de Ciclos de suprimentos
+Tela separada em `src/pages/estoque/CiclosSuprimento.tsx`, com componentes próprios para formulários, seleção de materiais, destino da seleção do cadastro e grupos/modelos. O cadastro aprovado foi mantido, com ligação funcional ao ciclo no menu Preparar seleção.
+
+### Fluxo disponível
+- Lista de ciclos abertos/todos/encerrados, busca, criação, edição e abertura. Não há exclusividade entre ciclos: vários podem estar em Planejamento ou Em execução simultaneamente. Ciclos encerrados podem ser reabertos em Editar ciclo.
+- Cada ciclo mostra todos os seus materiais, quantidade prevista, grupo de solicitação e base/observação da previsão. Há busca, filtro por grupo e paginação de 50 linhas.
+- Inclusão pela tela do ciclo ou Cadastro → Preparar seleção → Ciclo de suprimento → escolher ciclo e grupo. O seletor oferece materiais ativos ainda não presentes no ciclo, com busca e filtros MXM. Campos MXM não são alterados pelas operações do ciclo.
+- Uma linha por material em cada ciclo, com um grupo de solicitação por vez, como decisão inicial para impedir contagem duplicada. O mesmo material pode pertencer a outros ciclos independentemente.
+- Quantidade em branco = A definir; zero = nenhuma necessidade prevista. Quantidades positivas podem ter decimais. Base da previsão: Estimativa, Consumo anterior, Demanda do setor ou Não informada; observações são próprias da necessidade naquele ciclo.
+- Grupo de solicitação é independente do Grupo/Tipo MXM. É possível criar/renomear/excluir grupos, distribuir materiais selecionados em lote e abrir um recorte por grupo. Excluir um grupo mantém os materiais no ciclo, sem grupo.
+- Modelos reutilizáveis guardam somente nome e seleção de materiais. Podem ser salvos de um grupo ou de uma seleção; substituição exige confirmação. Aplicá-los em outro ciclo cria sua composição independente, sem copiar quantidades, pedidos ou recebimentos. Materiais já existentes são preservados sem duplicar nem mudar automaticamente seu grupo; itens ausentes/inativos são informados e não adicionados.
+- Retirar materiais do ciclo preserva o cadastro MXM e outros ciclos, mediante confirmação. Materiais com referência futura a pedidos não podem ser apagados ou ter sua quantidade sobrescrita sem o fluxo de ajuste correspondente.
+
+### Integração e preservação
+Inclusões, retiradas, ajustes de quantidade/grupo/base/observação e mudanças relevantes nos dados do ciclo registram eventos no histórico individual do material. A aba Pedidos e DLs agora consulta os vínculos de ciclos realmente criados, por ID. O cadastro impede exclusão de materiais ainda ligados a ciclos, permitindo mantê-los como inativos. O resumo do Painel utiliza as linhas de planejamento reais em vez das linhas estáticas de demonstração.
+
+Solicitado, em trânsito, recebido e falta solicitar ainda não têm integração de pedidos: aparecem como Não conectado, sem zeros ou cálculos fictícios. Não há emissão de PCD/PDF nem numeração nova de pedidos nesta etapa. A preparação de quantidades totais/parciais para pedidos de CD/FR/DL será a próxima integração.
+
+### Persistência
+Metadados mantêm a chave `suprimentos:cycles:v1`. Linhas, grupos por ciclo e modelos usam `suprimentos:cycle-planning:v1` (versão 1). Dados anteriores do cadastro e histórico são preservados. As linhas demonstrativas de `data.ts` não são transformadas em vínculos reais nem movimentos de pedidos.
+
+As gravações de planejamento/ciclos/histórico são feitas em conjunto, com recuperação dos valores anteriores se uma etapa falhar. Alterações de outra aba impedem sobrescrita e solicitam recarga. Dados de planejamento inválidos são preservados e a edição é bloqueada para diagnóstico. O backup JSON da importação inclui também o planejamento e modelos. Tudo continua local ao navegador; não há backend, autenticação real ou restauração automática de backups nesta entrega.
+
+### Validação
+32 testes automatizados totais, incluindo 13 de planejamento; build TypeScript/Vite. Testes no Chromium cobriram criação, simultaneidade, grupos, inclusão pelas duas origens, deduplicação, quantidades a definir/zero, modelos e independência entre ciclos, retirada, exclusão de grupo sem perda de materiais, encerramento/reabertura, histórico/vínculos no item, proteção contra exclusão de itens vinculados, recarga e largura móvel. Outro fluxo testou 125 materiais com paginação, seleção segura, mudança de grupo em lote, falha de quota com rollback e alteração em outra aba. Regressões do cadastro: filtro Mostrar, importação protegida e compartilhamento texto/PNG passaram novamente. Dados de teste são fictícios e isolados.
