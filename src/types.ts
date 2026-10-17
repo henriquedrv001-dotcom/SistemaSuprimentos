@@ -1,13 +1,19 @@
-export type SolicitationCriterion = "Mensal" | "Entrada e saída" | "Sob solicitação";
+
+export type SolicitationCriterion =
+  | "Mensal"
+  | "Entrada e saída"
+  | "Sob solicitação";
 
 export interface Item {
   id: string;
   code: string;
   description: string;
   unit: string;
+  type: string;
   group: string;
   criterion: SolicitationCriterion;
   active: boolean;
+  visible: boolean;
 }
 
 export interface SupplyCycle {
@@ -38,5 +44,18 @@ export interface PurchaseOrderSummary {
   requestedQuantity: number;
   receivedQuantity: number;
   expectedDelivery: string;
-  status: "Aguardando ERP" | "Aguardando entrega" | "Recebimento parcial" | "Concluído" | "Com ocorrência";
+  status:
+    | "Aguardando ERP"
+    | "Aguardando entrega"
+    | "Recebimento parcial"
+    | "Concluído"
+    | "Com ocorrência";
+}
+export interface ItemHistoryEntry {
+  id: string;
+  itemId: string;
+  code: string;
+  action: string;
+  details: string;
+  timestamp: string;
 }

@@ -1,22 +1,29 @@
-# Proposta e evolução do sistema
+# Base aprovada e evolução
 
 ## Objetivo confirmado
-Centralizar as informações dos processos de suprimentos da filial para planejar, controlar e acompanhar. O ERP oficial continua responsável pela execução: cotações, estoque, financeiro e demais operações. A ferramenta deve reduzir o uso de planilhas externas e quadros separados. Não presumir integração automática com o ERP: a forma de obter e atualizar informações ainda precisa ser definida.
+Central de informações da filial para planejar, controlar e acompanhar os processos do setor Estoque, com inclusão futura de Compras. O MXM continua sendo o ERP oficial de execução. O código do item deve ser exatamente o do ERP e será a referência de relacionamento. Integração automática com o ERP ainda não foi estabelecida.
 
-As telas atuais pertencem ao setor Estoque. Compras será incluído futuramente.
+## Base aprovada pelo responsável
+A versão azul recuperada pelo responsável no Codespace é o padrão a preservar. Fonte: arquivo src.zip enviado nesta conversa. O conteúdo foi incorporado na branch codex/base-azul-recuperada. A versão verde inicial e sua extração de telas não são a base para novas implementações.
 
-## Organização
-Cada tela tem um arquivo em `src/pages/estoque/`. O `App.tsx` organiza a navegação e compartilha o catálogo entre as telas. Elementos de resumo reutilizados ficam em `src/components/Resumo.tsx`.
+O ZIP contém App.tsx, data.ts, main.tsx, styles.css, supabase.ts, types.ts e um arquivo vazio screens/CadastroItens.tsx. A tela de cadastro efetiva está no App.tsx; o arquivo vazio não é importado. Nenhuma separação de telas foi aplicada nesta recuperação. Os arquivos TSX/CSS enviados foram preservados; em types.ts foi acrescentada somente a interface ItemHistoryEntry, já usada no App.tsx e ausente no arquivo recebido. O arquivo vite-env.d.ts é mantido para os tipos Vite. O package.json do Codespace ainda não foi recebido; a cópia disponível neste ambiente permitiu instalar e compilar a base recuperada.
 
-## Primeira entrega: cadastro de itens
-- Campos existentes: código do ERP (único), descrição, unidade, grupo e critério de solicitação.
-- Inclusão de itens fictícios, validação de campos obrigatórios e bloqueio de códigos repetidos, desconsiderando maiúsculas/minúsculas e espaços nas extremidades.
-- Busca por código, descrição, grupo e critério; apresentação do status do item.
-- Dados mantidos somente na sessão da página; navegar entre telas preserva o catálogo, recarregar restaura a demonstração. Ainda não existe gravação definitiva.
-- Confirmado: o código deve ser exatamente o do ERP e será a referência principal para relacionar informações. É tratado como texto para preservar zeros à esquerda. O identificador interno é mantido para preservar os vínculos existentes.
-- Pendente de validação: os demais campos e critérios atuais atendem ao processo? Não foi estabelecido vínculo automático com o ERP.
+## Recursos presentes na cópia recebida
+- Sete módulos: Painel, Cadastro de itens, Ciclos de suprimentos, Pedidos diretos, Planejamento DLs, Controle DLs, Acompanhamento de pedidos. Vários módulos de pedidos/saldos ainda são demonstrações ou placeholders.
+- Tema azul #004C99, marca textual e CSS enviados pelo responsável.
+- Cadastro: criação, importação CSV/TXT com prévia, modelo CSV, busca, filtros, ordenação, seleção múltipla, ocultação, edição ilustrativa e histórico local.
+- Dados de itens, ciclos e histórico gravados em localStorage; perfis Consulta/Editor apenas ilustrativos, sem autenticação real.
+- Nenhuma migração de banco foi executada. O botão de preparação em lote não constitui automaticamente pedidos, ciclos ou saldos.
 
-## Próximas entregas
-Validar uma tela por vez: definir tarefa e regras com o responsável, implementar, testar os fluxos, colher retorno e registrar versões no Git. A gravação definitiva e os acessos dos usuários precisam ser projetados antes do uso com dados reais.
+## Limitações verificadas na auditoria
+- Os 1.646 itens vistos no Codespace não fazem parte do ZIP: podem estar no armazenamento do navegador daquela prévia. Não limpar os dados desse navegador; exportar os dados em etapa própria antes de mudar o endereço de acesso.
+- O filtro Mostrar atual escolhe visíveis/ocultos/todos. O painel Mostrar por tipos com preferência persistente descrito no Word ainda não está implementado nesta cópia. CSS com classes correspondentes não comprova lógica aplicada.
+- A prévia de importação usa o texto 'Serão atualizados', mas a confirmação preserva códigos existentes sem sobrescrever. Corrigir a comunicação em entrega separada.
+- Ainda não há segurança de servidor ou verificação de vínculos para exclusões locais.
 
-No acompanhamento de pedidos, permitir alternar lista e Kanban usando os mesmos registros e filtros. O Kanban agrupará por status. Exemplos do responsável: PDF-0008 / SEMANA 1 OUT. / LUIZ L. / Solicitado; PDF-0009 / SEMANA 1 OUT. / ANNA KARLA / Recebido. Campos, transições de status e eventual movimentação entre colunas ainda serão definidos. Essa visualização não foi implementada nesta entrega.
+## Forma de trabalhar
+Usar o código aprovado como fonte primária. Fazer uma mudança pequena por vez, comparar diferenças, executar validação e colher retorno. Separar telas gradualmente somente depois de estabelecer a base, preservando visual e comportamento.
+
+Próxima melhoria prevista no cadastro: painel Mostrar por tipos ao lado da busca, filtros subordinados coerentes e preferência salva, conforme o Word. Esta recuperação não implementa esse painel.
+
+No futuro, o acompanhamento de pedidos terá lista e Kanban usando os mesmos registros e filtros, agrupados por status. Campos e transições serão validados antes de implementar. Reservas, recebimentos e saldos reais exigem persistência segura e regras específicas; o ERP segue oficial.
