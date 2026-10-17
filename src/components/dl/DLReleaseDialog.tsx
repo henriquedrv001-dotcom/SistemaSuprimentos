@@ -26,6 +26,7 @@ export default function DLReleaseDialog({
   const [checked, setChecked] = useState(false);
   const [text, setText] = useState("");
   const [error, setError] = useState("");
+  const confirmation = text.trim().toLocaleUpperCase("pt-BR");
   useEffect(() => {
     ref.current?.showModal();
   }, []);
@@ -46,106 +47,122 @@ export default function DLReleaseDialog({
       aria-labelledby="dl-release-title"
       onClose={onClose}
     >
-      <h2 id="dl-release-title">
-        Concluir {plan.code} e disponibilizar no Controle
-      </h2>
-      <p>
-        Confira os dados oficiais antes de criar os saldos iniciais. Depois da
-        conclusão, os valores ficam protegidos.
-      </p>
-      <div className="dl-contract-summary">
-        <div>
-          <span>Previsto</span>
-          <strong>{formatMoney(budget)}</strong>
-        </div>
-        <div>
-          <span>Contratado</span>
-          <strong>{formatMoney(total)}</strong>
-        </div>
-        <div>
-          <span>Diferença</span>
-          <strong>{formatMoney(total - budget)}</strong>
-        </div>
-      </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Material</th>
-              <th>Previsto</th>
-              <th>Contratado</th>
-              <th>Fornecedor / pedido MXM</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plan.lines.map((line) => {
-              const item = items.find((item) => item.id === line.itemId);
-              const award = contract.awards.find(
-                (award) => award.lineId === line.id,
-              );
-              return (
-                <tr key={line.id}>
-                  <td>
-                    {item?.code} · {item?.description}
-                  </td>
-                  <td>
-                    {decimalInput(line.quantityMilli, 3)} {line.unit}
-                  </td>
-                  <td>
-                    {award
-                      ? `${decimalInput(contractedQuantity(contract, line.id), 3)} ${line.unit}`
-                      : "Não contratado"}
-                  </td>
-                  <td>
-                    {award
-                      ? `${award.supplier} · ${award.mxmOrder}`
-                      : contract.notAwarded.find(
-                          (result) => result.lineId === line.id,
-                        )?.reason || "A definir"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <p className="muted">
-        Diferenças de quantidade e valor são permitidas e ficam registradas.
-        Reservas, recebimentos e pedidos serão conectados na etapa seguinte.
-      </p>
-      <label className="select-all-label">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-        />
-        Conferi os dados finais e confirmo que os pedidos de compra MXM foram
-        emitidos.
-      </label>
-      <label className="dl-result-reason">
-        Digite CONCLUIR para confirmar
-        <input
-          aria-label="Confirmação de conclusão da DL"
-          autoComplete="off"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </label>
-      {(validation || error) && (
-        <p className="catalog-error" role="alert">
-          {validation || error}
+      <header className="dl-release-heading">
+        <h2 id="dl-release-title">
+          Concluir {plan.code} e disponibilizar no Controle
+        </h2>
+        <p>
+          Confira os dados oficiais antes de criar os saldos iniciais. Depois da
+          conclusão, os valores ficam protegidos.
         </p>
-      )}
-      <div className="form-actions">
+      </header>
+      <div className="dl-release-body">
+        <div className="dl-contract-summary">
+          <div>
+            <span>Previsto</span>
+            <strong>{formatMoney(budget)}</strong>
+          </div>
+          <div>
+            <span>Contratado</span>
+            <strong>{formatMoney(total)}</strong>
+          </div>
+          <div>
+            <span>Diferença</span>
+            <strong>{formatMoney(total - budget)}</strong>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table className="dl-release-table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Previsto</th>
+                <th>Contratado</th>
+                <th>Fornecedor / pedido MXM</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plan.lines.map((line) => {
+                const item = items.find((item) => item.id === line.itemId);
+                const award = contract.awards.find(
+                  (award) => award.lineId === line.id,
+                );
+                return (
+                  <tr key={line.id}>
+                    <td>
+                      <strong>{item?.code || line.itemId}</strong>
+                      <small className="dl-release-material">
+                        {item?.description || "Cadastro indisponível"}
+                      </small>
+                    </td>
+                    <td>
+                      {decimalInput(line.quantityMilli, 3)} {line.unit}
+                    </td>
+                    <td>
+                      {award
+                        ? `${decimalInput(contractedQuantity(contract, line.id), 3)} ${line.unit}`
+                        : "Não contratado"}
+                    </td>
+                    <td className="dl-release-supplier">
+                      {award
+                        ? `${award.supplier} · ${award.mxmOrder}`
+                        : contract.notAwarded.find(
+                            (result) => result.lineId === line.id,
+                          )?.reason || "A definir"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted">
+          Diferenças de quantidade e valor são permitidas e ficam registradas.
+          Reservas, recebimentos e pedidos serão conectados na etapa seguinte.
+        </p>
+        <div className="dl-release-confirmation">
+          <label className="select-all-label">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setChecked(e.target.checked)}
+            />
+            Conferi os dados finais e confirmo que os pedidos de compra MXM
+            foram emitidos.
+          </label>
+          <label className="dl-result-reason">
+            Digite CONCLUIR para confirmar
+            <input
+              aria-label="Confirmação de conclusão da DL"
+              autoComplete="off"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </label>
+          {(!checked || confirmation !== "CONCLUIR") && (
+            <p className="muted" role="status">
+              {!checked
+                ? "Marque a conferência dos dados finais para continuar."
+                : "Digite CONCLUIR para habilitar a conclusão."}
+            </p>
+          )}
+        </div>
+        {(validation || error) && (
+          <p className="catalog-error" role="alert">
+            {validation || error}
+          </p>
+        )}
+      </div>
+      <footer className="form-actions dl-release-actions">
         <button className="secondary-button" autoFocus onClick={onClose}>
           Cancelar
         </button>
         <button
           className="primary-button"
-          disabled={!checked || text !== "CONCLUIR" || !!validation}
+          disabled={!checked || confirmation !== "CONCLUIR" || !!validation}
           onClick={() => {
             try {
-              onConfirm(checked, text);
+              onConfirm(checked, confirmation);
             } catch (cause) {
               setError(
                 cause instanceof Error
@@ -157,7 +174,7 @@ export default function DLReleaseDialog({
         >
           Concluir DL
         </button>
-      </div>
+      </footer>
     </dialog>
   );
 }

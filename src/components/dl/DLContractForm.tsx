@@ -1,3 +1,4 @@
+import DLMoneyInput from "./DLMoneyInput";
 import {
   automaticContractValidity,
   exactValidityMonths,
@@ -279,22 +280,27 @@ export default function DLContractForm({
                   placeholder?: string,
                 ) =>
                   award ? (
-                    <input
-                      aria-label={`${label} ${item?.code}`}
-                      title={label}
-                      placeholder={placeholder}
-                      type={key === "orderDate" ? "date" : "text"}
-                      inputMode={
-                        key === "quantity" || key === "price"
-                          ? "decimal"
-                          : undefined
-                      }
-                      readOnly={key === "quantity"}
-                      value={award[key]}
-                      onChange={(e) =>
-                        patchAward(award.id, { [key]: e.target.value })
-                      }
-                    />
+                    key === "price" ? (
+                      <DLMoneyInput
+                        label={`${label} ${item?.code}`}
+                        value={award.price}
+                        disabled={readOnly}
+                        onChange={(price) => patchAward(award.id, { price })}
+                      />
+                    ) : (
+                      <input
+                        aria-label={`${label} ${item?.code}`}
+                        title={label}
+                        placeholder={placeholder}
+                        type={key === "orderDate" ? "date" : "text"}
+                        inputMode={key === "quantity" ? "decimal" : undefined}
+                        readOnly={key === "quantity"}
+                        value={award[key]}
+                        onChange={(e) =>
+                          patchAward(award.id, { [key]: e.target.value })
+                        }
+                      />
+                    )
                   ) : null;
                 return (
                   <tr key={line.id}>
@@ -376,11 +382,13 @@ export default function DLContractForm({
                           </div>
                         </td>
                         <td>
-                          {input(
-                            "quantity",
-                            `Quantidade contratada (${line.unit})`,
-                          )}
-                          <small className="dl-spec">{line.unit}</small>
+                          <div className="dl-quantity-control">
+                            {input(
+                              "quantity",
+                              `Quantidade contratada (${line.unit})`,
+                            )}
+                            <span>{line.unit}</span>
+                          </div>
                         </td>
                         <td>{input("price", "Preço unitário final (R$)")}</td>
                         <td>{amount}</td>

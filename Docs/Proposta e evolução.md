@@ -216,3 +216,9 @@ Validados 99 testes, build e Chromium: seis etapas, rascunho/envio/análise, blo
 Botão Anexar arquivos com ícone, seleção de vários documentos e lista com download individual. O botão permanece Registrar pedido, conforme ajuste do usuário. Registrar muda o status para Pedido gerado e identifica na tela/histórico a data do fechamento do processo. A definição de fornecedores e a aprovação final continuam; o fechamento não libera saldo. Acréscimos preservam os arquivos anteriores e a primeira data de fechamento; após envio para aprovação continuam bloqueados até devolução. Compatibilidade com anexo único legado preservada. Recuperação do arquivo local original mantém os IDs.
 
 Validação: 103 testes e build; Chromium cobre vários anexos, acréscimo sem perda, rollback de arquivos, arquivo ausente e recuperação, persistência/download, status Pedido gerado, bloqueios, correção/reenvio e aprovação final sem antecipar saldo.
+
+
+### Apresentação final e conferência de conclusão da DL — 17/10/2026
+Tabela de fornecedores compacta, quantidade/unidade integradas, preços em moeda e totais alinhados. Modal de conclusão com cabeçalho/rodapé fixos e conteúdo rolável, fonte uniforme e descrições que quebram linha. A confirmação normaliza caixa e espaços antes de chamar o serviço estrito; o checkbox e a validação dos dados continuam obrigatórios. Corrigida a seleção do campo monetário ao alternar moeda/edição para evitar concatenar o valor anterior.
+
+Validado no Chromium o percurso completo, incluindo quatro materiais, conferência com cancelar, minúsculas/espaços, requisitos obrigatórios, versões desktop/móvel, conclusão única e Controle com quatro origens e R$ 6.504,00 persistidos. Teste em dados demonstrativos isolados, sem alterar os dados locais do usuário.
