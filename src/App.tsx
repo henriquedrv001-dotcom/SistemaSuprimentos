@@ -7,6 +7,7 @@ import {
 import { demoCycleItems, demoCycles, demoItems, demoOrders } from "./data";
 import type { Item, ItemHistoryEntry, SupplyCycle } from "./types";
 import ItemDetailsDialog from "./components/ItemDetailsDialog";
+import CatalogTypeFilter, { readCatalogTypeView } from "./components/CatalogTypeFilter";
 
 type Section = "Painel" | "Cadastro de itens" | "Ciclos de suprimento" | "Pedidos diretos" | "Planejamento DLs" | "Controle DLs" | "Acompanhamento de pedidos";
 
@@ -42,6 +43,7 @@ function writeLocalCollection<T>(key: string, value: T[]) {
 function App() {
   const [section, setSection] = useState<Section>("Painel");
   const [query, setQuery] = useState("");
+  const [selectedTypes, setSelectedTypes] = useState<string[] | null>(readCatalogTypeView);
   const [filterType, setFilterType] = useState("Todos");
   const [filterGroup, setFilterGroup] = useState("Todos");
   const [filterCriterion, setFilterCriterion] = useState("Todos");
@@ -76,12 +78,32 @@ function App() {
     setHistory((current) => [{ id: `hist-${crypto.randomUUID()}`, itemId: item.id, code: item.code, action, details, timestamp: new Date().toISOString() }, ...current]);
   }
 
-  const types = useMemo(() => [...new Set(items.map((item) => item.type || "SEM TIPO").filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")), [items]);
-  const groups = useMemo(() => [...new Set(items.filter((item) => filterType === "Todos" || (item.type || "SEM TIPO") === filterType).map((item) => item.group).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")), [items, filterType]);
+  const allTypes = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of items) { const name = item.type || "SEM TIPO"; counts.set(name, (counts.get(name) ?? 0) + 1); }
+    return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [items]);
+  const permittedItems = useMemo(() => items.filter(item => selectedTypes === null || selectedTypes.includes(item.type || "SEM TIPO")), [items, selectedTypes]);
+  const types = useMemo(() => [...new Set(permittedItems.map(item => item.type || "SEM TIPO"))].sort((a, b) => a.localeCompare(b, "pt-BR")), [permittedItems]);
+  const typeItems = useMemo(() => permittedItems.filter(item => filterType === "Todos" || (item.type || "SEM TIPO") === filterType), [permittedItems, filterType]);
+  const groups = useMemo(() => [...new Set(typeItems.map(item => item.group).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")), [typeItems]);
+  const criteria = useMemo(() => [...new Set(typeItems.filter(item => filterGroup === "Todos" || item.group === filterGroup).map(item => item.criterion))].sort((a, b) => a.localeCompare(b, "pt-BR")), [typeItems, filterGroup]);
+
+  function changeTypeView(next: string[] | null) {
+    setSelectedTypes(next); setFilterType("Todos"); setFilterGroup("Todos");
+    setFilterCriterion("Todos"); setFilterStatus("Todos");
+    setSelectedItemIds([]); setBulkDestination(""); setBulkMessage("");
+  }
+
+  useEffect(() => {
+    if (filterType !== "Todos" && !types.includes(filterType)) setFilterType("Todos");
+    if (filterGroup !== "Todos" && !groups.includes(filterGroup)) setFilterGroup("Todos");
+    if (filterCriterion !== "Todos" && !criteria.some(value => value === filterCriterion)) setFilterCriterion("Todos");
+  }, [types, groups, criteria, filterType, filterGroup, filterCriterion]);
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("pt-BR");
-    return items.filter((item) => {
+    return permittedItems.filter((item) => {
       const matchesQuery = !q || `${item.code} ${item.description} ${item.group} ${item.criterion} ${item.unit}`.toLocaleLowerCase("pt-BR").includes(q);
       const matchesType = filterType === "Todos" || (item.type || "SEM TIPO") === filterType;
       const matchesGroup = filterGroup === "Todos" || item.group === filterGroup;
@@ -94,7 +116,15 @@ function App() {
       if (sortMode === "group") return a.group.localeCompare(b.group, "pt-BR") || a.description.localeCompare(b.description, "pt-BR");
       return a.description.localeCompare(b.description, "pt-BR", { numeric: true, sensitivity: "base" });
     });
-  }, [items, query, filterType, filterGroup, filterCriterion, filterStatus, visibilityFilter, sortMode]);
+  }, [permittedItems, query, filterType, filterGroup, filterCriterion, filterStatus, visibilityFilter, sortMode]);
+
+  useEffect(() => {
+    const visibleIds = new Set(filteredItems.map(item => item.id));
+    setSelectedItemIds(current => {
+      const next = current.filter(id => visibleIds.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [filteredItems]);
 
   useEffect(() => {
     const el = catalogWrapRef.current;
@@ -379,13 +409,13 @@ function App() {
                 <p className="form-note">Dados salvos apenas neste navegador. A conexão ao banco será feita em etapa posterior.</p>
               </section>}
               <section className="panel">
-                <div className="toolbar"><div><h2>Catálogo de itens</h2><p>{filteredItems.length} de {items.length} itens exibidos</p></div><div className="search-box"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar código, descrição, grupo ou unidade" /></div></div>
+                <div className="toolbar catalog-toolbar"><div><h2>Catálogo de itens</h2><p aria-live="polite">{filteredItems.length} de {items.length} itens exibidos</p></div><div className="catalog-toolbar-actions"><label className="search-box catalog-search"><Search size={16} aria-hidden="true" /><input aria-label="Buscar itens" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar código, descrição, grupo ou unidade" /></label><CatalogTypeFilter types={allTypes} selected={selectedTypes} onChange={changeTypeView} /></div></div>
                 <div className="catalog-filters">
-                  <label>Tipo<select value={filterType} onChange={(e) => { setFilterType(e.target.value); setFilterGroup("Todos"); }}><option>Todos</option>{types.map((type) => <option key={type}>{type}</option>)}</select></label>
-                  <label>Grupo<select value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)}><option>Todos</option>{groups.map((group) => <option key={group}>{group}</option>)}</select></label>
-                  <label>Critério<select value={filterCriterion} onChange={(e) => setFilterCriterion(e.target.value)}><option>Todos</option><option>Mensal</option><option>Entrada e saída</option><option>Sob solicitação</option></select></label>
+                  <label>Tipo<select value={filterType} onChange={(e) => { setFilterType(e.target.value); setFilterGroup("Todos"); setFilterCriterion("Todos"); setSelectedItemIds([]); }}><option>Todos</option>{types.map((type) => <option key={type}>{type}</option>)}</select></label>
+                  <label>Grupo<select value={filterGroup} onChange={(e) => { setFilterGroup(e.target.value); setFilterCriterion("Todos"); }}><option>Todos</option>{groups.map((group) => <option key={group}>{group}</option>)}</select></label>
+                  <label>Critério<select value={filterCriterion} onChange={(e) => setFilterCriterion(e.target.value)}><option>Todos</option>{criteria.map(criterion => <option key={criterion}>{criterion}</option>)}</select></label>
                   <label>Status<select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option>Todos</option><option>Ativo</option><option>Inativo</option></select></label>
-                  <label>Mostrar<select value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value)}><option value="visiveis">Visíveis</option><option value="ocultos">Ocultos</option><option value="todos">Todos</option></select></label>
+                  <label>Visibilidade<select value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value)}><option value="visiveis">Visíveis</option><option value="ocultos">Ocultos</option><option value="todos">Todos</option></select></label>
                   <label>Ordenar por<select value={sortMode} onChange={(e) => setSortMode(e.target.value)}><option value="description">Descrição (A–Z)</option><option value="code">Código (A–Z)</option><option value="group">Grupo e descrição</option></select></label>
                 </div>
                 <div className="form-actions catalog-bulk-actions" style={{ justifyContent: "space-between", marginBottom: 12 }}>

@@ -17,14 +17,14 @@ O ZIP contém App.tsx, data.ts, main.tsx, styles.css, supabase.ts, types.ts e um
 
 ## Limitações verificadas na auditoria
 - Os 1.646 itens vistos no Codespace não fazem parte do ZIP: podem estar no armazenamento do navegador daquela prévia. Não limpar os dados desse navegador; exportar os dados em etapa própria antes de mudar o endereço de acesso.
-- O filtro Mostrar atual escolhe visíveis/ocultos/todos. O painel Mostrar por tipos com preferência persistente descrito no Word ainda não está implementado nesta cópia. CSS com classes correspondentes não comprova lógica aplicada.
+- Na base recuperada, Mostrar escolhia visíveis/ocultos/todos. A evolução local agora implementa Mostrar por tipos como filtro mestre, ao lado da busca; o controle antigo foi renomeado para Visibilidade.
 - A prévia de importação usa o texto 'Serão atualizados', mas a confirmação preserva códigos existentes sem sobrescrever. Corrigir a comunicação em entrega separada.
 - Ainda não há segurança de servidor ou verificação de vínculos para exclusões locais.
 
 ## Forma de trabalhar
 Usar o código aprovado como fonte primária. Fazer uma mudança pequena por vez, comparar diferenças, executar validação e colher retorno. Separar telas gradualmente somente depois de estabelecer a base, preservando visual e comportamento.
 
-Próxima melhoria prevista no cadastro: painel Mostrar por tipos ao lado da busca, filtros subordinados coerentes e preferência salva, conforme o Word. Esta recuperação não implementa esse painel.
+O painel Mostrar por tipos foi implementado na evolução local descrita abaixo; ainda aguarda sincronização com o Codespace.
 
 No futuro, o acompanhamento de pedidos terá lista e Kanban usando os mesmos registros e filtros, agrupados por status. Campos e transições serão validados antes de implementar. Reservas, recebimentos e saldos reais exigem persistência segura e regras específicas; o ERP segue oficial.
 
@@ -40,3 +40,15 @@ Por preferência do responsável, acumular as próximas melhorias neste ambiente
 - As chaves locais de itens, ciclos e histórico foram mantidas. Itens antigos sem os campos opcionais continuam funcionando.
 
 Validação: build TypeScript/Vite; navegador com seis colunas, bloqueio em Consulta, abas por teclado, especificação opcional/persistência, interruptor/cancelamento, histórico isolado por item, associações separadas incluindo saldo zero, ciclo por ID, estados vazios e janela móvel. Exemplos de associações foram injetados somente no navegador isolado de teste, sem alterar os dados do projeto.
+
+
+## Filtro mestre Mostrar e busca uniforme (aguardando sincronização)
+- Busca e Mostrar lado a lado, com altura, borda e foco compatíveis com os demais campos.
+- Componente separado `CatalogTypeFilter.tsx`: tipos com pesquisa, checkboxes e contagens, Selecionar todos, Desmarcar todos e Concluir.
+- Hierarquia: Mostrar restringe a base visível; Tipo só oferece tipos permitidos; Grupo só oferece grupos dos tipos permitidos e do Tipo escolhido; Critério acompanha esse recorte e o grupo.
+- Alterar Mostrar limpa subfiltros e seleção em lote. Mudanças nos demais filtros retiram da seleção os itens fora do resultado. Nenhum item é excluído da base por esse filtro.
+- Salvar como padrão, Restaurar padrão e Remover padrão usam a chave `suprimentos:cadastro:mostrar-tipos:v1`. Sem padrão: todos os tipos; seleção vazia: nenhum item. As mudanças só persistem quando o usuário salva o padrão. Remover padrão retorna a todos.
+- O padrão é uma visualização única por navegador/endereço, não compartilhada entre usuários ou ambientes. Não há telas de múltiplas visualizações nomeadas nesta entrega.
+- Visibilidade (visíveis/ocultos/todos) continua sendo um filtro independente, diferente do filtro mestre de tipos.
+
+Validação do filtro: hierarquia e opções subordinadas, seleção segura, busca, salvar/restaurar/remover padrão e recarga incluindo seleção vazia, fechamento por Escape, alturas iguais, largura móvel e preservação dos itens na base. Build passou.
