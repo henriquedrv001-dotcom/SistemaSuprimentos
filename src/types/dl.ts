@@ -112,6 +112,8 @@ export interface DLContract {
   notAwarded: { lineId: string; reason: string }[];
   signedOn: string;
   orderDatesFromContract?: true;
+  signedOnFromRegistration?: true;
+  validityFromPlanning?: true;
   validityMode?: "automatic";
   validityMonths?: number | null;
   validFrom: string;

@@ -348,7 +348,7 @@ function App() {
     }
     if(JSON.stringify(previous?.requestSubmission)!==JSON.stringify(candidate.requestSubmission)) changes.push(candidate.requestSubmission?`Requisição MXM ${candidate.requestSubmission.mxmNumber}, de ${candidate.requestSubmission.requestDate}, enviada explicitamente para análise em ${candidate.requestSubmission.timestamp}. Edição bloqueada até devolução.`:"Envio anterior invalidado pela reabertura do planejamento; será necessário reenviar para análise.");
     if(JSON.stringify(previous?.requestReturn)!==JSON.stringify(candidate.requestReturn)&&candidate.requestReturn)changes.push(`Requisição devolvida para correção em ${candidate.requestReturn.timestamp}. Observação: ${candidate.requestReturn.reason}`);
-    if (JSON.stringify(previous?.processFlow) !== JSON.stringify(candidate.processFlow)) changes.push(`Etapes do processo: ${JSON.stringify(previous?.processFlow ?? {})} → ${JSON.stringify(candidate.processFlow ?? {})}`);
+    if (JSON.stringify(previous?.processFlow) !== JSON.stringify(candidate.processFlow)) changes.push(`Etapas do processo: ${JSON.stringify(previous?.processFlow ?? {})} → ${JSON.stringify(candidate.processFlow ?? {})}`);
     const itemEvents: ItemHistoryEntry[] = [];
     for (const itemId of new Set([...(previous?.lines ?? []).map(line => line.itemId), ...candidate.lines.map(line => line.itemId)])) {
       const old = previous?.lines.find(line => line.itemId === itemId); const next = candidate.lines.find(line => line.itemId === itemId);

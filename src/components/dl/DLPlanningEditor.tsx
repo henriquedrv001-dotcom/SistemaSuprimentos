@@ -518,11 +518,6 @@ export default function DLPlanningEditor({
                     setDraft({ ...draft, [key]: e.target.value })
                   }
                 />
-                {key === "deliveryDate" && (
-                  <small className="muted">
-                    Necessária para gerar a requisição MXM.
-                  </small>
-                )}
               </label>
             ))}
             <label>

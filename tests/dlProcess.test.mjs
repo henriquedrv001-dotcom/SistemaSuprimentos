@@ -16,6 +16,7 @@ import {
 import {
   processFlow,
   registerDLOrder,
+  registeredDLContract,
   submitDLSuppliers,
   returnDLSuppliers,
 } from "../src/services/dlProcess.ts";
@@ -413,4 +414,99 @@ test("planejamento fechado protege vigência prevista e reabertura explícita li
     "",
   );
   assert.equal(saved.plan.plannedValidityMonths, 6);
+});
+
+test("registro calcula contratação na data local e vigência a partir dos meses planejados", () => {
+  const p = fixture();
+  delete p.contract;
+  p.plannedValidityMonths = 3;
+  const contract = registeredDLContract(p, "2027-02-01T01:00:00.000Z");
+  assert.equal(contract.signedOn, "2027-01-31");
+  assert.equal(contract.validFrom, "2027-01-31");
+  assert.equal(contract.validUntil, "2027-04-30");
+  assert.equal(contract.validityMonths, 3);
+  assert.equal(contract.validityFromPlanning, true);
+  assert.equal(contract.signedOnFromRegistration, true);
+  const next = registerDLOrder(p, [doc()]);
+  const saved = storeDLPlan(workspace(p), next, "Pedido gerado", "", {
+    processAction: "registerOrder",
+  });
+  assert.equal(saved.plan.contract.validityMonths, 3);
+  assert.equal(
+    saved.plan.contract.signedOn,
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(saved.plan.processFlow.orderRegistered.timestamp)),
+  );
+  assert.deepEqual(contractOrigins(saved.plan), []);
+});
+test("registro automático preserva dados contratuais antigos e acréscimo de anexos", () => {
+  const p = fixture();
+  p.plannedValidityMonths = 6;
+  p.contract = {
+    ...p.contract,
+    validityMode: "automatic",
+    validityMonths: 3,
+    validFrom: "2026-10-17",
+    validUntil: "2027-01-17",
+  };
+  const before = structuredClone(p.contract);
+  const next = registerDLOrder(p, [doc()]);
+  assert.deepEqual(next.contract, before);
+  const appended = registerDLOrder(next, [doc()]);
+  assert.deepEqual(appended.contract, before);
+});
+test("revisão dos meses planejados atualiza somente vigência derivada; registro não permite forjar fornecedores", () => {
+  const p = fixture();
+  delete p.contract;
+  p.plannedValidityMonths = 3;
+  const contract = registeredDLContract(p, "2026-10-17T18:00:00.000Z");
+  const revised = registeredDLContract(
+    { ...p, contract, plannedValidityMonths: 6 },
+    "2026-10-18T18:00:00.000Z",
+  );
+  assert.equal(revised.signedOn, "2026-10-17");
+  assert.equal(revised.validUntil, "2027-04-17");
+  const original = fixture();
+  const forged = structuredClone(registerDLOrder(original, [doc()]));
+  forged.contract.awards[0].supplier = "Outra pessoa";
+  assert.throws(
+    () =>
+      storeDLPlan(workspace(original), forged, "Pedido", "", {
+        processAction: "registerOrder",
+      }),
+    /preservar os dados finais/,
+  );
+});
+
+test("pedido antigo já registrado completa os dados automáticos usando a data original sem anexar de novo", () => {
+  const p = fixture();
+  delete p.contract;
+  p.plannedValidityMonths = 3;
+  p.stage = "Pedido gerado";
+  p.processFlow = {
+    version: 1,
+    purchaseOrders: [doc()],
+    orderRegistered: {
+      timestamp: "2027-02-01T01:00:00.000Z",
+      actor: "Compradora",
+    },
+  };
+  const next = registerDLOrder(p, []);
+  const saved = storeDLPlan(workspace(p), next, "Dados automáticos", "", {
+    processAction: "registerOrder",
+  });
+  assert.equal(saved.plan.contract.signedOn, "2027-01-31");
+  assert.equal(saved.plan.contract.validUntil, "2027-04-30");
+  assert.deepEqual(
+    saved.plan.processFlow.purchaseOrders,
+    p.processFlow.purchaseOrders,
+  );
+  assert.deepEqual(
+    saved.plan.processFlow.orderRegistered,
+    p.processFlow.orderRegistered,
+  );
 });

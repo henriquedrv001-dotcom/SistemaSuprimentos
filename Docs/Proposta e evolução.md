@@ -238,3 +238,12 @@ Componente visual compartilhado para títulos numerados, situações com ícones
 
 ### Cabeçalho compacto de Materiais e orçamento — 17/10/2026
 Aplicado o desenho enviado: título/categoria/abertura/entrega/vigência na primeira linha e justificativa/solicitante na segunda. Layout responsivo e controles compactos. Usuário confirmou vigência como período previsto em meses: campo opcional próprio `plannedValidityMonths`, com validação, histórico e bloqueio após fechar planejamento. Previsão não altera a vigência contratual real nem preenche datas ou previsões antigas. Validados 107 testes, build e Chromium com alinhamento das cinco caixas, edição/persistência, congelamento após fechamento e apresentação móvel.
+
+
+### Histórico compacto, andamento e contratação automática — 17/10/2026
+
+Histórico único com ícones, filtro de atividades e detalhes expansíveis; eventos antigos, inclusive snapshots de processo, são apresentados de forma legível sem regravação. Indicador das seis etapas baseado nas transições efetivas, com devolução e reabertura. Fornecedores conserva apenas preenchimento dos itens; resumo financeiro e contratual permanece na aba de consulta.
+
+Registrar pedido utiliza a data de Brasília e os meses previstos no planejamento para calcular o vencimento por calendário. Valores antigos e primeiro registro são preservados; registros anteriores incompletos podem completar os dados automáticos sem substituir anexos. Cabeçalho mais compacto, sem aviso abaixo da entrega.
+
+Validação: 117 testes, build e Chromium com fluxo completo, filtros sem alteração dos eventos, histórico no Controle, datas em limite de fuso/mês, preservação de dados legados, campos de fornecedores, anexos e aprovação final única.

@@ -1,3 +1,4 @@
+import DLProcessProgress from "./DLProcessProgress";
 import DLWorkflowStep from "./DLWorkflowStep";
 import type { ReactNode } from "react";
 import type { DLPlan } from "../../types/dl";
@@ -47,6 +48,7 @@ export default function DLRequestWorkflow({
       !plan.contract?.release);
   return (
     <div className="dl-request-steps">
+      <DLProcessProgress plan={plan} />
       {prelude}
       <DLWorkflowStep
         id="dl-generation-title"

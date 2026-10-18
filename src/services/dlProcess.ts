@@ -1,3 +1,4 @@
+import { automaticContractValidity } from "./dlDates.ts";
 import { dlOrderDocuments } from "./dlOrderDocuments.ts";
 import type {
   DLPlan,
@@ -5,7 +6,7 @@ import type {
   DLSaveOptions,
   DLOrderDocument,
 } from "../types/dl";
-import { validateDLContract } from "./dlContract.ts";
+import { emptyDLContract, validateDLContract } from "./dlContract.ts";
 const actor = "Sessão local · sem autenticação";
 const stamp = () => ({ timestamp: new Date().toISOString(), actor });
 const json = (value: unknown) => JSON.stringify(value);
@@ -23,6 +24,49 @@ export function canRegisterDLOrder(plan: DLPlan) {
 }
 export function processFlow(plan: DLPlan): DLProcessFlow {
   return plan.processFlow ?? { version: 1 };
+}
+export function needsDLContractRegistration(plan: DLPlan) {
+  const contract = plan.contract;
+  return !contract?.signedOn || (plan.plannedValidityMonths != null && !contract.validFrom && !contract.validUntil && contract.validityMonths == null);
+}
+export function registeredDLContract(plan: DLPlan, timestamp: string) {
+  const value = plan.contract ?? {
+    ...emptyDLContract(),
+    orderDatesFromContract: true as const,
+    validityMode: "automatic" as const,
+    validityMonths: null,
+  };
+  const signedOn =
+    value.signedOn ||
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(timestamp));
+  const canUsePlanned =
+    value.validityFromPlanning ||
+    (!value.validFrom && !value.validUntil && value.validityMonths == null);
+  const contract = automaticContractValidity({
+    ...value,
+    signedOn,
+    ...(!value.signedOn ? { signedOnFromRegistration: true as const } : {}),
+    ...(canUsePlanned && plan.plannedValidityMonths != null
+      ? {
+          validityMode: "automatic" as const,
+          validityMonths: plan.plannedValidityMonths,
+          validityFromPlanning: true as const,
+        }
+      : {}),
+  });
+  return {
+    ...contract,
+    awards: contract.awards.map((award) =>
+      contract.orderDatesFromContract
+        ? { ...award, orderDate: signedOn }
+        : award,
+    ),
+  };
 }
 export function registerDLOrder(
   plan: DLPlan,
@@ -43,19 +87,21 @@ export function registerDLOrder(
       );
     return !old;
   });
+  const registration =
+    plan.stage === "Pedido gerado"
+      ? (plan.processFlow?.orderRegistered ?? stamp())
+      : stamp();
   return {
     ...plan,
     stage: "Pedido gerado",
+    contract: registeredDLContract(plan, registration.timestamp),
     processFlow: {
       ...processFlow(plan),
       purchaseOrders: [
         ...(plan.processFlow?.purchaseOrders ?? []),
         ...additions,
       ],
-      orderRegistered:
-        plan.stage === "Pedido gerado"
-          ? (plan.processFlow?.orderRegistered ?? stamp())
-          : stamp(),
+      orderRegistered: registration,
     },
   };
 }
@@ -187,8 +233,19 @@ export function guardDLProcess(
     if (
       options.processAction === "registerOrder" &&
       next.stage === "Pedido gerado"
-    )
+    ) {
       oldData.stage = "Pedido gerado";
+      if (
+        !after?.orderRegistered ||
+        json(
+          registeredDLContract(previous, after.orderRegistered.timestamp),
+        ) !== json(next.contract)
+      )
+        throw new Error(
+          "O registro deve preservar os dados finais e calcular somente os dados automáticos da contratação.",
+        );
+      oldData.contract = next.contract;
+    }
     if (json(oldData) !== json(newData))
       throw new Error(
         "A ação da etapa não permite alterar os demais dados da DL.",
@@ -256,13 +313,17 @@ export function guardDLProcess(
     }
     if (json(expected) !== json(after))
       throw new Error("A ação não permite alterar outras etapas do processo.");
-    if (json(previous.contract) !== json(next.contract))
+    if (
+      options.processAction !== "registerOrder" &&
+      json(previous.contract) !== json(next.contract)
+    )
       throw new Error(
         "Salve os fornecedores antes de executar a ação da etapa.",
       );
   }
   if (
     before &&
+    options?.processAction !== "registerOrder" &&
     !previous.contract?.release &&
     json(previous.contract) !== json(next.contract) &&
     !options?.release &&

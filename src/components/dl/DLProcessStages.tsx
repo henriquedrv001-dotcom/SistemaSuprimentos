@@ -7,6 +7,7 @@ import type { Item } from "../../types";
 import { dlObservation } from "../../services/dlRequest";
 import {
   canRegisterDLOrder,
+  needsDLContractRegistration,
   processFlow,
   registerDLOrder,
   returnDLSuppliers,
@@ -189,20 +190,28 @@ export default function DLProcessStages({
   const hasAttachments = attachments.length > 0;
   const processClosed =
     plan.stage === "Pedido gerado" || !!plan.contract?.release;
+  const needsRegistration = needsDLContractRegistration(plan);
   const locked = blocked || busy;
   const canFill =
     eligible &&
+    !needsRegistration &&
     hasAttachments &&
     !submitted &&
     (processClosed || !plan.processFlow?.purchaseOrders);
   const released = !!plan.contract?.release;
   async function register() {
-    if (!files.length && (!hasAttachments || processClosed)) return;
+    if (
+      !files.length &&
+      (!hasAttachments || (processClosed && !needsRegistration))
+    )
+      return;
     if (
       !window.confirm(
-        processClosed
-          ? "Registrar os novos anexos? O processo permanece fechado com status Pedido gerado."
-          : "Registrar o pedido? O processo de compra será fechado com status Pedido gerado. Fornecedores e aprovação final continuam nas próximas etapas.",
+        processClosed && !files.length && needsRegistration
+          ? "Completar os dados automáticos da contratação a partir do registro existente?"
+          : processClosed
+            ? "Registrar os novos anexos? O processo permanece fechado com status Pedido gerado."
+            : "Registrar o pedido? O processo de compra será fechado com status Pedido gerado. Fornecedores e aprovação final continuam nas próximas etapas.",
       )
     )
       return;
@@ -228,7 +237,7 @@ export default function DLProcessStages({
       const candidate = registerDLOrder(plan, uploaded);
       onPersist(
         candidate,
-        `${processClosed ? "Anexos do pedido adicionados" : "Pedido gerado · processo fechado"}: ${dlOrderDocuments(
+        `${processClosed ? (uploaded.length ? "Anexos do pedido adicionados" : "Dados automáticos da contratação atualizados") : "Pedido gerado · processo fechado"}: ${dlOrderDocuments(
           candidate,
         )
           .map((document) => document.name)
@@ -294,14 +303,16 @@ export default function DLProcessStages({
         number={4}
         title="Registro do pedido"
         status={
-          processClosed
-            ? "Pedido gerado"
-            : hasAttachments
-              ? "Anexos registrados"
-              : "Aguardando pedido"
+          needsRegistration && hasAttachments && eligible
+            ? "Completar registro"
+            : processClosed
+              ? "Pedido gerado"
+              : hasAttachments
+                ? "Anexos registrados"
+                : "Aguardando pedido"
         }
-        completed={processClosed || hasAttachments}
-        active={eligible && !processClosed}
+        completed={(processClosed || hasAttachments) && !needsRegistration}
+        active={eligible && (!processClosed || needsRegistration)}
         description="Anexe o pedido emitido no MXM. Registrar fecha o processo de compra com status Pedido gerado."
       >
         {processClosed && plan.processFlow?.orderRegistered && (
@@ -432,7 +443,8 @@ export default function DLProcessStages({
             <button
               className="primary-button"
               disabled={
-                (!files.length && (!hasAttachments || processClosed)) ||
+                (!files.length &&
+                  (!hasAttachments || (processClosed && !needsRegistration))) ||
                 !eligible ||
                 submitted ||
                 locked ||
@@ -470,9 +482,10 @@ export default function DLProcessStages({
         }
         completed={submitted || released}
         active={canFill}
-        description="Confira o pedido e informe fornecedores, números MXM, preços e vigência. As quantidades vêm do planejamento."
+        description="Confira o pedido e informe fornecedores, números MXM e preços. As quantidades vêm do planejamento."
       >
         {(!hasAttachments ||
+          needsRegistration ||
           (!processClosed && !!plan.processFlow?.purchaseOrders)) &&
           !released && (
             <p className="catalog-feedback">

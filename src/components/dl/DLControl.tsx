@@ -1,3 +1,4 @@
+import DLHistory from "./DLHistory";
 import DLSchedulePanel from "./DLSchedulePanel";
 import { emptyDLSchedule } from "../../services/dlSchedule";
 import { useState } from "react";
@@ -238,22 +239,7 @@ export default function DLControl({
               foi criado automaticamente ao concluir esta DL.
             </p>
           )}
-          {tab === "history" && (
-            <>
-              {workspace.events
-                .filter((event) => event.planId === selected.id)
-                .map((event) => (
-                  <article className="dl-event" key={event.id}>
-                    <strong>{event.action}</strong>
-                    <p style={{ whiteSpace: "pre-wrap" }}>{event.details}</p>
-                    <small>
-                      {new Date(event.timestamp).toLocaleString("pt-BR")} ·{" "}
-                      {event.actor}
-                    </small>
-                  </article>
-                ))}
-            </>
-          )}
+          {tab === "history" && <DLHistory planId={selected.id} events={workspace.events} />}
         </>
       ) : (
         <>

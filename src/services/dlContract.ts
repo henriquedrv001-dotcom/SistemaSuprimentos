@@ -97,6 +97,7 @@ export function validateDLContract(
     throw new Error(
       "A data dos pedidos deve ser a mesma da contratação/emissão do pedido.",
     );
+  for (const flag of [contract.signedOnFromRegistration, contract.validityFromPlanning]) if (flag !== undefined && flag !== true) throw new Error("Origem dos dados automáticos da contratação inválida.");
   const lineIds = new Set(plan.lines.map((line) => line.id));
   if (
     new Set(contract.awards.map((award) => award.lineId)).size !==

@@ -1,8 +1,5 @@
 import DLMoneyInput from "./DLMoneyInput";
-import {
-  automaticContractValidity,
-  exactValidityMonths,
-} from "../../services/dlDates";
+import { automaticContractValidity } from "../../services/dlDates";
 import type {
   DLContract,
   DLContractAward,
@@ -14,7 +11,6 @@ import { emptyDLContract, awardTotal } from "../../services/dlContract";
 import {
   decimalInput,
   formatMoney,
-  lineSubtotal,
   parseScaledInput,
 } from "../../services/dlPlanning";
 export type AwardInput = Omit<
@@ -83,160 +79,14 @@ export default function DLContractForm({
       ),
     });
   }
-  let finalTotal = 0;
-  let valid = true;
-  try {
-    for (const award of materializeContract(value).awards) {
-      const amount = awardTotal(award);
-      if (amount === null) valid = false;
-      else finalTotal += amount;
-    }
-    if (!Number.isSafeInteger(finalTotal)) valid = false;
-  } catch {
-    valid = false;
-  }
-  const estimated = plan.lines.reduce(
-    (total, line) => total + (lineSubtotal(line) ?? 0),
-    0,
-  );
-  const completeResults = plan.lines.every(
-    (line) =>
-      value.awards.some((a) => a.lineId === line.id) ||
-      value.notAwarded.some((a) => a.lineId === line.id),
-  );
-  const difference = finalTotal - estimated;
   return (
     <>
-      <div className="dl-contract-summary">
-        <div>
-          <span>Orçamento previsto</span>
-          <strong>{formatMoney(estimated)}</strong>
-        </div>
-        <div>
-          <span>
-            Contratação {valid && completeResults ? "informada" : "parcial"}
-          </span>
-          <strong>
-            {valid ? formatMoney(finalTotal) : "Revise os valores"}
-          </strong>
-        </div>
-        <div>
-          <span>
-            Diferença{" "}
-            {valid && completeResults ? "sobre o previsto" : "parcial"}
-          </span>
-          <strong>
-            {valid
-              ? `${formatMoney(difference)}${estimated ? ` (${((difference / estimated) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%)` : ""}`
-              : "—"}
-          </strong>
-        </div>
-      </div>
-      <p className="muted">
-        Um fornecedor por item. Quantidades e preços finais não alteram o
-        orçamento previsto. Preencha os resultados e salve antes de concluir a
-        DL.
-      </p>
       <fieldset disabled={readOnly} className="dl-contract-fields">
-        <div className="form-grid dl-validity-fields">
-          <label>
-            Data da contratação / Emissão do pedido
-            <input
-              type="date"
-              value={value.signedOn}
-              onChange={(e) => onChange({ ...value, signedOn: e.target.value })}
-            />
-          </label>
-          {value.validityMode === "automatic" ? (
-            <>
-              <label>
-                Vigência (meses)
-                <input
-                  type="number"
-                  aria-label="Vigência (meses)"
-                  min="1"
-                  max="1200"
-                  step="1"
-                  value={value.validityMonths ?? ""}
-                  onChange={(e) =>
-                    onChange({
-                      ...value,
-                      validityMonths:
-                        e.target.value === "" ? null : Number(e.target.value),
-                    })
-                  }
-                />
-                <small className="muted">
-                  Meses contados a partir da data da contratação/emissão do
-                  pedido.
-                </small>
-              </label>
-              <label>
-                Vencimento da vigência (automático)
-                <input
-                  type="text"
-                  readOnly
-                  value={(() => {
-                    try {
-                      const end = automaticContractValidity({
-                        ...value,
-                        awards: [],
-                      }).validUntil;
-                      return end ? end.split("-").reverse().join("/") : "";
-                    } catch {
-                      return "Revise a data ou os meses";
-                    }
-                  })()}
-                  placeholder="Informe a data-base e os meses"
-                />
-              </label>
-            </>
-          ) : (
-            <div className="dl-legacy-validity">
-              <strong>Vigência cadastrada</strong>
-              <p>
-                {value.validFrom
-                  ? value.validFrom.split("-").reverse().join("/")
-                  : "—"}{" "}
-                a{" "}
-                {value.validUntil
-                  ? value.validUntil.split("-").reverse().join("/")
-                  : "—"}
-              </p>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Substituir as datas manuais pelo cálculo a partir da data da contratação e dos meses? A alteração só será aplicada ao salvar.",
-                    )
-                  )
-                    onChange({
-                      ...value,
-                      validityMode: "automatic",
-                      validityMonths:
-                        value.signedOn === value.validFrom
-                          ? exactValidityMonths(
-                              value.validFrom,
-                              value.validUntil,
-                            )
-                          : null,
-                      validFrom: "",
-                      validUntil: "",
-                    });
-                }}
-              >
-                Calcular por meses
-              </button>
-            </div>
-          )}
-        </div>
         <div className="table-wrap">
           <table className="dl-contract-table">
             <thead>
               <tr>
-                <th>Código / material / previsto</th>
+                <th>Código / material</th>
                 <th>Resultado</th>
                 <th>Fornecedor</th>
                 <th>Pedido MXM</th>
@@ -309,14 +159,6 @@ export default function DLContractForm({
                       <span className="dl-spec">
                         {item?.description ?? "Material"}
                       </span>
-                      <small className="dl-spec">
-                        Previsto:{" "}
-                        {decimalInput(line.quantityMilli, 3) || "A definir"}{" "}
-                        {line.unit} ·{" "}
-                        {lineSubtotal(line) === null
-                          ? "Preço a definir"
-                          : formatMoney(lineSubtotal(line)!)}
-                      </small>
                     </td>
                     <td>
                       <select
@@ -433,13 +275,6 @@ export default function DLContractForm({
           </p>
         )}
       </fieldset>
-      {readOnly && (
-        <p className="muted">
-          {plan.contract?.release
-            ? "Contratação concluída e protegida. A origem dos saldos é preservada."
-            : "Conclua o planejamento para registrar a contratação. Para processos suspensos ou cancelados, revise a situação antes de continuar."}
-        </p>
-      )}
     </>
   );
 }
