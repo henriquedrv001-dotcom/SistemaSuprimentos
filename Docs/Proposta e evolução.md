@@ -254,3 +254,8 @@ Validação: 117 testes, build e Chromium com fluxo completo, filtros sem altera
 Numeradores das etapas concluídas usam o azul do tema. Salvar alterações fica cinza e desabilitado quando não há alterações pendentes, voltando a habilitar ao editar. Cada anexo tem Visualizar ao lado de Baixar: PDF e imagem abrem em diálogo, sem iniciar download; fechar libera a URL temporária.
 
 Validação: build, TypeScript e Chromium com salvar/editar, numeradores concluídos, visualização de PDF e imagem, fechamento/reabertura e download preservado.
+
+
+### Ajuste dos numeradores e acesso ao cronograma — 17/10/2026
+
+Etapas concluídas têm numeradores com fundo azul do tema e texto branco. Removido o bloco superior Andamento do processo. Cronograma sai da lista de abas e continua acessível pelo botão no topo; a abertura padrão passa a Materiais e orçamento. Funcionalidades e dados do cronograma preservados. Build e navegador conferidos.

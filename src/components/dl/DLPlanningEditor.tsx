@@ -56,7 +56,7 @@ export default function DLPlanningEditor({
       ]),
     ),
   );
-  const [tab, setTab] = useState("schedule");
+  const [tab, setTab] = useState("items");
   const [scheduleDraft, setScheduleDraft] = useState(
     () => plan.schedule ?? emptyDLSchedule(),
   );
@@ -403,7 +403,6 @@ export default function DLPlanningEditor({
       </div>
       <div className="tabs">
         {[
-          ["schedule", "Cronograma"],
           ["items", "Materiais e orçamento"],
           ["request", "Requisição e processo"],
           ["contract", "Contratação e fornecedores"],
