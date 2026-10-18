@@ -34,6 +34,8 @@ export interface DLPlan {
   /** Observação legada; conservada para compatibilidade. */
   notes: string;
   deliveryDate?: string;
+  /** Estimated months at planning; independent of signed contract dates. */
+  plannedValidityMonths?: number | null;
   stage: DLStage;
   contract?: DLContract;
   processFlow?: DLProcessFlow;

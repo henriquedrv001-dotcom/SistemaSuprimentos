@@ -98,6 +98,7 @@ function validDate(date: string) {
 }
 export function validateDLPlan(plan: DLPlan) {
   if (!plan.title.trim()) throw new Error("Informe o objeto/título da DL.");
+  if (plan.plannedValidityMonths !== undefined && plan.plannedValidityMonths !== null && (!Number.isSafeInteger(plan.plannedValidityMonths) || plan.plannedValidityMonths < 1 || plan.plannedValidityMonths > 1200)) throw new Error("A vigência prevista deve ter de 1 a 1200 meses inteiros, ou ficar em branco.");
   if (
     plan.deliveryDate !== undefined &&
     (typeof plan.deliveryDate !== "string" ||
@@ -321,6 +322,7 @@ export function newDLPlan(
     justification: draft.justification.trim(),
     notes: draft.notes.trim(),
     deliveryDate: draft.deliveryDate ?? "",
+    plannedValidityMonths: null,
     id: `dl-${crypto.randomUUID()}`,
     code: formatDLCode(sequenceNumber),
     sequenceNumber,
@@ -391,6 +393,7 @@ export function storeDLPlan(
         justification: plan.justification,
         notes: plan.notes,
         deliveryDate: plan.deliveryDate,
+        plannedValidityMonths: plan.plannedValidityMonths,
         lines: plan.lines,
       });
     if (!editableDLItems(previous)) {

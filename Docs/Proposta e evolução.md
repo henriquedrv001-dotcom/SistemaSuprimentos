@@ -234,3 +234,7 @@ Retirado o campo de digitação CONCLUIR. A conclusão mantém o checkbox obriga
 
 ### Padrão compacto das seis etapas — 17/10/2026
 Componente visual compartilhado para títulos numerados, situações com ícones, expansão e corpo de cada etapa. Mantidos os títulos e a ordem existentes, com campos/ações compactos, paleta azul e cinza e descrições diretas. Etapas concluídas recolhidas, etapas em andamento abertas e consulta manual pelo título. Retirados os expansores redundantes internos de justificativa/fornecedores. Recolher preserva estado em edição e anexos selecionados. Nenhuma mudança de regra ou estrutura dos dados. Validados build, testes existentes e Chromium no percurso completo e versões desktop/móvel.
+
+
+### Cabeçalho compacto de Materiais e orçamento — 17/10/2026
+Aplicado o desenho enviado: título/categoria/abertura/entrega/vigência na primeira linha e justificativa/solicitante na segunda. Layout responsivo e controles compactos. Usuário confirmou vigência como período previsto em meses: campo opcional próprio `plannedValidityMonths`, com validação, histórico e bloqueio após fechar planejamento. Previsão não altera a vigência contratual real nem preenche datas ou previsões antigas. Validados 107 testes, build e Chromium com alinhamento das cinco caixas, edição/persistência, congelamento após fechamento e apresentação móvel.

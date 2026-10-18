@@ -326,5 +326,91 @@ test("concluir por confirmação do pop-up ainda exige checkbox e aprovação do
   const completed = releaseDLPlan(p, true, true);
   assert.equal(completed.stage, "Concluído");
   assert.equal(contractOrigins(completed).length, 1);
-  assert.throws(() => releaseDLPlan(registered(), true, true), /envie os fornecedores/);
+  assert.throws(
+    () => releaseDLPlan(registered(), true, true),
+    /envie os fornecedores/,
+  );
+});
+
+test("vigência prevista é salva no planejamento sem mudar a contratação", () => {
+  const p = fixture();
+  p.stage = "Em planejamento";
+  p.contract = {
+    ...p.contract,
+    validityMode: "automatic",
+    validityMonths: 3,
+    validFrom: "2026-10-17",
+    validUntil: "2027-01-17",
+  };
+  const original = structuredClone(p.contract);
+  const saved = storeDLPlan(
+    workspace(p),
+    { ...p, plannedValidityMonths: 6 },
+    "Vigência prevista",
+    "",
+  );
+  assert.equal(saved.plan.plannedValidityMonths, 6);
+  assert.deepEqual(saved.plan.contract, original);
+  assert.equal(
+    readDLWorkspace(JSON.stringify(saved.workspace)).plans[0]
+      .plannedValidityMonths,
+    6,
+  );
+});
+test("vigência prevista é opcional, exige meses inteiros positivos e não é inferida de dados antigos", () => {
+  const p = fixture();
+  p.stage = "Em planejamento";
+  for (const months of [0, -1, 1.5, 1201, "3", NaN]) {
+    assert.throws(
+      () =>
+        storeDLPlan(
+          workspace(p),
+          { ...p, plannedValidityMonths: months },
+          "Salvar",
+          "",
+        ),
+      /vigência prevista/,
+    );
+  }
+  delete p.plannedValidityMonths;
+  assert.equal(
+    readDLWorkspace(JSON.stringify(workspace(p))).plans[0]
+      .plannedValidityMonths,
+    undefined,
+  );
+  const saved = storeDLPlan(
+    workspace(p),
+    { ...p, plannedValidityMonths: null },
+    "Salvar",
+    "",
+  );
+  assert.equal(saved.plan.plannedValidityMonths, null);
+});
+test("planejamento fechado protege vigência prevista e reabertura explícita libera edição", () => {
+  const p = fixture();
+  p.plannedValidityMonths = 3;
+  assert.throws(
+    () =>
+      storeDLPlan(
+        workspace(p),
+        { ...p, plannedValidityMonths: 6 },
+        "Salvar",
+        "",
+      ),
+    /planejamento está fechado/,
+  );
+  const reopened = storeDLPlan(
+    workspace(p),
+    reopenDLPlanning(p, true),
+    "Reabrir",
+    "",
+    { reopenPlanning: true },
+  );
+  const saved = storeDLPlan(
+    reopened.workspace,
+    { ...reopened.plan, plannedValidityMonths: 6 },
+    "Vigência prevista",
+    "",
+  );
+  assert.equal(saved.plan.plannedValidityMonths, 6);
 });

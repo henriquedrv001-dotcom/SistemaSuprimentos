@@ -584,9 +584,6 @@ dialog.dl-create {margin:auto}
 @media(max-width:900px) {.dl-editor .dl-schedule-fields {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px) {.dl-editor .dl-schedule-fields {grid-template-columns:minmax(0,1fr)}}
 
-.dl-planning-dates {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:start}
-.dl-planning-dates > label {align-content:start}
-@media(max-width:600px) {.dl-planning-dates {grid-template-columns:minmax(0,1fr)}}
 
 .dl-final-facts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0}
 .dl-final-facts div {min-width:0}
@@ -679,3 +676,13 @@ dialog.dl-create {margin:auto}
 .dl-workflow-body .dl-order-files li {padding:8px 10px}
 .dl-workflow-body .dl-order-closed,.dl-workflow-body .dl-return-note {padding:9px 10px;font-size:11px}
 @media(max-width:600px) {.dl-workflow-step .dl-stage-disclosure > .dl-step-heading {grid-template-columns:minmax(0,1fr) 16px;gap:6px 8px;padding:10px 12px}.dl-step-heading h3 {grid-column:1;grid-row:1}.dl-step-pill {grid-column:1;grid-row:2;justify-self:start;margin-left:31px;white-space:normal}.dl-step-chevron {grid-column:2;grid-row:1}.dl-workflow-body {padding:10px 12px 12px}.dl-workflow-body .dl-actions button {flex:1 1 160px;white-space:normal}}
+
+.dl-editor .dl-planning-fields {--control-height:36px;grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,.8fr);align-items:start;gap:14px 12px}
+.dl-planning-fields > label {min-width:0;align-content:start}
+.dl-planning-fields input {min-width:0}
+.dl-planning-fields .dl-planning-observation {grid-column:1/4}
+.dl-planning-fields .dl-planning-requester {grid-column:4/6}
+.dl-planning-fields .dl-planning-observation textarea {min-height:64px;line-height:1.5}
+.dl-planning-fields label small {font-size:10px;line-height:1.5;font-weight:400}
+@media(max-width:1100px) {.dl-editor .dl-planning-fields {grid-template-columns:repeat(2,minmax(0,1fr))}.dl-planning-fields .dl-planning-observation {grid-column:1/-1;grid-row:4}.dl-planning-fields .dl-planning-requester {grid-column:auto;grid-row:3}}
+@media(max-width:600px) {.dl-editor .dl-planning-fields {grid-template-columns:minmax(0,1fr)}.dl-planning-fields .dl-planning-observation,.dl-planning-fields .dl-planning-requester {grid-column:auto;grid-row:auto}}

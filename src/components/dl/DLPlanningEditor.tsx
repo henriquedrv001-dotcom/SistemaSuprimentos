@@ -494,53 +494,59 @@ export default function DLPlanningEditor({
       )}
       {tab === "items" && (
         <>
-          <div className="form-grid">
+          <div className="form-grid dl-planning-fields">
             {(
               [
                 ["title", "Objeto / título"],
                 ["category", "Categoria"],
+                ["openedOn", "Data de abertura"],
+                ["deliveryDate", "Data de entrega"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>
                 {label}
                 <input
+                  aria-label={label}
                   disabled={!editable || justificationDirty}
-                  type="text"
-                  value={draft[key]}
+                  type={
+                    key === "openedOn" || key === "deliveryDate"
+                      ? "date"
+                      : "text"
+                  }
+                  value={draft[key] ?? ""}
                   onChange={(e) =>
                     setDraft({ ...draft, [key]: e.target.value })
                   }
                 />
+                {key === "deliveryDate" && (
+                  <small className="muted">
+                    Necessária para gerar a requisição MXM.
+                  </small>
+                )}
               </label>
             ))}
-            <div className="dl-full-row dl-planning-dates">
-              {(
-                [
-                  ["openedOn", "Data de abertura"],
-                  ["deliveryDate", "Data de entrega"],
-                  ["responsible", "Solicitante"],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key}>
-                  {label}
-                  <input
-                    aria-label={label}
-                    disabled={!editable || justificationDirty}
-                    type={key === "responsible" ? "text" : "date"}
-                    value={draft[key] ?? ""}
-                    onChange={(e) =>
-                      setDraft({ ...draft, [key]: e.target.value })
-                    }
-                  />
-                  {key === "deliveryDate" && (
-                    <small className="muted">
-                      Necessária para gerar a requisição MXM.
-                    </small>
-                  )}
-                </label>
-              ))}
-            </div>
-            <label className="dl-observation-field dl-full-row">
+            <label>
+              Vigência (meses)
+              <input
+                aria-label="Vigência prevista (meses)"
+                type="number"
+                min="1"
+                max="1200"
+                step="1"
+                placeholder="A definir"
+                disabled={!editable || justificationDirty}
+                value={draft.plannedValidityMonths ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    plannedValidityMonths:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+                title="Período previsto no planejamento. A vigência contratual é definida após a emissão do pedido."
+              />
+            </label>
+            <label className="dl-observation-field dl-planning-observation">
               Observação / Justificativa
               <textarea
                 aria-label="Observação / Justificativa"
@@ -553,6 +559,17 @@ export default function DLPlanningEditor({
                     justification: e.target.value,
                     notes: "",
                   })
+                }
+              />
+            </label>
+            <label className="dl-planning-requester">
+              Solicitante
+              <input
+                aria-label="Solicitante"
+                disabled={!editable || justificationDirty}
+                value={draft.responsible}
+                onChange={(e) =>
+                  setDraft({ ...draft, responsible: e.target.value })
                 }
               />
             </label>
