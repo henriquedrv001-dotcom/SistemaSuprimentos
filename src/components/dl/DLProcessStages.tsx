@@ -1,3 +1,4 @@
+import DLDocumentPreview from "./DLDocumentPreview";
 import DLWorkflowStep from "./DLWorkflowStep";
 import { Paperclip, FileText, Download, X } from "lucide-react";
 import { dlOrderDocuments } from "../../services/dlOrderDocuments";
@@ -339,6 +340,7 @@ export default function DLProcessStages({
                     KB
                   </small>
                 </span>
+                <DLDocumentPreview document={document} />
                 <button
                   className="text-button"
                   aria-label={`Baixar ${document.name}`}

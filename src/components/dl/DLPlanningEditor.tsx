@@ -332,8 +332,9 @@ export default function DLPlanningEditor({
             Cronograma
           </button>
           <button
-            className="primary-button"
+            className={`primary-button${!dirty ? " is-saved" : ""}`}
             disabled={
+              !dirty ||
               justificationDirty ||
               (tab === "items"
                 ? !editable

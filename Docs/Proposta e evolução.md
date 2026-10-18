@@ -247,3 +247,10 @@ Histórico único com ícones, filtro de atividades e detalhes expansíveis; eve
 Registrar pedido utiliza a data de Brasília e os meses previstos no planejamento para calcular o vencimento por calendário. Valores antigos e primeiro registro são preservados; registros anteriores incompletos podem completar os dados automáticos sem substituir anexos. Cabeçalho mais compacto, sem aviso abaixo da entrega.
 
 Validação: 117 testes, build e Chromium com fluxo completo, filtros sem alteração dos eventos, histórico no Controle, datas em limite de fuso/mês, preservação de dados legados, campos de fornecedores, anexos e aprovação final única.
+
+
+### Acabamento das etapas e visualização dos anexos — 17/10/2026
+
+Numeradores das etapas concluídas usam o azul do tema. Salvar alterações fica cinza e desabilitado quando não há alterações pendentes, voltando a habilitar ao editar. Cada anexo tem Visualizar ao lado de Baixar: PDF e imagem abrem em diálogo, sem iniciar download; fechar libera a URL temporária.
+
+Validação: build, TypeScript e Chromium com salvar/editar, numeradores concluídos, visualização de PDF e imagem, fechamento/reabertura e download preservado.

@@ -24,7 +24,7 @@ export default function DLWorkflowStep({
   useEffect(() => setOpen(active && !completed), [active, completed]);
   return (
     <section
-      className={`dl-request-step dl-workflow-step${active && !completed ? " is-active" : ""}`}
+      className={`dl-request-step dl-workflow-step${completed ? " is-complete" : active ? " is-active" : ""}`}
       aria-labelledby={id}
     >
       <details
