@@ -355,3 +355,29 @@
     font-size: 11px;
   }
 }
+
+/* Controle inicial por origem/material, na ordem da planilha. */
+.dl-control .dl-control-items-table {min-width:1050px;font-size:11px}
+.dl-control .dl-control-items-table th {width:auto;padding:9px 8px;font-size:10px;white-space:normal}
+.dl-control .dl-control-items-table .dl-item-pdl {width:9%}
+.dl-control .dl-control-items-table .dl-item-description {width:30%}
+.dl-control .dl-control-items-table .dl-item-quantity {width:8%}
+.dl-control .dl-control-items-table .dl-item-price {width:10%}
+.dl-control .dl-control-items-table .dl-item-mxm {width:10%}
+.dl-control .dl-control-items-table .dl-item-supplier {width:14%}
+.dl-control .dl-control-items-table .dl-item-balance {width:8%}
+.dl-control .dl-control-items-table .dl-item-last-order {width:11%}
+.dl-control .dl-control-items-table td {padding:9px 8px;white-space:nowrap;font-weight:400;color:var(--text-secondary)}
+.dl-control .dl-control-items-table th small {display:block;font-size:9px;font-weight:400;margin-top:1px}
+.dl-control .dl-control-items-table .dl-control-material,.dl-control .dl-control-items-table .dl-control-supplier {white-space:normal;overflow-wrap:anywhere;text-transform:uppercase}
+.dl-control .dl-control-material strong {display:block;font-size:11px;font-weight:500;line-height:1.45}
+.dl-control .dl-control-items-table .dl-control-material small {margin-top:2px;font-size:10px;line-height:1.4}
+.dl-control .dl-control-items-table .dl-control-material-reference .text-button {display:inline;padding:0;font-size:10px}
+.dl-control .dl-control-items-table .dl-control-number {text-align:right;font-variant-numeric:tabular-nums}
+.dl-control .dl-control-items-table th:nth-child(3),.dl-control .dl-control-items-table th:nth-child(7) {text-align:right}
+.dl-control .dl-control-items-table td:nth-child(3),.dl-control .dl-control-items-table td:nth-child(5) {overflow-wrap:normal}
+.dl-control .dl-control-items-table th:nth-child(8),.dl-control .dl-control-items-table td:nth-child(8) {text-align:right}
+.dl-control .dl-control-items-table .dl-control-unit {margin-left:4px;font-size:9px;color:var(--text-muted)}
+.dl-control .dl-control-items-table .dl-control-balance {color:var(--primary);font-weight:600;background:#F5F9FE}
+.dl-control .dl-control-items-table .empty-state {text-align:center;white-space:normal}
+.dl-control .dl-control-items-note {font-size:10px;line-height:1.5;margin:9px 0 0}

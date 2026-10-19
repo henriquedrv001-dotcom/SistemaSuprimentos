@@ -275,3 +275,12 @@ Materiais e orçamento, Contratação e fornecedores, Histórico, Cronograma e C
 Cronograma organiza os mesmos campos em Abastecimento, Prazos e previsões e Acompanhamento, mantendo autorização, avisos, cálculos e vigência. Resumo distingue valores parciais, pendências e meses previstos dos dados contratuais; informações ausentes não aparecem como intervalos repetidos ou totais finais. Controle mantém filtros, abas, origens e indicação das integrações ainda não conectadas.
 
 Validação: 117 testes aprovados, build e Chromium em 1540, 980 e 390 px; edição/salvamento de materiais, fechamento/bloqueio, resumo vazio/final, histórico sem regravação, prazos e validações, cronograma após conclusão sem mudar contratação/origens, filtros e consulta no Controle. Comparação da captura e métricas confirma Requisição e processo idêntica à versão aprovada.
+
+
+### Controle inicial por material, no formato da planilha — 18/10/2026
+
+A entrada do Controle passa a exibir uma linha por origem contratada, preservando materiais iguais de DLs/fornecedores diferentes. Colunas: Pedido (PDL), Objeto / descrição, QTD, Valor unitário, Pedido MXM, Fornecedor, Saldo e Último pedido. Descrição inclui código, objeto da aquisição e link para os detalhes da DL. Mantidos resumo, filtros e abas internas. Busca e filtro de fornecedor atuam por item, sem retornar outras linhas do mesmo processo.
+
+QTD vem da contratação e Valor é o preço unitário. Saldo continua inicial, sem consumos/reservas fictícios. Como ainda não existem solicitações PDL estruturadas, PDL e Último pedido aparecem como travessão; não são inferidos do código da DL nem da data do pedido MXM. Nenhuma escrita ou migração de dados.
+
+Validação: build e Chromium com oito colunas, somente itens contratados/liberados, origens separadas, quantidades decimais/unidades históricas, preço unitário, filtros combinados por fornecedor/material/MXM/categoria/situação, detalhes e histórico, persistência intacta e rolagem móvel.

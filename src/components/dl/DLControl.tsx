@@ -41,26 +41,23 @@ export default function DLControl({
     (sum, plan) => sum + BigInt(contractTotal(plan.contract!).totalCents),
     0n,
   );
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const rows = plans.flatMap((plan) =>
+    contractOrigins(plan).map((origin) => ({
+      plan,
+      origin,
+      item: itemById.get(origin.itemId),
+    })),
+  );
   const providers = [
-    ...new Set(
-      plans.flatMap((plan) =>
-        plan.contract!.awards.map((award) => award.supplier),
-      ),
-    ),
+    ...new Set(rows.map(({ origin }) => origin.supplier)),
   ].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const matched = plans.filter(
-    (plan) =>
+  const matched = rows.filter(
+    ({ plan, origin, item }) =>
       (!status || contractStatus(plan, today) === status) &&
       (!category || plan.category === category) &&
-      (!supplier ||
-        plan.contract!.awards.some((award) => award.supplier === supplier)) &&
-      `${plan.code} ${plan.title} ${plan.request.officialDLNumber} ${plan
-        .contract!.awards.map((award) => {
-          const line = plan.lines.find((line) => line.id === award.lineId);
-          const item = items.find((item) => item.id === line?.itemId);
-          return `${award.supplier} ${award.mxmOrder} ${item?.code} ${item?.description}`;
-        })
-        .join(" ")}`
+      (!supplier || origin.supplier === supplier) &&
+      `${plan.code} ${plan.title} ${plan.request.officialDLNumber} ${origin.supplier} ${origin.mxmOrder} ${item?.code ?? ""} ${item?.description ?? ""}`
         .toLocaleLowerCase("pt-BR")
         .includes(query.trim().toLocaleLowerCase("pt-BR")),
   );
@@ -114,7 +111,7 @@ export default function DLControl({
             className="text-button dl-control-back"
             onClick={() => setActive(null)}
           >
-            ← Todas as DLs do Controle
+            ← Todos os itens do Controle
           </button>
           <div className="panel-heading dl-control-heading">
             <div>
@@ -264,9 +261,9 @@ export default function DLControl({
       ) : (
         <>
           <div className="panel-heading dl-control-heading">
-            <h2>DLs e contratações</h2>
+            <h2>Materiais no Controle</h2>
             <span className="muted">
-              {matched.length} de {plans.length} DL(s)
+              {matched.length} de {rows.length} itens
             </span>
           </div>
           <div className="dl-control-filters">
@@ -275,7 +272,7 @@ export default function DLControl({
               <span className="catalog-search">
                 <input
                   aria-label="Buscar no Controle de DLs"
-                  placeholder="Buscar DL, material, fornecedor ou pedido MXM"
+                  placeholder="Buscar DL, objeto, código, material, fornecedor ou MXM"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -338,71 +335,104 @@ export default function DLControl({
             className="table-wrap dl-control-table-wrap"
             tabIndex={0}
             role="region"
-            aria-label="DLs e contratações"
+            aria-label="Itens e saldos das DLs"
           >
-            <table className="dl-control-table">
+            <table className="dl-control-table dl-control-items-table">
+              <colgroup>
+                <col className="dl-item-pdl" />
+                <col className="dl-item-description" />
+                <col className="dl-item-quantity" />
+                <col className="dl-item-price" />
+                <col className="dl-item-mxm" />
+                <col className="dl-item-supplier" />
+                <col className="dl-item-balance" />
+                <col className="dl-item-last-order" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>DL</th>
-                  <th>Objeto</th>
-                  <th>Fornecedores</th>
-                  <th>Valor contratado inicial</th>
-                  <th>Vigência</th>
-                  <th>Situação</th>
+                  <th scope="col">Pedido (PDL)</th>
+                  <th scope="col">Objeto / descrição</th>
+                  <th scope="col" title="Quantidade contratada inicial">
+                    QTD
+                  </th>
+                  <th scope="col">
+                    Valor<small>Unitário</small>
+                  </th>
+                  <th scope="col">Pedido MXM</th>
+                  <th scope="col">Fornecedor</th>
+                  <th
+                    scope="col"
+                    title="Saldo inicial contratado; movimentações ainda não vinculadas"
+                  >
+                    Saldo
+                  </th>
+                  <th scope="col">Último pedido</th>
                 </tr>
               </thead>
               <tbody>
-                {matched.map((plan) => (
-                  <tr key={plan.id}>
-                    <td>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setActive(plan.id);
-                          setTab("overview");
-                        }}
-                      >
-                        {plan.code}
-                      </button>
+                {matched.map(({ plan, origin, item }) => (
+                  <tr key={origin.id}>
+                    <td
+                      className="dl-control-pdl"
+                      title="Nenhum pedido PDL vinculado"
+                    >
+                      —
                     </td>
-                    <td>{plan.title}</td>
-                    <td>
-                      {[
-                        ...new Set(
-                          plan.contract!.awards.map((award) => award.supplier),
-                        ),
-                      ].join(", ")}
+                    <td className="dl-control-material">
+                      <strong>
+                        {item?.description || "Cadastro indisponível"}
+                      </strong>
+                      <small className="dl-control-material-reference">
+                        <span>{item?.code || origin.itemId}</span>
+                        <span aria-hidden="true"> · </span>
+                        <button
+                          className="text-button"
+                          aria-label={`Abrir ${plan.code}: ${item?.description || origin.itemId}`}
+                          onClick={() => {
+                            setActive(plan.id);
+                            setTab("overview");
+                          }}
+                        >
+                          {plan.code}
+                        </button>
+                      </small>
+                      <small>{plan.title}</small>
                     </td>
-                    <td>
-                      {formatMoney(contractTotal(plan.contract!).totalCents)}
+                    <td className="dl-control-number">
+                      {decimalInput(origin.quantityMilli, 3)}
+                      <span className="dl-control-unit">{origin.unit}</span>
                     </td>
-                    <td>
-                      {plan.contract!.validFrom
-                        ? `${date(plan.contract!.validFrom)} a ${date(plan.contract!.validUntil)}`
-                        : "Não informada / não aplicável"}
+                    <td className="dl-control-number">
+                      {formatMoney(origin.unitPriceCents)}
                     </td>
-                    <td>
-                      <span
-                        className="dl-control-status"
-                        data-status={contractStatus(plan, today)}
-                      >
-                        {contractStatus(plan, today)}
-                      </span>
+                    <td>{origin.mxmOrder}</td>
+                    <td className="dl-control-supplier">{origin.supplier}</td>
+                    <td className="dl-control-number dl-control-balance">
+                      {decimalInput(origin.remainingMilli, 3)}
+                      <span className="dl-control-unit">{origin.unit}</span>
                     </td>
+                    <td title="Nenhum pedido PDL registrado">—</td>
                   </tr>
                 ))}
                 {!matched.length && (
                   <tr>
-                    <td colSpan={6} className="empty-state">
-                      {plans.length
-                        ? "Nenhuma DL corresponde aos filtros."
-                        : "Conclua uma contratação no Planejamento para consultar os saldos iniciais aqui."}
+                    <td colSpan={8} className="empty-state">
+                      {rows.length
+                        ? "Nenhum material corresponde aos filtros."
+                        : plans.length
+                          ? "As DLs concluídas não possuem materiais contratados para exibir."
+                          : "Conclua uma contratação no Planejamento para consultar os itens e saldos iniciais aqui."}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          <p className="muted dl-control-items-note">
+            QTD é a quantidade contratada; Valor é o preço unitário. PDL e
+            último pedido ficam sem informação enquanto não há solicitação
+            vinculada.
+          </p>
         </>
       )}
     </section>
