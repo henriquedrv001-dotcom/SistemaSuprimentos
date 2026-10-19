@@ -1,0 +1,153 @@
+.dl-final-summary {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dl-final-summary .dl-final-summary-heading h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dl-final-summary .dl-final-summary-heading p {
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.dl-final-summary .dl-final-summary-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.dl-final-summary .dl-final-summary-totals > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+
+.dl-final-summary .dl-final-summary-totals span {
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.dl-final-summary .dl-final-summary-totals strong {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dl-final-summary .dl-final-summary-totals small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.dl-final-summary .dl-final-facts {
+  display: grid;
+  grid-template-columns: 1.25fr 0.7fr 1fr 1.4fr;
+  gap: 12px 16px;
+  margin: 14px 0;
+}
+
+.dl-final-summary .dl-final-facts dt {
+  margin-bottom: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.dl-final-summary .dl-final-facts dd {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dl-final-summary .dl-final-summary-documents {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dl-final-summary .dl-final-summary-table-wrap {
+  scrollbar-width: thin;
+}
+
+.dl-final-summary .dl-final-summary-table {
+  min-width: 720px;
+  table-layout: fixed;
+  font-size: 11px;
+}
+
+.dl-final-summary .dl-final-summary-table th {
+  padding: 8px 10px;
+}
+
+.dl-final-summary .dl-final-summary-table td {
+  padding: 9px 10px;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dl-final-summary .dl-final-summary-table th:first-child {
+  width: 34%;
+}
+
+.dl-final-summary .dl-final-summary-table th:nth-child(2) {
+  width: 19%;
+}
+
+.dl-final-summary .dl-final-summary-table th:nth-child(3) {
+  width: 12%;
+}
+
+.dl-final-summary .dl-final-summary-table th:nth-child(4) {
+  width: 11%;
+}
+
+.dl-final-summary .dl-final-summary-table th:nth-child(5),
+.dl-final-summary .dl-final-summary-table th:nth-child(6) {
+  width: 12%;
+}
+
+.dl-final-summary .dl-final-summary-table .dl-material-name {
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.dl-final-summary .dl-final-summary-table .dl-final-summary-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dl-final-summary .dl-final-summary-approval {
+  margin: 12px 0 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 950px) {
+  .dl-final-summary .dl-final-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .dl-final-summary .dl-final-summary-totals,
+  .dl-final-summary .dl-final-facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .dl-final-summary .dl-final-summary-totals > div {
+    padding: 9px 10px;
+  }
+}

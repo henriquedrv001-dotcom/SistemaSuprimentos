@@ -81,7 +81,7 @@ export default function DLHistory({
             ))}
           </select>
         </label>
-        <span>
+        <span role="status">
           {matched.length} de {entries.length} registros
         </span>
       </div>
@@ -102,10 +102,16 @@ export default function DLHistory({
                     <span className="dl-history-type">
                       {dlActivityLabels[category]}
                     </span>
-                    <span className="dl-history-description">
+                    <span
+                      className="dl-history-description"
+                      title={dlActivitySummary(event)}
+                    >
                       {dlActivitySummary(event)}
                     </span>
-                    <span className="dl-history-actor">
+                    <span
+                      className="dl-history-actor"
+                      title={event.actor || "Responsável não informado"}
+                    >
                       {event.actor || "Responsável não informado"}
                     </span>
                     <time dateTime={event.timestamp}>

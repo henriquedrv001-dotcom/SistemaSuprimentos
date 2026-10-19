@@ -1,0 +1,159 @@
+.dl-schedule-panel {
+  min-width: 0;
+  font-size: 12px;
+}
+
+.dl-schedule-panel .dl-schedule-heading {
+  margin-bottom: 12px;
+}
+
+.dl-schedule-panel .dl-schedule-heading h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.dl-schedule-panel .dl-schedule-heading p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.dl-schedule-panel .dl-schedule-group {
+  min-width: 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.dl-schedule-panel .dl-schedule-group h4 {
+  margin: 0 0 7px;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dl-schedule-panel .dl-contract-fields .form-grid {
+  margin: 0;
+  gap: 8px 12px;
+  align-items: start;
+}
+
+.dl-schedule-panel .dl-contract-fields .dl-schedule-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dl-schedule-panel .form-grid label {
+  min-width: 0;
+  gap: 4px;
+  align-content: start;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.dl-schedule-panel .form-grid input,
+.dl-schedule-panel .form-grid select {
+  min-width: 0;
+  height: 34px;
+  padding-left: 9px;
+  font-size: 12px;
+}
+
+.dl-schedule-panel .dl-schedule-help {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.dl-schedule-panel .dl-schedule-actuals {
+  grid-column: span 2;
+  min-width: 0;
+  margin: 19px 0 0;
+  font-size: 11px;
+}
+
+.dl-schedule-panel .dl-schedule-actuals summary {
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--background-soft);
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dl-schedule-panel .dl-schedule-actuals summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.dl-schedule-panel .dl-schedule-actuals .form-grid {
+  margin-top: 9px;
+}
+
+.dl-schedule-panel > .table-wrap {
+  margin-top: 3px;
+}
+
+.dl-schedule-panel .dl-schedule-table th,
+.dl-schedule-panel .dl-schedule-table td {
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.dl-schedule-panel .dl-schedule-table td:first-child {
+  min-width: 220px;
+}
+
+.dl-schedule-panel .dl-schedule-table td small {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.dl-schedule-panel .dl-schedule-validity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 12px;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 11px;
+}
+
+.dl-schedule-panel .dl-schedule-validity p {
+  margin: 0;
+}
+
+.dl-schedule-panel .dl-schedule-footnote {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .dl-schedule-panel .dl-contract-fields .dl-schedule-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dl-schedule-panel .dl-schedule-actuals {
+    grid-column: auto;
+  }
+
+  .dl-schedule-panel .dl-schedule-actuals .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .dl-schedule-panel .dl-contract-fields .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dl-schedule-panel .dl-schedule-actuals {
+    margin-top: 0;
+  }
+
+  .dl-schedule-panel .dl-schedule-table {
+    min-width: 580px;
+  }
+}

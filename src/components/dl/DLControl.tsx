@@ -16,6 +16,7 @@ import {
   planBudget,
   todayInBrazil,
 } from "../../services/dlPlanning";
+import "./DLControl.css";
 export default function DLControl({
   workspace,
   items,
@@ -65,7 +66,7 @@ export default function DLControl({
   );
   return (
     <section className="panel dl-control">
-      <div className="dl-contract-summary">
+      <div className="dl-contract-summary dl-control-stats">
         <div>
           <span>Valor contratado inicial</span>
           <strong>
@@ -102,17 +103,20 @@ export default function DLControl({
           </strong>
         </div>
       </div>
-      <p className="catalog-feedback">
+      <p className="catalog-feedback dl-control-note">
         Saldos iniciais das contratações registradas. Reservas, recebimentos e
         movimentações do ERP ainda não estão conectados. Estes valores não
         incluem consumos anteriores.
       </p>
       {selected ? (
         <>
-          <button className="text-button" onClick={() => setActive(null)}>
+          <button
+            className="text-button dl-control-back"
+            onClick={() => setActive(null)}
+          >
             ← Todas as DLs do Controle
           </button>
-          <div className="panel-heading">
+          <div className="panel-heading dl-control-heading">
             <div>
               <h2>
                 {selected.code} · {selected.title}
@@ -134,7 +138,7 @@ export default function DLControl({
               Consultar planejamento
             </button>
           </div>
-          <div className="tabs">
+          <div className="tabs dl-control-tabs">
             {[
               ["overview", "Visão geral"],
               ["balances", "Materiais e saldos"],
@@ -153,7 +157,7 @@ export default function DLControl({
           </div>
           {tab === "overview" && (
             <>
-              <div className="dl-contract-summary">
+              <div className="dl-contract-summary dl-control-totals">
                 <div>
                   <span>Previsto</span>
                   <strong>
@@ -176,33 +180,47 @@ export default function DLControl({
                   </strong>
                 </div>
               </div>
-              <dl className="dl-overview">
-                <dt>Data da contratação</dt>
-                <dd>{date(selected.contract!.signedOn)}</dd>
-                <dt>Vigência</dt>
-                <dd>
-                  {selected.contract!.validFrom
-                    ? `${date(selected.contract!.validFrom)} a ${date(selected.contract!.validUntil)}`
-                    : "Não informada / não aplicável"}
-                </dd>
-                <dt>Fornecedores</dt>
-                <dd>
-                  {[
-                    ...new Set(
-                      selected.contract!.awards.map((award) => award.supplier),
-                    ),
-                  ].join(", ")}
-                </dd>
-                <dt>Conferência para liberação</dt>
-                <dd>{selected.contract!.release!.reference}</dd>
-                <dt>Concluída em</dt>
-                <dd>
-                  {new Date(
-                    selected.contract!.release!.timestamp,
-                  ).toLocaleString("pt-BR")}
-                </dd>
-                <dt>Observações</dt>
-                <dd>{selected.contract!.notes || "—"}</dd>
+              <dl className="dl-control-overview">
+                <div>
+                  <dt>Data da contratação</dt>
+                  <dd>{date(selected.contract!.signedOn)}</dd>
+                </div>
+                <div>
+                  <dt>Vigência</dt>
+                  <dd>
+                    {selected.contract!.validFrom
+                      ? `${date(selected.contract!.validFrom)} a ${date(selected.contract!.validUntil)}`
+                      : "Não informada / não aplicável"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Fornecedores</dt>
+                  <dd>
+                    {[
+                      ...new Set(
+                        selected.contract!.awards.map(
+                          (award) => award.supplier,
+                        ),
+                      ),
+                    ].join(", ")}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Conferência para liberação</dt>
+                  <dd>{selected.contract!.release!.reference}</dd>
+                </div>
+                <div>
+                  <dt>Concluída em</dt>
+                  <dd>
+                    {new Date(
+                      selected.contract!.release!.timestamp,
+                    ).toLocaleString("pt-BR")}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Observações</dt>
+                  <dd>{selected.contract!.notes || "—"}</dd>
+                </div>
               </dl>
               {!!selected.contract!.notAwarded.length && (
                 <>
@@ -239,75 +257,90 @@ export default function DLControl({
               foi criado automaticamente ao concluir esta DL.
             </p>
           )}
-          {tab === "history" && <DLHistory planId={selected.id} events={workspace.events} />}
+          {tab === "history" && (
+            <DLHistory planId={selected.id} events={workspace.events} />
+          )}
         </>
       ) : (
         <>
-          <div className="panel-heading">
+          <div className="panel-heading dl-control-heading">
             <h2>DLs e contratações</h2>
             <span className="muted">
               {matched.length} de {plans.length} DL(s)
             </span>
           </div>
-          <label className="catalog-search">
-            <input
-              aria-label="Buscar no Controle de DLs"
-              placeholder="Buscar DL, material, fornecedor ou pedido MXM"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
-          <div className="form-grid">
-            <label>
-              Situação
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="">Todas</option>
-                {[
-                  "Ativa",
-                  "Vence em até 30 dias",
-                  "Vigência futura",
-                  "Vigência encerrada",
-                ].map((status) => (
-                  <option key={status}>{status}</option>
-                ))}
-              </select>
+          <div className="dl-control-filters">
+            <label className="dl-control-search">
+              <span>Buscar</span>
+              <span className="catalog-search">
+                <input
+                  aria-label="Buscar no Controle de DLs"
+                  placeholder="Buscar DL, material, fornecedor ou pedido MXM"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </span>
             </label>
-            <label>
-              Fornecedor
-              <select
-                value={supplier}
-                onChange={(e) => setSupplier(e.target.value)}
-              >
-                <option value="">Todos</option>
-                {providers.map((supplier) => (
-                  <option key={supplier}>{supplier}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Categoria
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="">Todas</option>
-                {[
-                  ...new Set(
-                    plans.map((plan) => plan.category).filter(Boolean),
-                  ),
-                ]
-                  .sort()
-                  .map((category) => (
-                    <option key={category}>{category}</option>
+            <div className="form-grid dl-control-selects">
+              <label>
+                Situação
+                <select
+                  aria-label="Situação"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="">Todas</option>
+                  {[
+                    "Ativa",
+                    "Vence em até 30 dias",
+                    "Vigência futura",
+                    "Vigência encerrada",
+                  ].map((status) => (
+                    <option key={status}>{status}</option>
                   ))}
-              </select>
-            </label>
+                </select>
+              </label>
+              <label>
+                Fornecedor
+                <select
+                  aria-label="Fornecedor"
+                  value={supplier}
+                  onChange={(e) => setSupplier(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  {providers.map((supplier) => (
+                    <option key={supplier}>{supplier}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Categoria
+                <select
+                  aria-label="Categoria"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="">Todas</option>
+                  {[
+                    ...new Set(
+                      plans.map((plan) => plan.category).filter(Boolean),
+                    ),
+                  ]
+                    .sort()
+                    .map((category) => (
+                      <option key={category}>{category}</option>
+                    ))}
+                </select>
+              </label>
+            </div>
           </div>
-          <div className="table-wrap">
-            <table>
+          <div
+            className="table-wrap dl-control-table-wrap"
+            tabIndex={0}
+            role="region"
+            aria-label="DLs e contratações"
+          >
+            <table className="dl-control-table">
               <thead>
                 <tr>
                   <th>DL</th>
@@ -348,7 +381,14 @@ export default function DLControl({
                         ? `${date(plan.contract!.validFrom)} a ${date(plan.contract!.validUntil)}`
                         : "Não informada / não aplicável"}
                     </td>
-                    <td>{contractStatus(plan, today)}</td>
+                    <td>
+                      <span
+                        className="dl-control-status"
+                        data-status={contractStatus(plan, today)}
+                      >
+                        {contractStatus(plan, today)}
+                      </span>
+                    </td>
                   </tr>
                 ))}
                 {!matched.length && (
@@ -374,7 +414,7 @@ function date(value: string) {
 function DLBalanceTable({ plan, items }: { plan: DLPlan; items: Item[] }) {
   return (
     <>
-      <p className="muted">
+      <p className="muted dl-control-note">
         Cada linha identifica uma origem única: DL, material, fornecedor e
         pedido de compra MXM. Valores em{" "}
         {plan.contract?.validUntil && plan.contract.validUntil < todayInBrazil()
@@ -382,7 +422,12 @@ function DLBalanceTable({ plan, items }: { plan: DLPlan; items: Item[] }) {
           : "controle inicial"}
         ; elegibilidade para pedidos será validada na integração.
       </p>
-      <div className="table-wrap">
+      <div
+        className="table-wrap dl-control-table-wrap"
+        tabIndex={0}
+        role="region"
+        aria-label="Materiais e saldos da DL"
+      >
         <table className="dl-balance-table">
           <thead>
             <tr>

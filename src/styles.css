@@ -763,3 +763,46 @@ dialog.dl-create {margin:auto}
 @media(max-width:720px) {.dl-overview-filters {flex-wrap:wrap}.dl-overview-search {flex-basis:100%}.dl-acquisition-list .dl-stage-filter {flex:1;width:auto}.dl-acquisition-list .panel-heading {gap:10px}.dl-acquisition-list .panel-heading h2 {font-size:13px}.dl-acquisition-list .primary-button {font-size:11px;padding:0 10px}.dl-acquisition-list .table-wrap {scrollbar-width:thin}}
 
 .dl-acquisition-list button,.dl-overview-heading button,.dl-overview-tabs button,.dl-overview-create button {text-transform:uppercase}
+
+/* Densidade das telas de DL; a aba Requisição e processo mantém o estilo aprovado. */
+.dl-editor.dl-compact {--control-height:34px;padding:16px;box-shadow:none}
+.dl-compact > .panel-heading {align-items:center;gap:12px;margin-bottom:12px}
+.dl-compact > .panel-heading h2 {font-size:15px;line-height:1.4;margin:3px 0 4px;overflow-wrap:anywhere}
+.dl-compact > .panel-heading p {font-size:11px;line-height:1.45}
+.dl-compact > .panel-heading .dl-actions {gap:8px}
+.dl-compact > .panel-heading .primary-button,.dl-compact > .panel-heading .secondary-button {min-height:34px;padding:0 11px;font-size:11px}
+.dl-compact > .tabs {margin:0 0 16px}
+.dl-compact > .tabs .tab {padding:10px 13px;font-size:12px;gap:6px}
+.dl-compact > h3,.dl-compact .dl-history-section > h3,.dl-compact .dl-budget-heading h3 {font-size:15px;line-height:1.4;margin:0 0 5px}
+.dl-compact .dl-planning-fields {--control-height:34px;margin:0 0 14px;gap:8px 12px}
+.dl-compact .dl-planning-fields label {gap:4px;line-height:1.4;font-size:11px}
+.dl-compact .dl-planning-fields input {height:34px;padding:0 9px;font-size:12px}
+.dl-compact .dl-planning-fields .dl-planning-observation textarea {min-height:54px;padding:7px 9px;font-size:12px;line-height:1.45}
+.dl-compact .dl-budget-heading {align-items:center;margin:0 0 10px;gap:12px}
+.dl-compact .dl-budget-heading p {font-size:10px;line-height:1.45}
+.dl-compact .dl-budget-heading button {min-height:34px;padding:0 11px;font-size:11px}
+.dl-compact .dl-budget-table {min-width:940px;table-layout:fixed}
+.dl-compact .dl-budget-table .dl-budget-code {width:15%}
+.dl-compact .dl-budget-table .dl-budget-material {width:33%}
+.dl-compact .dl-budget-table .dl-budget-unit {width:6%}
+.dl-compact .dl-budget-table .dl-budget-quantity {width:11%}
+.dl-compact .dl-budget-table .dl-budget-price {width:14%}
+.dl-compact .dl-budget-table .dl-budget-subtotal {width:13%}
+.dl-compact .dl-budget-table .dl-budget-action {width:8%}
+.dl-compact .dl-budget-table th {padding:8px 9px;font-size:10px;white-space:normal;line-height:1.4}
+.dl-compact .dl-budget-table td {padding:9px;vertical-align:middle;line-height:1.45;font-size:11px}
+.dl-compact .dl-budget-table td:nth-child(2),.dl-compact .dl-budget-table td:nth-child(3) {white-space:normal;overflow-wrap:anywhere}
+.dl-compact .dl-budget-table th:nth-child(3),.dl-compact .dl-budget-table td:nth-child(3) {text-align:center}
+.dl-compact .dl-budget-table th:nth-child(n+4),.dl-compact .dl-budget-table td:nth-child(n+4) {text-align:right;font-variant-numeric:tabular-nums}
+.dl-compact .dl-budget-table input {height:32px;min-height:32px;min-width:0;max-width:100%;padding:5px 8px;text-align:right;font-size:11px}
+.dl-compact .dl-budget-table .dl-spec {font-size:10px;line-height:1.45;margin-top:3px;color:var(--text-muted)}
+.dl-compact .dl-budget-table .text-button {font-size:11px;padding:5px 0}
+.dl-compact .table-wrap {scrollbar-width:thin}
+.dl-compact .table-wrap:focus-visible {outline:2px solid var(--primary);outline-offset:2px}
+.dl-compact > .table-wrap + p {margin:8px 0 0;font-size:10px;line-height:1.45}
+.dl-compact .dl-history-toolbar,.dl-control .dl-history-toolbar {margin:10px 0;font-size:11px;gap:8px}
+.dl-compact .dl-history-toolbar select,.dl-control .dl-history-toolbar select {height:32px}
+.dl-compact .dl-history-row,.dl-control .dl-history-row {grid-template-columns:16px 112px minmax(0,1fr) 145px 120px 14px;gap:8px;padding:9px 10px;min-height:40px}
+.dl-compact .dl-history-detail,.dl-control .dl-history-detail {padding:10px 12px 12px 36px;line-height:1.5}
+@media(max-width:1100px) {.dl-compact .dl-history-row,.dl-control .dl-history-row {grid-template-columns:16px 100px minmax(0,1fr) 14px}}
+@media(max-width:600px) {.dl-editor.dl-compact {padding:12px}.dl-compact > .panel-heading {align-items:flex-start}.dl-compact > .panel-heading .dl-actions {gap:6px}.dl-compact > .panel-heading .primary-button,.dl-compact > .panel-heading .secondary-button {min-height:38px;white-space:normal;flex:1 1 120px}.dl-compact > .tabs {gap:0;margin-bottom:12px}.dl-compact > .tabs .tab {padding:9px 8px;font-size:11px}.dl-compact .dl-planning-fields input {height:38px}.dl-compact .dl-budget-heading {align-items:flex-start;flex-wrap:wrap}.dl-compact .dl-history-row,.dl-control .dl-history-row {grid-template-columns:16px minmax(0,1fr) 14px;gap:5px 8px}.dl-compact .dl-history-detail,.dl-control .dl-history-detail {padding-left:12px}}

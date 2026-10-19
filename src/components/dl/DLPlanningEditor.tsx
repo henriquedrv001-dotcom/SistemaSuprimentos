@@ -296,7 +296,10 @@ export default function DLPlanningEditor({
     }
   }
   return (
-    <section className="panel dl-editor">
+    <section
+      className={`panel dl-editor${tab === "request" ? "" : " dl-compact"}`}
+      data-view={tab}
+    >
       <div className="panel-heading">
         <div>
           <button
@@ -569,12 +572,12 @@ export default function DLPlanningEditor({
               />
             </label>
           </div>
-          <div className="panel-heading">
+          <div className="panel-heading dl-budget-heading">
             <div>
               <h3>Orçamento previsto: {budgetText}</h3>
               <p className="muted">
-                Quantidade: até 3 casas decimais. Preço unitário: reais, até 2
-                casas. Sem separador de milhar.
+                Quantidade: até 3 casas decimais. Preço em R$: até 2 casas, sem
+                separador de milhar ao editar.
               </p>
             </div>
             <button
@@ -585,17 +588,31 @@ export default function DLPlanningEditor({
               Adicionar materiais
             </button>
           </div>
-          <div className="table-wrap">
+          <div
+            className="table-wrap"
+            role="region"
+            aria-label="Materiais e orçamento"
+            tabIndex={0}
+          >
             <table className="dl-budget-table">
+              <colgroup>
+                <col className="dl-budget-code" />
+                <col className="dl-budget-material" />
+                <col className="dl-budget-unit" />
+                <col className="dl-budget-quantity" />
+                <col className="dl-budget-price" />
+                <col className="dl-budget-subtotal" />
+                <col className="dl-budget-action" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Material</th>
-                  <th>Unidade</th>
-                  <th>Quantidade</th>
-                  <th>Preço unitário previsto (R$)</th>
-                  <th>Subtotal previsto</th>
-                  <th>Ação</th>
+                  <th scope="col">Código</th>
+                  <th scope="col">Material</th>
+                  <th scope="col">Unidade</th>
+                  <th scope="col">Quantidade</th>
+                  <th scope="col">Preço unitário previsto (R$)</th>
+                  <th scope="col">Subtotal previsto</th>
+                  <th scope="col">Ação</th>
                 </tr>
               </thead>
               <tbody>
@@ -743,10 +760,13 @@ export default function DLPlanningEditor({
         />
       )}
       {tab === "history" && (
-        <>
-          <h3>Histórico desta DL</h3>
+        <section
+          className="dl-history-section"
+          aria-labelledby="dl-history-title"
+        >
+          <h3 id="dl-history-title">Histórico desta DL</h3>
           <DLHistory planId={plan.id} events={workspace.events} />
-        </>
+        </section>
       )}
       {picker && (
         <CycleItemPicker

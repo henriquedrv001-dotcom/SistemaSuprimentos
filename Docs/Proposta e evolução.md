@@ -266,3 +266,12 @@ Etapas concluídas têm numeradores com fundo azul do tema e texto branco. Remov
 Busca e filtro de situação alinhados, ação Nova DL com ícone, contagem de resultados e limpeza dos filtros. Tabela com colunas dimensionadas, valores monetários alinhados à direita, nomes longos com quebra e situações em marcadores discretos. Textos da listagem, navegação de DLs e janela de criação em maiúsculas na apresentação, preservando os dados antigos. Busca sem resultado mostra orientação; em telas estreitas a rolagem fica dentro da tabela.
 
 Validação: build e Chromium em 1540, 980, 650 e 390 px; filtros combinados, aviso sem resultados, limpeza, foco visível, abrir DL existente, criação/cancelamento e dados salvos intactos.
+
+
+### Densidade e padrão visual das telas de DL — 18/10/2026
+
+Materiais e orçamento, Contratação e fornecedores, Histórico, Cronograma e Controle receberam espaçamentos menores, controles e tipografia consistentes, tabelas com nomes longos legíveis e valores alinhados. Elementos, áreas, informações e ações foram preservados; estilos isolados não mudam cadastro, ciclos ou a tela aprovada de Requisição e processo. Cabeçalho compacto aplicado somente às demais abas.
+
+Cronograma organiza os mesmos campos em Abastecimento, Prazos e previsões e Acompanhamento, mantendo autorização, avisos, cálculos e vigência. Resumo distingue valores parciais, pendências e meses previstos dos dados contratuais; informações ausentes não aparecem como intervalos repetidos ou totais finais. Controle mantém filtros, abas, origens e indicação das integrações ainda não conectadas.
+
+Validação: 117 testes aprovados, build e Chromium em 1540, 980 e 390 px; edição/salvamento de materiais, fechamento/bloqueio, resumo vazio/final, histórico sem regravação, prazos e validações, cronograma após conclusão sem mudar contratação/origens, filtros e consulta no Controle. Comparação da captura e métricas confirma Requisição e processo idêntica à versão aprovada.

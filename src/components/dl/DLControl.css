@@ -1,0 +1,357 @@
+.panel.dl-control {
+  min-width: 0;
+  padding: 18px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dl-control .dl-control-stats,
+.dl-control .dl-control-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.dl-control .dl-control-totals {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dl-control .dl-control-stats > div,
+.dl-control .dl-control-totals > div {
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.dl-control .dl-control-stats span,
+.dl-control .dl-control-totals span {
+  margin-bottom: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.dl-control .dl-control-stats strong,
+.dl-control .dl-control-totals strong {
+  font-size: 16px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dl-control .dl-control-note {
+  margin: 0 0 14px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.dl-control .dl-control-back {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.dl-control .dl-control-heading {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.dl-control .dl-control-heading > div {
+  min-width: 0;
+}
+
+.dl-control .dl-control-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.dl-control .dl-control-heading .muted {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.dl-control .dl-control-heading .secondary-button {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 11px;
+}
+
+.dl-control .dl-control-tabs {
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.dl-control .dl-control-tabs .tab {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dl-control .dl-control-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(0, 3fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.dl-control .dl-control-search {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dl-control .dl-control-search .catalog-search {
+  width: 100%;
+  max-width: none;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.dl-control .dl-control-search input {
+  height: 32px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.dl-control .form-grid.dl-control-selects {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.dl-control .dl-control-selects label {
+  min-width: 0;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.dl-control .dl-control-selects select {
+  height: 34px;
+  min-width: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 10px;
+  font-size: 12px;
+}
+
+.dl-control .dl-control-table-wrap {
+  scrollbar-width: thin;
+}
+
+.dl-control .dl-control-table-wrap:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.dl-control .dl-control-table {
+  min-width: 880px;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.dl-control .dl-control-table th,
+.dl-control .dl-balance-table th {
+  padding: 9px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.dl-control .dl-control-table td,
+.dl-control .dl-balance-table td {
+  padding: 10px;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+.dl-control .dl-control-table th:nth-child(1) {
+  width: 10%;
+}
+.dl-control .dl-control-table th:nth-child(2) {
+  width: 24%;
+}
+.dl-control .dl-control-table th:nth-child(3) {
+  width: 18%;
+}
+.dl-control .dl-control-table th:nth-child(4) {
+  width: 17%;
+}
+.dl-control .dl-control-table th:nth-child(5) {
+  width: 16%;
+}
+.dl-control .dl-control-table th:nth-child(6) {
+  width: 15%;
+}
+
+.dl-control .dl-control-table td:nth-child(2),
+.dl-control .dl-control-table td:nth-child(3),
+.dl-control .dl-control-table td:nth-child(5),
+.dl-control .dl-control-table td:nth-child(6) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dl-control .dl-control-table td:nth-child(2) {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dl-control .dl-control-table th:nth-child(4),
+.dl-control .dl-control-table td:nth-child(4),
+.dl-control .dl-balance-table th:nth-child(n + 5),
+.dl-control .dl-balance-table td:nth-child(n + 5) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-control .dl-control-table .text-button {
+  padding: 3px 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.dl-control .dl-control-table tbody tr:hover,
+.dl-control .dl-balance-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.dl-control .dl-control-status {
+  display: inline-flex;
+  padding: 4px 6px;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  background: var(--background-soft);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.dl-control .dl-control-status[data-status="Ativa"],
+.dl-control .dl-control-status[data-status="Vigência futura"] {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.dl-control .dl-control-status[data-status="Vence em até 30 dias"] {
+  color: var(--warning);
+  background: var(--warning-light);
+}
+
+.dl-control .dl-control-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.dl-control .dl-control-overview > div {
+  min-width: 0;
+}
+
+.dl-control .dl-control-overview dt {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dl-control .dl-control-overview dd {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.dl-control h3 {
+  margin: 14px 0 6px;
+  font-size: 14px;
+}
+
+.dl-control .dl-balance-table {
+  min-width: 1120px;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.dl-control .dl-balance-table th:first-child {
+  width: 25%;
+}
+.dl-control .dl-balance-table th:nth-child(2) {
+  width: 14%;
+}
+.dl-control .dl-balance-table th:nth-child(3) {
+  width: 8%;
+}
+.dl-control .dl-balance-table th:nth-child(4) {
+  width: 6%;
+}
+.dl-control .dl-balance-table th:nth-child(n + 5) {
+  width: 8%;
+}
+
+.dl-control .dl-balance-table td:first-child,
+.dl-control .dl-balance-table td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dl-control .dl-balance-table .dl-spec {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.dl-control .empty-state {
+  padding: 20px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+@media (max-width: 1000px) {
+  .dl-control .dl-control-filters {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .dl-control .dl-control-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .panel.dl-control {
+    padding: 14px;
+  }
+
+  .dl-control .dl-control-stats,
+  .dl-control .dl-control-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dl-control .form-grid.dl-control-selects {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .dl-control .dl-control-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .dl-control .dl-control-tabs .tab {
+    padding: 8px 9px;
+    font-size: 11px;
+  }
+}
