@@ -1,7 +1,9 @@
+import DLControlItemDialog from "./DLControlItemDialog";
 import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
   ChevronRight,
+  Eye,
 } from "lucide-react";
 import DLControlAlertDialog from "./DLControlAlertDialog";
 import {
@@ -14,6 +16,7 @@ import type {
   DLControlSort,
   DLControlDirection,
   DLControlAlert,
+  DLControlRow,
 } from "../../services/dlControl";
 import DLHistory from "./DLHistory";
 import DLSchedulePanel from "./DLSchedulePanel";
@@ -56,6 +59,7 @@ export default function DLControl({
   const [direction, setDirection] = useState<DLControlDirection>("asc");
   const [showZeroBalances, setShowZeroBalances] = useState(true);
   const [alert, setAlert] = useState<DLControlAlert | null>(null);
+  const [openedOrigin, setOpenedOrigin] = useState<string | null>(null);
   const today = todayInBrazil();
   const selected = plans.find((plan) => plan.id === active);
   const consolidated = plans.reduce(
@@ -70,6 +74,9 @@ export default function DLControl({
     rows,
     { query, status, supplier, category, showZeroBalances, sortBy, direction },
     today,
+  );
+  const openedItem: DLControlRow | undefined = rows.find(
+    (row) => row.origin.id === openedOrigin,
   );
   const limit = DEFAULT_DL_LOW_BALANCE_PERCENT;
   const alerts = {
@@ -293,9 +300,21 @@ export default function DLControl({
         <>
           <div className="panel-heading dl-control-heading">
             <h2>Materiais no Controle</h2>
-            <span className="muted">
-              {matched.length} de {rows.length} itens
-            </span>
+            <div className="dl-control-heading-tools">
+              <label className="select-all-label">
+                <input
+                  type="checkbox"
+                  checked={showZeroBalances}
+                  onChange={(event) =>
+                    setShowZeroBalances(event.target.checked)
+                  }
+                />
+                Mostrar zerados
+              </label>
+              <span className="muted">
+                {matched.length} de {rows.length} itens
+              </span>
+            </div>
           </div>
           <div className="dl-control-filters">
             <label className="dl-control-search">
@@ -361,12 +380,11 @@ export default function DLControl({
                 </select>
               </label>
             </div>
-          </div>
-          <div className="dl-control-list-options">
-            <div className="dl-control-ordering">
-              <label>
-                Ordenar por
+            <div className="dl-control-sort-field">
+              <label htmlFor="dl-control-sort">Ordenar por</label>
+              <div className="dl-control-sort-controls">
                 <select
+                  id="dl-control-sort"
                   aria-label="Ordenar itens por"
                   value={sortBy}
                   onChange={(event) =>
@@ -378,30 +396,22 @@ export default function DLControl({
                   <option value="item">Item</option>
                   <option value="balance">Saldo</option>
                 </select>
-              </label>
-              <button
-                className="secondary-button"
-                aria-label={`Ordenação ${direction === "asc" ? "crescente" : "decrescente"}`}
-                onClick={() =>
-                  setDirection(direction === "asc" ? "desc" : "asc")
-                }
-              >
-                {direction === "asc" ? (
-                  <ArrowUpNarrowWide size={15} aria-hidden="true" />
-                ) : (
-                  <ArrowDownWideNarrow size={15} aria-hidden="true" />
-                )}
-                {direction === "asc" ? "Crescente" : "Decrescente"}
-              </button>
+                <button
+                  className="secondary-button"
+                  aria-label={`Ordenação ${direction === "asc" ? "crescente" : "decrescente"}`}
+                  title={`Alternar ordenação ${direction === "asc" ? "crescente" : "decrescente"}`}
+                  onClick={() =>
+                    setDirection(direction === "asc" ? "desc" : "asc")
+                  }
+                >
+                  {direction === "asc" ? (
+                    <ArrowUpNarrowWide size={15} aria-hidden="true" />
+                  ) : (
+                    <ArrowDownWideNarrow size={15} aria-hidden="true" />
+                  )}
+                </button>
+              </div>
             </div>
-            <label className="select-all-label">
-              <input
-                type="checkbox"
-                checked={showZeroBalances}
-                onChange={(event) => setShowZeroBalances(event.target.checked)}
-              />
-              Mostrar itens com saldo zerado
-            </label>
           </div>
           <div
             className="table-wrap dl-control-table-wrap"
@@ -423,13 +433,11 @@ export default function DLControl({
               <thead>
                 <tr>
                   <th scope="col">DL</th>
-                  <th scope="col">Objeto / descrição</th>
+                  <th scope="col">Item / descrição</th>
                   <th scope="col" title="Quantidade contratada inicial">
                     QTD
                   </th>
-                  <th scope="col">
-                    Valor<small>Unitário</small>
-                  </th>
+                  <th scope="col">Valor unitário</th>
                   <th scope="col">Pedido MXM</th>
                   <th scope="col">Fornecedor</th>
                   <th
@@ -457,13 +465,16 @@ export default function DLControl({
                       </button>
                     </td>
                     <td className="dl-control-material">
-                      <strong>
-                        {item?.description || "Cadastro indisponível"}
-                      </strong>
-                      <small className="dl-control-material-reference">
-                        {item?.code || origin.itemId}
-                      </small>
-                      <small>{plan.title}</small>
+                      <button
+                        className="dl-control-open-item"
+                        aria-label={`Abrir item ${item?.description || origin.itemId} da ${plan.code}`}
+                        onClick={() => setOpenedOrigin(origin.id)}
+                      >
+                        <span>
+                          {item?.description || "Cadastro indisponível"}
+                        </span>
+                        <Eye size={14} aria-hidden="true" />
+                      </button>
                     </td>
                     <td className="dl-control-number">
                       {decimalInput(origin.quantityMilli, 3)}
@@ -500,6 +511,17 @@ export default function DLControl({
             pedido fica sem informação enquanto não há solicitação vinculada.
           </p>
         </>
+      )}
+      {openedItem && (
+        <DLControlItemDialog
+          row={openedItem}
+          onClose={() => setOpenedOrigin(null)}
+          onOpenDL={(id) => {
+            setOpenedOrigin(null);
+            setActive(id);
+            setTab("balances");
+          }}
+        />
       )}
       {alert && (
         <DLControlAlertDialog

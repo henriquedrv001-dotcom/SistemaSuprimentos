@@ -300,3 +300,12 @@ Novos indicadores: DLs com saldo próximo ao fim, itens com saldo zerado, DLs ve
 Clicar nos três indicadores de alerta abre detalhes agrupados por DL com item, fornecedor, pedido MXM, contratado, saldo, percentual restante e acesso à aquisição. O Controle ainda usa os saldos iniciais das origens; não foram criados consumos ou saldos fictícios para alimentar alertas.
 
 Validação: 124 testes aprovados, build e Chromium com ordenações, filtros combinados, controle de zerados, indicadores independentes dos filtros, diálogos vazios e preenchidos, abertura das DLs e visualização móvel. Cenários de saldo baixo/zerado foram verificados em testes unitários e em dados explícitos de teste somente em memória, sem gravar movimentos no workspace.
+
+
+### Controle mais compacto, abertura do item e esboço de Tarefas — 18/10/2026
+
+Filtros e ordenação na mesma faixa; mostrar zerados e contagem junto do título. Sentido de ordenação em botão com ícone e nome acessível. Cabeçalhos uniformes, Valor unitário em uma linha, células com menor espaçamento. A descrição vira ação de abrir item; código e objeto deixam a lista e ficam na janela de dados da origem. Essa janela conserva DL, código, objeto, fornecedor, pedido MXM, quantidade, valor, vigência e saldo da contratação selecionada. A área de movimentações está preparada; nenhuma baixa direta é executada nesta etapa.
+
+Administração → Tarefas agora abre um esboço interativo, com lista/kanban, busca, situação e simulação da fila por perfil: Jovem aprendiz, Responsável pelo estoque e Compradora. Exemplos independentes das DLs mostram início, encaminhamento ao próximo perfil, análise/devolução com observação e aprovação. A tarefa sai da fila do executor ao ser encaminhada, podendo visualizar a fila de destino. Reset e troca de visualização preservam o caráter demonstrativo; nada é salvo no workspace nem representa atribuição/permissão real.
+
+Validação: 128 testes e build aprovados; Chromium com cinco filtros alinhados, linhas mais baixas, janela do item, dados da origem, navegação da DL, tela móvel, filtros de tarefas, lista/kanban e simulação completa de ida/devolução/compra/aprovação. Estado salvo de DLs, catálogo, ciclos e histórico permaneceu intacto.

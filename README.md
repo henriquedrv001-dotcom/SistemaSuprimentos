@@ -141,3 +141,9 @@ A vigência desse cabeçalho é uma **previsão em meses**, opcional, salva como
 O histórico apresenta registros compactos com ícone, atividade, descrição breve, responsável e data. O filtro seleciona o tipo de atividade; expandir um registro mostra seus detalhes sem modificar os eventos antigos. O indicador de seis etapas acompanha os registros efetivos, incluindo devoluções, sem presumir aprovações ausentes. A etapa de fornecedores mantém apenas os dados dos itens; os resumos financeiros e contratuais ficam em Contratação e fornecedores.
 
 O cabeçalho de materiais tem menor espaçamento entre linhas e não exibe o aviso de obrigatoriedade sob a entrega. Validação atual: 117 testes aprovados, build e fluxo completo no Chromium, incluindo histórico filtrado, avanço das etapas, contratação automática, anexos, aprovação e apresentação móvel.
+
+### Esboço de Tarefas
+
+Em **Administração → Tarefas**, alterne Lista/Kanban e selecione o perfil funcional para simular sua fila. Os exemplos permitem iniciar, encaminhar, devolver com observação e aprovar tarefas, mostrando o perfil de destino em cada etapa. São dados demonstrativos em memória: não criam atribuições reais nem alteram DLs, pedidos ou saldos.
+
+No Controle, a descrição do material abre os dados daquela origem de saldo; código e objeto da aquisição ficam nessa janela. A baixa direta será conectada à área de movimentações em etapa posterior.

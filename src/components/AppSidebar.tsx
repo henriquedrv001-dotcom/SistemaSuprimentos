@@ -1,11 +1,11 @@
 import { Boxes, CalendarDays, ClipboardList, FileCheck2, LayoutDashboard, ListTodo, Settings, Truck, WalletCards } from "lucide-react";
 
-export type AppSection = "Painel" | "Cadastro de itens" | "Ciclos de suprimento" | "Pedidos diretos" | "Planejamento DLs" | "Controle DLs" | "Acompanhamento de pedidos" | "ATA / Contratos";
+export type AppSection = "Tarefas" | "Painel" | "Cadastro de itens" | "Ciclos de suprimento" | "Pedidos diretos" | "Planejamento DLs" | "Controle DLs" | "Acompanhamento de pedidos" | "ATA / Contratos";
 type NavigationItem = { label: string; section?: AppSection; matches?: AppSection[]; icon: typeof LayoutDashboard };
 const groups: { label: string; items: NavigationItem[] }[] = [
   { label: "Administração", items: [
     { label: "Cadastro de itens", section: "Cadastro de itens", icon: Boxes },
-    { label: "Tarefas", icon: ListTodo },
+    { label: "Tarefas", section: "Tarefas", icon: ListTodo },
     { label: "Configurações", icon: Settings },
   ] },
   { label: "Estoque", items: [

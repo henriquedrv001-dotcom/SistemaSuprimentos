@@ -1,3 +1,4 @@
+import Tarefas from "./pages/administracao/Tarefas";
 import {resolveDLRequestStage} from "./services/dlRequest";
 import type { DLPlan, DLSaveOptions } from "./types/dl";
 import { dlWorkspaceKey, emptyDLWorkspace, readDLWorkspace, storeDLPlan } from "./services/dlPlanning";
@@ -582,6 +583,7 @@ function App() {
             </>
           )}
 
+          {section === "Tarefas" && <Tarefas />}
           {section === "ATA / Contratos" && <AcompanhamentoATAContratos />}
 
         </div>
