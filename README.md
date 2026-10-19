@@ -2,6 +2,8 @@
 
 Padrões reutilizáveis de filtros, navegação e elementos: [Catálogo de modelos de interface](Docs/Modelos%20de%20interface.md). Aplicar a outras funções quando solicitado.
 
+Pedidos DLs: [preparação de rascunhos e regras pendentes](Docs/Pedidos%20DLs.md). Esta etapa salva rascunhos locais, sem reservar ou baixar saldo.
+
 Este repositório contém a primeira estrutura de código baseada no documento de requisitos.
 
 ## Tecnologias

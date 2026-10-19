@@ -11,6 +11,7 @@ import {
 import { demoCycles, demoItems, demoOrders } from "./data";
 import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
 import OrdersNavigation from "./components/OrdersNavigation";
+import DLOrders from "./components/DLOrders";
 import AppSidebar, { navigationLocation, orderSections } from "./components/AppSidebar";
 import type { AppSection } from "./components/AppSidebar";
 import PlanejamentoControleDLs from "./pages/estoque/PlanejamentoControleDLs";
@@ -419,7 +420,7 @@ function App() {
   return (
     <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`} data-section={section}>
       <a className="skip-navigation" href="#workspace-content">Ir para o conteúdo</a>
-      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL e mudar de tela?")) setSection(next);}} />
+      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) setSection(next);}} />
 
       <main className="main-area" id="workspace-content" tabIndex={-1}>
         <header className="topbar">
@@ -428,8 +429,9 @@ function App() {
         </header>
 
         <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
-          {orderSections.includes(section) && <OrdersNavigation section={section} onNavigate={setSection} />}
-          {(section === "Pedidos FRs" || section === "Pedidos DLs" || section === "Pedidos Material Entrada e Saída") && <section className="panel order-placeholder"><span className="tag tag-neutral">Em breve</span><h2>{section}</h2><p className="muted">Área reservada para este tipo de pedido. O fluxo de criação e movimentação será definido em etapa própria.</p></section>}
+          {orderSections.includes(section) && <OrdersNavigation section={section} onNavigate={next => { if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) setSection(next); }} />}
+          {section === "Pedidos DLs" && <DLOrders plans={dlWorkspace.plans} items={items} cycles={cycles} storageError={dlState.error} onDirtyChange={setDLDirty} />}
+          {(section === "Pedidos FRs" || section === "Pedidos Material Entrada e Saída") && <section className="panel order-placeholder"><span className="tag tag-neutral">Em breve</span><h2>{section}</h2><p className="muted">Área reservada para este tipo de pedido. O fluxo de criação e movimentação será definido em etapa própria.</p></section>}
           {bulkMessage && section !== "Cadastro de itens" && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
           {section === "Painel" && (
             <>

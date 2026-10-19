@@ -57,7 +57,7 @@ export default function OrdersNavigation({
                   <small>
                     {item.section === "Pedidos diretos"
                       ? "Exemplo"
-                      : "Em breve"}
+                      : item.section === "Pedidos DLs" ? "Rascunhos" : "Em breve"}
                   </small>
                 </button>
               ))}
