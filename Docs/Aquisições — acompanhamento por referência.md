@@ -13,8 +13,8 @@ Essas referências originais substituem as propostas posteriores geradas pelo as
 
 1. Lista e estrutura de detalhe/material: primeiro checkpoint implementado e conferido nesta sessão.
 2. Processo, Contratação, Cronograma e Histórico: checkpoint 2 implementado e validado; revisão conjunta ainda pendente.
-3. Controle e painel do item: pendentes de adequação completa às referências.
-4. Revisão visual conjunta e validação final: pendente.
+3. Controle e painel do item: checkpoint 3 implementado e validado.
+4. Revisão técnica conjunta e validação final: concluídas nesta sessão. Aceite visual do usuário e sincronização continuam pendentes.
 
 ## Checkpoint 1
 
@@ -52,3 +52,26 @@ Validação: build e 128 testes aprovados; percurso Chromium completo com rascun
 Script local: /workspace/onboarding-tools/acquisitions-reference-flow.cjs. Capturas: /workspace/aquisicoes-etapa2-processo.png, aquisicoes-etapa2-contratacao.png, aquisicoes-etapa2-cronograma.png e aquisicoes-etapa2-historico.png.
 
 Adequação de Controle/painel do item e revisão visual conjunta continuam pendentes. Nada deste checkpoint foi enviado ao GitHub.
+
+
+## Checkpoint 3 — Controle e painel lateral do item
+
+Controle com quatro indicadores, regra de saldo baixo explícita e ressalva dos saldos iniciais permanentemente visível. Mantidos busca, situação, fornecedor, categoria, ordenação por DL/fornecedor/item/saldo, sentido de ordenação, opção de zerados e consultas dos indicadores. Cabeçalhos e saldos seguem o padrão da referência; a linha mostra o item sem duplicar código e objeto, que continuam no painel lateral.
+
+Painel lateral com título, código, DL/objeto, quantidade, unidade histórica, fornecedor, pedido MXM, contratação, vigência, especificação e saldo em destaque. Rodapé com Fechar/Consultar DL. Área de movimentos identifica a ausência de integração; não inventa baixas, recebimentos ou datas de último pedido. Nova DL no Controle reutiliza o mesmo cadastro e encaminha ao planejamento; cancelar não consome número.
+
+Validação Chromium: mesmo material em origens de DLs diferentes; unidade histórica KG e quantidade decimal; MXM com zeros à esquerda; filtros, sentido de ordenação, três consultas dos indicadores; fechamento por Escape; painel no limite direito e altura inteira; consulta da DL e retorno preservando filtros; tablet/celular sem transbordamento da página; consultas sem escrita; cancelamento e criação de DL a partir do Controle.
+
+Script local: /workspace/onboarding-tools/acquisitions-reference-control.cjs. Capturas reais: /workspace/aquisicoes-etapa3-controle.png e aquisicoes-etapa3-item.png.
+
+## Fechamento técnico desta rodada
+
+As oito vistas de Aquisições das referências originais foram adequadas: lista, materiais, processo, contratação, cronograma, histórico, controle e detalhe do item. Revisados layout e informações visíveis. Código/especificação de materiais e valores finais foram mantidos, mesmo quando não aparecem no desenho ilustrativo. Os textos de perfis, cálculos e anexos usam a aplicação real.
+
+- 128 testes existentes aprovados, sem falhas.
+- Build de produção e TypeScript aprovados.
+- Percursos de navegador de lista/materiais, fluxo completo e Controle aprovados; desktop, tablet e celular.
+- Comparação dos estilos computados com/sem a folha de Aquisições confirmou isolamento em Visão geral, Catálogo, Ciclos, Tarefas, Pedidos e Acompanhamento (script local acquisitions-scope-review.cjs).
+- Nova conferência de cabeçalhos e consulta dos materiais, com capturas aquisicoes-revisao-materiais.png e aquisicoes-revisao-contratacao.png.
+
+Este fechamento é técnico, não substitui o aceite visual do usuário nem afirma ausência absoluta de defeitos. As alterações permanecem locais até solicitação explícita de sincronização. Pedidos, Acompanhamento, Ciclos, Catálogo e Tarefas não foram reformulados nesta rodada. Baixas diretas, movimentos do ERP e autenticação por perfil continuam fora desta alteração visual.

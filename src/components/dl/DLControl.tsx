@@ -4,6 +4,7 @@ import {
   ArrowUpNarrowWide,
   ChevronRight,
   Eye,
+  Info,
 } from "lucide-react";
 import DLControlAlertDialog from "./DLControlAlertDialog";
 import {
@@ -135,19 +136,21 @@ export default function DLControl({
               <small>{plans.length} DL(s) concluída(s)</small>
             </div>
           </div>
-          <p className="dl-control-metric-rule">
-            Saldo próximo ao fim: maior que zero e até {limit}% da quantidade
-            contratada, por item. Cada DL é contada uma vez. Indicadores
-            consideram todas as DLs; os filtros abaixo afetam apenas a lista.
-          </p>
-          <details className="dl-control-data-note">
-            <summary>Saldos iniciais · integrações pendentes</summary>
-            <p className="dl-control-note">
-              Saldos iniciais das contratações registradas. Reservas,
-              recebimentos e movimentações do ERP ainda não estão conectados.
-              Estes valores não incluem consumos anteriores.
-            </p>
-          </details>
+          <div className="dl-control-guidance">
+            <Info size={16} aria-hidden="true" />
+            <div>
+              <p className="dl-control-metric-rule">
+                Saldo baixo: positivo e até {limit}% da quantidade contratada,
+                por item; cada DL conta uma vez. Indicadores globais; os filtros
+                afetam apenas a lista.
+              </p>
+              <p className="dl-control-note">
+                Saldos iniciais das contratações. Reservas, recebimentos e
+                movimentações do ERP ainda não integrados; estes valores não
+                incluem consumos anteriores.
+              </p>
+            </div>
+          </div>
         </>
       )}
       {selected ? (
@@ -300,7 +303,11 @@ export default function DLControl({
             </p>
           )}
           {tab === "history" && (
-            <DLHistory planId={selected.id} events={workspace.events} />
+            <DLHistory
+              heading="Histórico de atividades"
+              planId={selected.id}
+              events={workspace.events}
+            />
           )}
         </section>
       ) : (
@@ -493,8 +500,13 @@ export default function DLControl({
                     <td>{origin.mxmOrder}</td>
                     <td className="dl-control-supplier">{origin.supplier}</td>
                     <td className="dl-control-number dl-control-balance">
-                      {decimalInput(origin.remainingMilli, 3)}
-                      <span className="dl-control-unit">{origin.unit}</span>
+                      <span
+                        className="dl-control-balance-value"
+                        data-zero={origin.remainingMilli === 0}
+                      >
+                        {decimalInput(origin.remainingMilli, 3)}
+                        <span className="dl-control-unit">{origin.unit}</span>
+                      </span>
                     </td>
                     <td title="Nenhum pedido PDL registrado">—</td>
                   </tr>

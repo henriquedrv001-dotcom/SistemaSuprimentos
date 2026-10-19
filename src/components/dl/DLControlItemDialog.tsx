@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 import type { DLControlRow } from "../../services/dlControl";
 import { decimalInput, formatMoney } from "../../services/dlPlanning";
 export default function DLControlItemDialog({
@@ -27,10 +27,13 @@ export default function DLControlItemDialog({
     >
       <header className="dl-control-item-heading">
         <div>
-          <p>Dados do item · {plan.code}</p>
           <h2 id="dl-control-item-title">
             {item?.description || "Cadastro indisponível"}
           </h2>
+          <p>Código MXM: {item?.code || origin.itemId}</p>
+          <p>
+            {plan.code} · {plan.title}
+          </p>
         </div>
         <button
           className="icon-button"
@@ -41,26 +44,7 @@ export default function DLControlItemDialog({
         </button>
       </header>
       <div className="dl-control-item-body">
-        <div className="dl-control-item-balance">
-          <span>Saldo desta contratação</span>
-          <strong>
-            {decimalInput(origin.remainingMilli, 3)} {origin.unit}
-          </strong>
-          <small>O saldo exibido ainda é o saldo inicial contratado.</small>
-        </div>
         <dl className="dl-control-item-facts">
-          <div>
-            <dt>Código MXM</dt>
-            <dd>{item?.code || origin.itemId}</dd>
-          </div>
-          <div>
-            <dt>DL</dt>
-            <dd>{plan.code}</dd>
-          </div>
-          <div className="dl-item-fact-full">
-            <dt>Objeto da aquisição</dt>
-            <dd>{plan.title}</dd>
-          </div>
           <div>
             <dt>Quantidade contratada</dt>
             <dd>
@@ -88,7 +72,11 @@ export default function DLControlItemDialog({
             <dd>
               {plan.contract?.validFrom && plan.contract.validUntil
                 ? `${date(plan.contract.validFrom)} a ${date(plan.contract.validUntil)}`
-                : "Não informada"}
+                : plan.contract?.validFrom
+                  ? `A partir de ${date(plan.contract.validFrom)}`
+                  : plan.contract?.validUntil
+                    ? `Até ${date(plan.contract.validUntil)}`
+                    : "Não informada"}
             </dd>
           </div>
           {item?.technicalSpecification && (
@@ -97,22 +85,55 @@ export default function DLControlItemDialog({
               <dd>{item.technicalSpecification}</dd>
             </div>
           )}
+          <div>
+            <dt>Saldo</dt>
+            <dd className="dl-control-item-balance-value">
+              {decimalInput(origin.remainingMilli, 3)} {origin.unit}
+            </dd>
+          </div>
         </dl>
         <section className="dl-control-item-movements">
-          <h3>Saldo e movimentações</h3>
+          <div className="dl-control-movements-heading">
+            <h3>Movimentações</h3>
+            <span>
+              <Info size={13} aria-hidden="true" />
+              Consulta da origem do saldo
+            </span>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Movimento</th>
+                  <th>Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={3} className="empty-state">
+                    Nenhuma movimentação integrada.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <p>
-            Esta visão identifica a origem do saldo por DL, material, fornecedor
-            e pedido MXM. As baixas diretas serão registradas nesta área na
-            próxima etapa.
+            O saldo exibido é o saldo inicial contratado. Reservas, baixas e
+            recebimentos ainda não estão conectados. Esta consulta não altera o
+            saldo.
           </p>
         </section>
       </div>
       <footer className="dl-control-item-footer">
-        <button className="secondary-button" onClick={() => onOpenDL(plan.id)}>
-          Consultar DL
-        </button>
-        <button className="primary-button" onClick={() => ref.current?.close()}>
+        <button
+          className="secondary-button"
+          onClick={() => ref.current?.close()}
+        >
           Fechar
+        </button>
+        <button className="primary-button" onClick={() => onOpenDL(plan.id)}>
+          Consultar DL
         </button>
       </footer>
     </dialog>

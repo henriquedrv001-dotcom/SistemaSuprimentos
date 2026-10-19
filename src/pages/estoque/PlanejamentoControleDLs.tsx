@@ -66,6 +66,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
         ).plan;
       const saved = props.onSave(candidate, "Planejamento criado");
       setActive(saved.id);
+      if (props.tab !== "planning") props.onChange("planning");
       setCreating(false);
       setTitle("");
       props.onPendingClose();
@@ -104,21 +105,21 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
         <div className="page-heading dl-overview-heading">
           <div>
             <p className="eyebrow">SUPRIMENTOS</p>
-            <h1>Aquisições</h1>
+            <h1>
+              {props.tab === "control" ? "Controle de DLs" : "Aquisições"}
+            </h1>
           </div>
-          {props.tab === "planning" && (
-            <button
-              className="primary-button"
-              disabled={disabled}
-              onClick={() => {
-                setCreating(true);
-                setError("");
-              }}
-            >
-              <Plus size={16} aria-hidden="true" />
-              Nova DL
-            </button>
-          )}
+          <button
+            className="primary-button"
+            disabled={disabled}
+            onClick={() => {
+              setCreating(true);
+              setError("");
+            }}
+          >
+            <Plus size={16} aria-hidden="true" />
+            Nova DL
+          </button>
         </div>
       )}
       {(!plan || props.tab === "control") && (
@@ -436,6 +437,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                     "Materiais incluídos pelo cadastro",
                   );
                   setActive(saved.id);
+                  if (props.tab !== "planning") props.onChange("planning");
                   props.onPendingClose();
                   setDestination("");
                   setError("");

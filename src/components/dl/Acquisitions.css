@@ -667,6 +667,11 @@
 .modern-shell .acquisitions-page .dl-final-summary-table :is(th, td) {
   padding: 11px;
 }
+.modern-shell .acquisitions-page .dl-final-summary-table th {
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: normal;
+}
 .modern-shell .acquisitions-page .dl-final-summary-table td {
   font-size: 12px;
 }
@@ -885,4 +890,216 @@
   margin: 0;
   justify-self: end;
   display: inline-flex;
+}
+/* Controle: lista por origem e painel lateral conforme os quadros 13 e 14. */
+.modern-shell .acquisitions-page .dl-control-list {
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.modern-shell .acquisitions-page .dl-control-indicators {
+  gap: 12px;
+}
+.modern-shell .acquisitions-page .dl-control-indicator {
+  background: white;
+  border-radius: 6px;
+  padding: 14px;
+}
+.modern-shell .acquisitions-page .dl-control-indicator strong {
+  font-size: 23px;
+}
+.modern-shell .acquisitions-page .dl-control-indicator span {
+  font-size: 11px;
+}
+.modern-shell .acquisitions-page .dl-control-guidance {
+  display: flex;
+  align-items: start;
+  gap: 9px;
+  margin: 12px 0 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.modern-shell .acquisitions-page .dl-control-guidance > svg {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.modern-shell .acquisitions-page .dl-control-guidance .dl-control-metric-rule {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.modern-shell .acquisitions-page .dl-control-guidance .dl-control-note {
+  margin: 4px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.modern-shell .acquisitions-page .dl-control-heading h2 {
+  font-size: 14px;
+}
+.modern-shell .acquisitions-page .dl-control .dl-control-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.modern-shell .acquisitions-page .dl-control .dl-control-items-table th {
+  font-size: 10px;
+  text-transform: none;
+  padding: 11px 9px;
+}
+.modern-shell .acquisitions-page .dl-control .dl-control-items-table td {
+  padding: 11px 9px;
+  font-size: 12px;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-control
+  .dl-control-items-table
+  .dl-control-open-item {
+  color: var(--primary);
+  font-size: 12px;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-control
+  .dl-control-items-table
+  .dl-control-open-item
+  span {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.modern-shell .acquisitions-page .dl-control .dl-control-balance {
+  background: transparent;
+}
+.modern-shell .acquisitions-page .dl-control-balance-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: #e7f1fe;
+  color: var(--primary);
+  min-width: 58px;
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-control-balance-value[data-zero="true"] {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.modern-shell
+  .acquisitions-page
+  .item-edit-dialog.dl-control-item-dialog[open] {
+  width: min(500px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+}
+.modern-shell .acquisitions-page .dl-control-item-heading {
+  padding: 22px;
+}
+.modern-shell .acquisitions-page .dl-control-item-heading h2 {
+  font-size: 20px;
+  margin-bottom: 9px;
+}
+.modern-shell .acquisitions-page .dl-control-item-heading p {
+  font-size: 11px;
+  margin: 4px 0;
+}
+.modern-shell .acquisitions-page .dl-control-item-body {
+  padding: 18px 22px;
+  flex: 1;
+}
+.modern-shell .acquisitions-page .dl-control-item-facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin: 0 0 24px;
+}
+.modern-shell .acquisitions-page .dl-control-item-facts > div {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 14px;
+  align-items: baseline;
+}
+.modern-shell .acquisitions-page .dl-control-item-facts dt {
+  font-size: 11px;
+  margin: 0;
+}
+.modern-shell .acquisitions-page .dl-control-item-facts dd {
+  font-size: 12px;
+  margin: 0;
+}
+.modern-shell .acquisitions-page .dl-control-item-facts .dl-item-fact-full {
+  grid-column: auto;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-control-item-facts
+  .dl-control-item-balance-value {
+  padding: 8px;
+  border-radius: 5px;
+  color: var(--primary);
+  background: #e7f1fe;
+  font-weight: 600;
+}
+.modern-shell .acquisitions-page .dl-control-item-movements {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.modern-shell .acquisitions-page .dl-control-movements-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.modern-shell .acquisitions-page .dl-control-movements-heading h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.modern-shell .acquisitions-page .dl-control-movements-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+.modern-shell .acquisitions-page .dl-control-item-movements .table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.modern-shell .acquisitions-page .dl-control-item-movements th {
+  font-size: 10px;
+  padding: 9px;
+}
+.modern-shell .acquisitions-page .dl-control-item-movements .empty-state {
+  text-align: left;
+  white-space: normal;
+  font-size: 11px;
+  padding: 16px 9px;
+}
+.modern-shell .acquisitions-page .dl-control-item-movements p {
+  margin-top: 12px;
+  font-size: 10px;
+}
+.modern-shell .acquisitions-page .dl-control-item-footer {
+  padding: 15px 22px;
+}
+@media (max-width: 650px) {
+  .modern-shell .acquisitions-page .dl-control-item-heading {
+    padding: 18px;
+  }
+  .modern-shell .acquisitions-page .dl-control-item-heading h2 {
+    font-size: 18px;
+  }
+  .modern-shell .acquisitions-page .dl-control-item-body {
+    padding: 16px 18px;
+  }
+  .modern-shell .acquisitions-page .dl-control-item-facts > div {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .modern-shell .acquisitions-page .dl-control-movements-heading {
+    flex-wrap: wrap;
+  }
 }
