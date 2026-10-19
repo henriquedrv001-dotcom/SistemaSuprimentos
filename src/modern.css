@@ -459,3 +459,121 @@
     padding: 0;
   }
 }
+
+/* Shared finishing: consistent readable density, keyboard access, and task details. */
+.skip-navigation {
+  position: fixed;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 14px;
+  background: var(--primary);
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.skip-navigation:focus {
+  top: 12px;
+}
+.list-result-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.modern-shell
+  :is(
+    .tasks-table,
+    .dl-final-summary-table,
+    .cycle-overview-table,
+    .dl-control-table
+  ) {
+  font-variant-numeric: tabular-nums;
+}
+.modern-shell :is(.tasks-table, .dl-final-summary-table, .dl-control-table) th {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15px;
+}
+.modern-shell .dl-compact .tabs,
+.modern-shell .cycles-page .tabs {
+  gap: 4px;
+}
+.modern-shell .dl-compact > .panel-heading {
+  align-items: center;
+}
+.modern-shell .dl-final-summary .dl-final-facts {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--background-soft);
+}
+.modern-shell .dl-final-summary .dl-final-facts dd {
+  margin-left: 0;
+}
+.modern-shell .dl-final-summary-totals > div {
+  border-radius: 7px;
+  background: #fff;
+}
+.modern-shell .dl-history-list {
+  background: #fff;
+}
+.modern-shell .tasks-counts > div {
+  background: var(--background-soft);
+  box-shadow: none;
+}
+.modern-shell .tasks-column {
+  background: #f4f7fb;
+  border-color: var(--border);
+}
+.modern-shell .tasks-card {
+  border-radius: 7px;
+  margin-bottom: 10px;
+}
+.modern-shell .tasks-card:focus-visible {
+  outline-offset: 2px;
+}
+.modern-shell .tasks-preview-note {
+  background: #fff;
+  border-left: 3px solid var(--primary);
+}
+.modern-shell .tasks-dialog[open] {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(660px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  border: 0;
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px #172b3a1a;
+}
+.modern-shell .tasks-dialog::backdrop {
+  background: #172b3a33;
+}
+.modern-shell .tasks-dialog-body {
+  flex: 1;
+}
+.modern-shell .tasks-dialog > footer {
+  background: #fff;
+}
+.modern-shell .tasks-dialog :is(input, textarea) {
+  text-transform: uppercase;
+}
+@media (max-width: 720px) {
+  .modern-shell .dl-compact .dl-actions {
+    gap: 6px;
+  }
+  .modern-shell .dl-compact .dl-actions button {
+    min-width: 0;
+  }
+  .modern-shell .tasks-queue-heading {
+    gap: 10px;
+  }
+  .modern-shell .tasks-dialog[open] {
+    width: 100%;
+  }
+}

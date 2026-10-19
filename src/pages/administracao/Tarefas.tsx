@@ -178,7 +178,22 @@ export default function Tarefas() {
               ? `Fila de ${previewRoles[profile]}`
               : "Fila atribuída · todos os perfis"}
           </h2>
-          <span>{shown.length} tarefa(s) de exemplo</span>
+          <div className="list-result-actions">
+            <span role="status">{shown.length} tarefa(s) de exemplo</span>
+            {(query || profile || state) && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => {
+                  setQuery("");
+                  setProfile("");
+                  setState("");
+                }}
+              >
+                Limpar filtros de tarefas
+              </button>
+            )}
+          </div>
         </div>
         {message && (
           <div className="tasks-feedback" role="status">

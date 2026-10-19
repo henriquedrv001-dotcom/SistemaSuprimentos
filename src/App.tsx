@@ -418,9 +418,10 @@ function App() {
 
   return (
     <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`}>
+      <a className="skip-navigation" href="#workspace-content">Ir para o conteúdo</a>
       <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL e mudar de tela?")) setSection(next);}} />
 
-      <main className="main-area">
+      <main className="main-area" id="workspace-content" tabIndex={-1}>
         <header className="topbar">
           <div className="breadcrumbs" aria-label="Localização">Suprimentos <span>/</span> {navigationLocation(section).label}</div>
           <div className="user-chip"><div className="avatar">US</div><span>Usuário de teste</span><ChevronDown size={15} /></div>

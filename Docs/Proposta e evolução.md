@@ -321,3 +321,11 @@ Detalhes do catálogo e dos itens no Controle usam painéis laterais, mantendo o
 Validação: 128 testes aprovados, TypeScript e build; Chromium com menu expandido/recolhido, acesso aos módulos e cinco tipos de pedidos, desktop/tablet/celular sem overflow global, edição/cancelamento/persistência e Escape no painel do catálogo; Controle por origem e demonstração de Tarefas com lista/kanban e encaminhamento/devolução/aprovação; edição e bloqueio do planejamento, resumo contratual, histórico, cálculos e persistência do cronograma. Comparação dos estilos com/sem a nova camada confirma os elementos internos das seis etapas preservados. Navegação não regravou os dados de domínio no cenário de teste.
 
 Alterações locais; envio ao GitHub aguarda solicitação de sincronização do usuário.
+
+### Acabamento visual e navegação por teclado — 19/10/2026
+
+Detalhes de Tarefas seguem o painel lateral dos itens, com conteúdo rolável e ações ao fim; comportamento nativo de diálogo, foco e Escape preservados. Cabeçalhos de tabelas, dados numéricos, cartões kanban e fatos do resumo contratual receberam acabamento consistente. A tela aprovada de Requisição e processo permanece sem alteração interna.
+
+Limpar filtros de tarefas restaura perfil/situação/busca, sem reiniciar os fluxos de exemplo. Limpar filtros de ciclos restaura busca e visualização Abertos, sem alterar ciclos. Ações aparecem somente quando há filtro ativo. Atalho Ir para o conteúdo permite saltar a navegação com teclado.
+
+Validação: build e TypeScript; Chromium com limpeza dos filtros, contagens restauradas, atalho por teclado, painel lateral de tarefa em desktop/celular e fechamento por Escape. Reexecutados os percursos de Controle e demonstração completa de Tarefas, edição/bloqueio de planejamento, resumo, histórico, cronograma e comparação dos estilos das seis etapas. Sem alteração nos serviços ou dados de domínio.

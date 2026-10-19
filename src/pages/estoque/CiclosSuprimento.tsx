@@ -259,6 +259,18 @@ export default function CiclosSuprimento({
                   <option value="closed">Encerrados</option>
                 </select>
               </label>
+              {(query || statusFilter !== "open") && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => {
+                    setQuery("");
+                    setStatusFilter("open");
+                  }}
+                >
+                  Limpar filtros de ciclos
+                </button>
+              )}
             </div>
             <div className="table-wrap">
               <table className="cycle-overview-table">
