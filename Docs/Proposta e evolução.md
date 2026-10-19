@@ -259,3 +259,10 @@ Validação: build, TypeScript e Chromium com salvar/editar, numeradores conclu�
 ### Ajuste dos numeradores e acesso ao cronograma — 17/10/2026
 
 Etapas concluídas têm numeradores com fundo azul do tema e texto branco. Removido o bloco superior Andamento do processo. Cronograma sai da lista de abas e continua acessível pelo botão no topo; a abertura padrão passa a Materiais e orçamento. Funcionalidades e dados do cronograma preservados. Build e navegador conferidos.
+
+
+### Listagem compacta de processos de aquisição — 18/10/2026
+
+Busca e filtro de situação alinhados, ação Nova DL com ícone, contagem de resultados e limpeza dos filtros. Tabela com colunas dimensionadas, valores monetários alinhados à direita, nomes longos com quebra e situações em marcadores discretos. Textos da listagem, navegação de DLs e janela de criação em maiúsculas na apresentação, preservando os dados antigos. Busca sem resultado mostra orientação; em telas estreitas a rolagem fica dentro da tabela.
+
+Validação: build e Chromium em 1540, 980, 650 e 390 px; filtros combinados, aviso sem resultados, limpeza, foco visível, abrir DL existente, criação/cancelamento e dados salvos intactos.

@@ -1,3 +1,4 @@
+import { Plus, Search, X } from "lucide-react";
 import { contractTotal } from "../../services/dlContract";
 import DLControl from "../../components/dl/DLControl";
 import { useEffect, useRef, useState } from "react";
@@ -64,9 +65,17 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
     }
   }
   const disabled = !!props.error;
+  const filteredPlans = props.workspace.plans.filter(
+    (plan) =>
+      `${plan.code} ${plan.title} ${plan.category}`
+        .toLocaleLowerCase("pt-BR")
+        .includes(query.toLocaleLowerCase("pt-BR")) &&
+      (!stageFilter || plan.stage === stageFilter),
+  );
+  const hasFilters = !!query || !!stageFilter;
   return (
     <>
-      <div className="page-heading">
+      <div className="page-heading dl-overview-heading">
         <div>
           <p className="eyebrow">ESTOQUE · AQUISIÇÕES</p>
           <h1>Planejamento e Controle DLs</h1>
@@ -75,7 +84,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
           </p>
         </div>
       </div>
-      <div className="tabs">
+      <div className="tabs dl-overview-tabs">
         <button
           className={`tab ${props.tab === "planning" ? "active" : ""}`}
           onClick={() => props.onChange("planning")}
@@ -111,12 +120,17 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
           onBack={() => setActive(null)}
         />
       ) : (
-        <section className="panel">
+        <section
+          className="panel dl-acquisition-list"
+          aria-labelledby="dl-overview-title"
+        >
           <div className="panel-heading">
             <div>
-              <h2>Processos de aquisição</h2>
-              <p className="muted">
-                {props.workspace.plans.length} DL(s) cadastrada(s)
+              <h2 id="dl-overview-title">Processos de aquisição</h2>
+              <p className="muted" role="status">
+                {hasFilters
+                  ? `${filteredPlans.length} de ${props.workspace.plans.length} processos`
+                  : `${props.workspace.plans.length} ${props.workspace.plans.length === 1 ? "processo cadastrado" : "processos cadastrados"}`}
               </p>
             </div>
             <button
@@ -127,101 +141,146 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                 setError("");
               }}
             >
+              <Plus size={15} aria-hidden="true" />
               Nova DL
             </button>
           </div>
-          <label className="catalog-search">
-            <input
-              aria-label="Buscar DL"
-              placeholder="Buscar número, objeto ou categoria"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
-          <label className="dl-stage-filter">
-            Situação
-            <select
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value)}
-            >
-              <option value="">Todas</option>
-              {dlStages.map((stage) => (
-                <option key={stage}>{stage}</option>
-              ))}
-            </select>
-          </label>
-          <div className="table-wrap">
-            <table>
+          <div className="dl-overview-filters">
+            <label className="dl-overview-search">
+              <span>Buscar DL</span>
+              <span className="catalog-search">
+                <Search size={16} aria-hidden="true" />
+                <input
+                  type="search"
+                  aria-label="Buscar DL"
+                  placeholder="Número, objeto ou categoria"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </span>
+            </label>
+            <label className="dl-stage-filter">
+              <span>Situação</span>
+              <select
+                aria-label="Situação"
+                value={stageFilter}
+                onChange={(e) => setStageFilter(e.target.value)}
+              >
+                <option value="">Todas as situações</option>
+                {dlStages.map((stage) => (
+                  <option key={stage}>{stage}</option>
+                ))}
+              </select>
+            </label>
+            {hasFilters && (
+              <button
+                className="text-button dl-clear-filters"
+                onClick={() => {
+                  setQuery("");
+                  setStageFilter("");
+                }}
+              >
+                <X size={14} aria-hidden="true" />
+                Limpar filtros
+              </button>
+            )}
+          </div>
+          <div
+            className="table-wrap"
+            role="region"
+            aria-label="Processos de aquisição"
+            tabIndex={0}
+          >
+            <table className="dl-overview-table">
+              <colgroup>
+                <col className="dl-col-code" />
+                <col className="dl-col-title" />
+                <col className="dl-col-category" />
+                <col className="dl-col-date" />
+                <col className="dl-col-count" />
+                <col className="dl-col-money" />
+                <col className="dl-col-money" />
+                <col className="dl-col-stage" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>DL</th>
-                  <th>Objeto</th>
-                  <th>Categoria</th>
-                  <th>Abertura</th>
-                  <th>Materiais</th>
-                  <th>Orçamento previsto</th>
-                  <th>Contratação final</th>
-                  <th>Situação</th>
+                  <th scope="col">DL</th>
+                  <th scope="col">Objeto</th>
+                  <th scope="col">Categoria</th>
+                  <th scope="col">Abertura</th>
+                  <th scope="col">Materiais</th>
+                  <th scope="col">Orçamento previsto</th>
+                  <th scope="col">Contratação final</th>
+                  <th scope="col">Situação</th>
                 </tr>
               </thead>
               <tbody>
-                {props.workspace.plans
-                  .filter(
-                    (plan) =>
-                      `${plan.code} ${plan.title} ${plan.category}`
-                        .toLocaleLowerCase()
-                        .includes(query.toLocaleLowerCase()) &&
-                      (!stageFilter || plan.stage === stageFilter),
-                  )
-                  .map((plan) => {
-                    const budget = planBudget(plan.lines);
-                    return (
-                      <tr key={plan.id}>
-                        <td>
-                          <button
-                            className="text-button"
-                            onClick={() => setActive(plan.id)}
-                          >
-                            {plan.code}
-                          </button>
-                        </td>
-                        <td>{plan.title}</td>
-                        <td>
-                          {plan.category?.toLocaleUpperCase("pt-BR") || "—"}
-                        </td>
-                        <td>{plan.openedOn.split("-").reverse().join("/")}</td>
-                        <td>{plan.lines.length}</td>
-                        <td>
-                          {formatMoney(budget.totalCents)}
-                          {budget.incomplete > 0 && (
-                            <small className="muted"> · parcial</small>
-                          )}
-                        </td>
-                        <td>
-                          {plan.contract?.awards.length ? (
-                            <>
-                              {formatMoney(
-                                contractTotal(plan.contract).totalCents,
-                              )}
-                              {!plan.contract.release && (
-                                <small className="muted">
-                                  {" "}
-                                  · em conferência
-                                </small>
-                              )}
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>{plan.stage}</td>
-                      </tr>
-                    );
-                  })}
-                {!props.workspace.plans.length && (
+                {filteredPlans.map((plan) => {
+                  const budget = planBudget(plan.lines);
+                  return (
+                    <tr key={plan.id}>
+                      <td>
+                        <button
+                          className="text-button"
+                          onClick={() => setActive(plan.id)}
+                        >
+                          {plan.code}
+                        </button>
+                      </td>
+                      <td>{plan.title}</td>
+                      <td>
+                        {plan.category?.toLocaleUpperCase("pt-BR") || "—"}
+                      </td>
+                      <td>{plan.openedOn.split("-").reverse().join("/")}</td>
+                      <td>{plan.lines.length}</td>
+                      <td>
+                        {formatMoney(budget.totalCents)}
+                        {budget.incomplete > 0 && (
+                          <small className="muted">Parcial</small>
+                        )}
+                      </td>
+                      <td>
+                        {plan.contract?.awards.length ? (
+                          <>
+                            {formatMoney(
+                              contractTotal(plan.contract).totalCents,
+                            )}
+                            {!plan.contract.release && (
+                              <small className="muted">Em conferência</small>
+                            )}
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className="dl-overview-stage"
+                          data-tone={
+                            plan.stage === "Concluído"
+                              ? "complete"
+                              : plan.stage === "Suspenso"
+                                ? "warning"
+                                : plan.stage === "Cancelado" ||
+                                    plan.stage === "Não contratado"
+                                  ? "inactive"
+                                  : plan.stage === "Rascunho"
+                                    ? "draft"
+                                    : "active"
+                          }
+                        >
+                          {plan.stage}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!filteredPlans.length && (
                   <tr>
                     <td colSpan={8} className="empty-state">
-                      Crie sua primeira DL para começar o planejamento.
+                      {props.workspace.plans.length
+                        ? "Nenhuma DL encontrada. Revise a busca ou a situação selecionada."
+                        : "Crie sua primeira DL para começar o planejamento."}
                     </td>
                   </tr>
                 )}
@@ -353,7 +412,7 @@ function DLCreateDialog({
   return (
     <dialog
       ref={ref}
-      className="item-edit-dialog dl-create"
+      className="item-edit-dialog dl-create dl-overview-create"
       aria-label="Criar ou escolher DL"
       onClose={onClose}
     >

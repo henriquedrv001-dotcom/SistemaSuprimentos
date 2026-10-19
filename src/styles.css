@@ -724,3 +724,42 @@ dialog.dl-create {margin:auto}
 .dl-document-preview img {display:block;max-width:100%;height:calc(100% - 50px);object-fit:contain;margin:auto}
 .dl-order-files .dl-preview-error {color:var(--danger);font-size:12px;flex-basis:100%}
 @media(max-width:600px) {.dl-order-files li {flex-wrap:wrap}.dl-order-files li > span {flex-basis:calc(100% - 30px)}}
+
+/* Listagem compacta dos processos de aquisição. */
+.dl-acquisition-list,.dl-overview-heading,.dl-overview-tabs,.dl-overview-create {text-transform:uppercase}
+.dl-acquisition-list .panel-heading {align-items:center;margin-bottom:16px}
+.dl-acquisition-list .panel-heading h2 {font-size:15px;letter-spacing:.15px}
+.dl-acquisition-list .panel-heading p {font-size:11px;margin-top:5px}
+.dl-acquisition-list .primary-button {display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
+.dl-overview-filters {display:flex;align-items:flex-end;gap:12px;margin-bottom:16px}
+.dl-overview-search {display:grid;gap:6px;flex:1;min-width:0}
+.dl-overview-search > span:first-child,.dl-acquisition-list .dl-stage-filter > span {font-size:10px;font-weight:600;color:var(--text-secondary);letter-spacing:.25px}
+.dl-acquisition-list .catalog-search {width:100%;max-width:none}
+.dl-acquisition-list .dl-stage-filter {display:grid;gap:6px;align-items:stretch;margin:0;width:240px;min-width:0;flex-shrink:0}
+.dl-acquisition-list .dl-stage-filter select {width:100%;font-size:11px}
+.dl-acquisition-list .dl-clear-filters {display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:var(--control-height);white-space:nowrap;font-size:10px}
+.dl-acquisition-list .table-wrap:focus-visible {outline:2px solid var(--primary);outline-offset:3px;border-radius:3px}
+.dl-overview-table {min-width:1040px;table-layout:fixed;font-size:11px}
+.dl-overview-table .dl-col-code {width:8%}
+.dl-overview-table .dl-col-title {width:21%}
+.dl-overview-table .dl-col-category {width:14%}
+.dl-overview-table .dl-col-date {width:9%}
+.dl-overview-table .dl-col-count {width:7%}
+.dl-overview-table .dl-col-money {width:12%}
+.dl-overview-table .dl-col-stage {width:17%}
+.dl-overview-table th {font-size:10px;padding:10px 9px}
+.dl-overview-table td {height:50px;padding:10px 9px;vertical-align:middle}
+.dl-overview-table td:nth-child(2),.dl-overview-table td:nth-child(3) {white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+.dl-overview-table td:nth-child(2) {color:var(--text);font-weight:500}
+.dl-overview-table th:nth-child(5),.dl-overview-table td:nth-child(5) {text-align:center}
+.dl-overview-table th:nth-child(6),.dl-overview-table th:nth-child(7),.dl-overview-table td:nth-child(6),.dl-overview-table td:nth-child(7) {text-align:right;font-variant-numeric:tabular-nums}
+.dl-overview-table .text-button {font-size:11px;padding:4px 0;white-space:nowrap}
+.dl-overview-table tbody tr:hover {background:#FAFCFF}
+.dl-overview-table .empty-state {height:auto;padding:24px;white-space:normal;text-align:center}
+.dl-overview-stage {display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 7px;border-radius:5px;background:var(--gray-soft);color:var(--text-secondary);font-size:9px;font-weight:600;line-height:1.4;white-space:normal}
+.dl-overview-stage::before {content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.dl-overview-stage[data-tone="complete"],.dl-overview-stage[data-tone="active"] {background:var(--primary-light);color:var(--primary)}
+.dl-overview-stage[data-tone="warning"] {background:var(--warning-light);color:var(--warning)}
+@media(max-width:720px) {.dl-overview-filters {flex-wrap:wrap}.dl-overview-search {flex-basis:100%}.dl-acquisition-list .dl-stage-filter {flex:1;width:auto}.dl-acquisition-list .panel-heading {gap:10px}.dl-acquisition-list .panel-heading h2 {font-size:13px}.dl-acquisition-list .primary-button {font-size:11px;padding:0 10px}.dl-acquisition-list .table-wrap {scrollbar-width:thin}}
+
+.dl-acquisition-list button,.dl-overview-heading button,.dl-overview-tabs button,.dl-overview-create button {text-transform:uppercase}
