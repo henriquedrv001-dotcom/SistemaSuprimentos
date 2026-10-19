@@ -60,6 +60,10 @@ export default function DLControlItemDialog({
             <dd>{origin.supplier}</dd>
           </div>
           <div>
+            <dt>Requisição MXM</dt>
+            <dd>{plan.request.mxmNumber || "Não informada"}</dd>
+          </div>
+          <div>
             <dt>Pedido MXM</dt>
             <dd>{origin.mxmOrder}</dd>
           </div>

@@ -5,7 +5,6 @@ import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
   ChevronRight,
-  Eye,
   Info,
 } from "lucide-react";
 import DLControlAlertDialog from "./DLControlAlertDialog";
@@ -474,7 +473,6 @@ export default function DLControl({
                         <span>
                           {item?.description || "Cadastro indisponível"}
                         </span>
-                        <Eye size={14} aria-hidden="true" />
                       </button>
                     </td>
                     <td className="dl-control-number">
