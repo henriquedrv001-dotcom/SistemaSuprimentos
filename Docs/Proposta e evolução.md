@@ -284,3 +284,8 @@ A entrada do Controle passa a exibir uma linha por origem contratada, preservand
 QTD vem da contratação e Valor é o preço unitário. Saldo continua inicial, sem consumos/reservas fictícios. Como ainda não existem solicitações PDL estruturadas, PDL e Último pedido aparecem como travessão; não são inferidos do código da DL nem da data do pedido MXM. Nenhuma escrita ou migração de dados.
 
 Validação: build e Chromium com oito colunas, somente itens contratados/liberados, origens separadas, quantidades decimais/unidades históricas, preço unitário, filtros combinados por fornecedor/material/MXM/categoria/situação, detalhes e histórico, persistência intacta e rolagem móvel.
+
+
+### Correção da nomenclatura da planilha — 18/10/2026
+
+Confirmado pelo usuário: os antigos PDLs da planilha representam as aquisições hoje chamadas DLs. A primeira coluna do Controle é DL e exibe o código existente da aquisição, clicável para os detalhes. Retirada a repetição do código da DL na descrição. Último pedido continua reservado à solicitação vinculada, sem inferir datas da contratação. Nenhuma renumeração ou migração de registros. PDL permanece o termo do futuro pedido ao fornecedor ligado ao ciclo e ao saldo.

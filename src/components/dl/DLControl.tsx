@@ -339,7 +339,7 @@ export default function DLControl({
           >
             <table className="dl-control-table dl-control-items-table">
               <colgroup>
-                <col className="dl-item-pdl" />
+                <col className="dl-item-dl" />
                 <col className="dl-item-description" />
                 <col className="dl-item-quantity" />
                 <col className="dl-item-price" />
@@ -350,7 +350,7 @@ export default function DLControl({
               </colgroup>
               <thead>
                 <tr>
-                  <th scope="col">Pedido (PDL)</th>
+                  <th scope="col">DL</th>
                   <th scope="col">Objeto / descrição</th>
                   <th scope="col" title="Quantidade contratada inicial">
                     QTD
@@ -372,29 +372,24 @@ export default function DLControl({
               <tbody>
                 {matched.map(({ plan, origin, item }) => (
                   <tr key={origin.id}>
-                    <td
-                      className="dl-control-pdl"
-                      title="Nenhum pedido PDL vinculado"
-                    >
-                      —
+                    <td>
+                      <button
+                        className="text-button"
+                        aria-label={`Abrir ${plan.code}: ${item?.description || origin.itemId}`}
+                        onClick={() => {
+                          setActive(plan.id);
+                          setTab("overview");
+                        }}
+                      >
+                        {plan.code}
+                      </button>
                     </td>
                     <td className="dl-control-material">
                       <strong>
                         {item?.description || "Cadastro indisponível"}
                       </strong>
                       <small className="dl-control-material-reference">
-                        <span>{item?.code || origin.itemId}</span>
-                        <span aria-hidden="true"> · </span>
-                        <button
-                          className="text-button"
-                          aria-label={`Abrir ${plan.code}: ${item?.description || origin.itemId}`}
-                          onClick={() => {
-                            setActive(plan.id);
-                            setTab("overview");
-                          }}
-                        >
-                          {plan.code}
-                        </button>
+                        {item?.code || origin.itemId}
                       </small>
                       <small>{plan.title}</small>
                     </td>
@@ -429,9 +424,8 @@ export default function DLControl({
             </table>
           </div>
           <p className="muted dl-control-items-note">
-            QTD é a quantidade contratada; Valor é o preço unitário. PDL e
-            último pedido ficam sem informação enquanto não há solicitação
-            vinculada.
+            QTD é a quantidade contratada; Valor é o preço unitário. Último
+            pedido fica sem informação enquanto não há solicitação vinculada.
           </p>
         </>
       )}

@@ -359,7 +359,7 @@
 /* Controle inicial por origem/material, na ordem da planilha. */
 .dl-control .dl-control-items-table {min-width:1050px;font-size:11px}
 .dl-control .dl-control-items-table th {width:auto;padding:9px 8px;font-size:10px;white-space:normal}
-.dl-control .dl-control-items-table .dl-item-pdl {width:9%}
+.dl-control .dl-control-items-table .dl-item-dl {width:9%}
 .dl-control .dl-control-items-table .dl-item-description {width:30%}
 .dl-control .dl-control-items-table .dl-item-quantity {width:8%}
 .dl-control .dl-control-items-table .dl-item-price {width:10%}
@@ -372,7 +372,6 @@
 .dl-control .dl-control-items-table .dl-control-material,.dl-control .dl-control-items-table .dl-control-supplier {white-space:normal;overflow-wrap:anywhere;text-transform:uppercase}
 .dl-control .dl-control-material strong {display:block;font-size:11px;font-weight:500;line-height:1.45}
 .dl-control .dl-control-items-table .dl-control-material small {margin-top:2px;font-size:10px;line-height:1.4}
-.dl-control .dl-control-items-table .dl-control-material-reference .text-button {display:inline;padding:0;font-size:10px}
 .dl-control .dl-control-items-table .dl-control-number {text-align:right;font-variant-numeric:tabular-nums}
 .dl-control .dl-control-items-table th:nth-child(3),.dl-control .dl-control-items-table th:nth-child(7) {text-align:right}
 .dl-control .dl-control-items-table td:nth-child(3),.dl-control .dl-control-items-table td:nth-child(5) {overflow-wrap:normal}
