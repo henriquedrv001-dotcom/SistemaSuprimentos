@@ -309,3 +309,15 @@ Filtros e ordenação na mesma faixa; mostrar zerados e contagem junto do títul
 Administração → Tarefas agora abre um esboço interativo, com lista/kanban, busca, situação e simulação da fila por perfil: Jovem aprendiz, Responsável pelo estoque e Compradora. Exemplos independentes das DLs mostram início, encaminhamento ao próximo perfil, análise/devolução com observação e aprovação. A tarefa sai da fila do executor ao ser encaminhada, podendo visualizar a fila de destino. Reset e troca de visualização preservam o caráter demonstrativo; nada é salvo no workspace nem representa atribuição/permissão real.
 
 Validação: 128 testes e build aprovados; Chromium com cinco filtros alinhados, linhas mais baixas, janela do item, dados da origem, navegação da DL, tela móvel, filtros de tarefas, lista/kanban e simulação completa de ida/devolução/compra/aprovação. Estado salvo de DLs, catálogo, ciclos e histórico permaneceu intacto.
+
+### Reformulação visual e navegação unificada — 19/10/2026
+
+Aplicada a primeira versão do padrão visual aprovado: superfícies claras, azul como destaque, títulos menores, tabelas e controles compactos, cabeçalho reduzido e menu lateral único recolhível. Navegação por ícones mantém nomes acessíveis; no celular, recolher oculta os atalhos sem perder o botão de expansão. Preferência de menu é somente de sessão; não altera os dados de domínio.
+
+Aquisições mantém áreas próprias Planejamento de DLs e Controle de DLs. Pedidos reúne Estoque (CDs, FRs, DLs) e Compras (ATA/Contrato, Material Entrada e Saída), com seleção e indicação da área atual. A fila demonstrativa de CDs e o placeholder de ATA/Contrato foram preservados; os outros três tipos têm áreas explicitamente futuras, sem pedidos ou movimentações artificiais. Acompanhamento segue acessível pelo menu.
+
+Detalhes do catálogo e dos itens no Controle usam painéis laterais, mantendo os diálogos nativos, Escape, foco, abas, salvar/cancelar e dados de cada origem. A camada visual está isolada em `src/modern.css`. As seis etapas aprovadas de Requisição e processo conservam tipografia, cores, numeração, espaçamentos e comportamento internos. Não houve alteração de serviços, armazenamento, cálculos, regras de aprovação, anexos ou numeração anual. Recursos futuros vistos nas pranchas continuam fora do escopo funcional.
+
+Validação: 128 testes aprovados, TypeScript e build; Chromium com menu expandido/recolhido, acesso aos módulos e cinco tipos de pedidos, desktop/tablet/celular sem overflow global, edição/cancelamento/persistência e Escape no painel do catálogo; Controle por origem e demonstração de Tarefas com lista/kanban e encaminhamento/devolução/aprovação; edição e bloqueio do planejamento, resumo contratual, histórico, cálculos e persistência do cronograma. Comparação dos estilos com/sem a nova camada confirma os elementos internos das seis etapas preservados. Navegação não regravou os dados de domínio no cenário de teste.
+
+Alterações locais; envio ao GitHub aguarda solicitação de sincronização do usuário.

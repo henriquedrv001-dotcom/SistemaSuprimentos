@@ -77,8 +77,8 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
     <>
       <div className="page-heading dl-overview-heading">
         <div>
-          <p className="eyebrow">ESTOQUE · AQUISIÇÕES</p>
-          <h1>Planejamento e Controle DLs</h1>
+          <p className="eyebrow">SUPRIMENTOS</p>
+          <h1>Aquisições</h1>
           <p className="muted">
             Da necessidade de aquisição ao acompanhamento do processo.
           </p>
@@ -89,13 +89,13 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
           className={`tab ${props.tab === "planning" ? "active" : ""}`}
           onClick={() => props.onChange("planning")}
         >
-          Planejamento
+          Planejamento de DLs
         </button>
         <button
           className={`tab ${props.tab === "control" ? "active" : ""}`}
           onClick={() => props.onChange("control")}
         >
-          Controle
+          Controle de DLs
         </button>
       </div>
       {props.error && (

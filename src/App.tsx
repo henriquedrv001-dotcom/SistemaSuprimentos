@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { demoCycles, demoItems, demoOrders } from "./data";
 import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
-import AppSidebar, { navigationLocation } from "./components/AppSidebar";
+import OrdersNavigation from "./components/OrdersNavigation";
+import AppSidebar, { navigationLocation, orderSections } from "./components/AppSidebar";
 import type { AppSection } from "./components/AppSidebar";
 import PlanejamentoControleDLs from "./pages/estoque/PlanejamentoControleDLs";
 import AcompanhamentoATAContratos from "./pages/compras/AcompanhamentoATAContratos";
@@ -46,6 +47,7 @@ function writeLocalCollection<T>(key: string, value: T[]) {
 
 function App() {
   const [section, setSection] = useState<AppSection>("Painel");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[] | null>(readCatalogTypeView);
   const [filterType, setFilterType] = useState("Todos");
@@ -415,16 +417,18 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <AppSidebar section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL e mudar de tela?")) setSection(next);}} />
+    <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`}>
+      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL e mudar de tela?")) setSection(next);}} />
 
       <main className="main-area">
         <header className="topbar">
-          <div className="breadcrumbs" aria-label="Localização">Suprimentos <span>/</span> {navigationLocation(section).group} <span>/</span> {navigationLocation(section).label}</div>
+          <div className="breadcrumbs" aria-label="Localização">Suprimentos <span>/</span> {navigationLocation(section).label}</div>
           <div className="user-chip"><div className="avatar">US</div><span>Usuário de teste</span><ChevronDown size={15} /></div>
         </header>
 
-        <div className="page-content">
+        <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
+          {orderSections.includes(section) && <OrdersNavigation section={section} onNavigate={setSection} />}
+          {(section === "Pedidos FRs" || section === "Pedidos DLs" || section === "Pedidos Material Entrada e Saída") && <section className="panel order-placeholder"><span className="tag tag-neutral">Em breve</span><h2>{section}</h2><p className="muted">Área reservada para este tipo de pedido. O fluxo de criação e movimentação será definido em etapa própria.</p></section>}
           {bulkMessage && section !== "Cadastro de itens" && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
           {section === "Painel" && (
             <>
@@ -472,7 +476,7 @@ function App() {
           {section === "Cadastro de itens" && (
             <>
               <div className="page-heading">
-                <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Catálogo geral de materiais MXM. Importe, filtre, ordene e selecione vários itens..</p></div>
+                <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Catálogo geral de materiais MXM. Importe, filtre, ordene e selecione vários itens.</p></div>
                 <div className="form-actions">
                   <input ref={importInputRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={(e) => void handleImportFile(e.target.files?.[0])} />
                   <button className="secondary-button" onClick={downloadTemplate}><Download size={17} /> Modelo CSV</button>
@@ -563,7 +567,7 @@ function App() {
 
           {section === "Pedidos diretos" && (
             <>
-              <div className="page-heading"><div><p className="eyebrow">EXECUÇÃO</p><h1>Pedidos diretos</h1><p className="muted">Pedidos do tipo PCD registrados no protótipo.</p></div><button className="secondary-button" onClick={() => window.alert("O fluxo de criação de pedidos diretos será implementado após a validação das regras de compromisso e saldo.")}>Preparar pedido <FileText size={17} /></button></div>
+              <div className="page-heading"><div><p className="eyebrow">EXECUÇÃO</p><h2>Pedidos CDs</h2><p className="muted">Pedidos do tipo PCD registrados no protótipo.</p></div><button className="secondary-button" onClick={() => window.alert("O fluxo de criação de pedidos diretos será implementado após a validação das regras de compromisso e saldo.")}>Preparar pedido <FileText size={17} /></button></div>
               <section className="panel">
                 <div className="toolbar"><div><h2>Fila de pedidos diretos</h2><p>{directOrders.length} pedidos demonstrativos</p></div></div>
                 <div className="table-wrap"><table><thead><tr><th>Item</th><th>Ciclo</th><th>Solicitado</th><th>Recebido</th><th>Entrega prevista</th><th>Status</th></tr></thead><tbody>

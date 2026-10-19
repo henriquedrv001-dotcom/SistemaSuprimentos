@@ -1,0 +1,461 @@
+/* Visual refresh: presentation only. Workflow-specific request styles retain their sizing. */
+.modern-shell {
+  background: #f7f9fc;
+}
+.modern-shell .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  width: 218px;
+  padding: 18px 12px 14px;
+  background: #fff;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 28px;
+}
+.modern-shell .brand {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  gap: 8px;
+}
+.modern-shell .brand-mark {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+}
+.modern-shell .brand strong {
+  color: var(--text);
+  font-size: 13px;
+}
+.modern-shell .brand span {
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+.sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+}
+.sidebar-toggle:hover {
+  background: var(--gray-soft);
+}
+.modern-shell .sidebar nav {
+  display: grid;
+  gap: 5px;
+  overflow: visible;
+}
+.modern-shell .nav-item {
+  min-height: 40px;
+  width: 100%;
+  padding: 10px;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  border-radius: 6px;
+}
+.modern-shell .nav-item:hover {
+  background: var(--background-soft);
+  color: var(--primary);
+}
+.modern-shell .nav-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.modern-shell .nav-item:disabled {
+  opacity: 0.6;
+}
+.modern-shell .nav-item:disabled:hover {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.modern-shell .nav-item small {
+  background: var(--gray-soft);
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+.modern-shell .sidebar-bottom {
+  padding: 18px 8px 0;
+}
+.modern-shell .sidebar-bottom p {
+  color: var(--text-muted);
+}
+.modern-shell .mode-pill {
+  color: var(--text-secondary);
+  border-color: var(--border);
+  font-size: 10px;
+  padding: 6px 8px;
+}
+.modern-shell .sidebar.is-collapsed {
+  width: 68px;
+  padding-inline: 10px;
+}
+.is-collapsed .sidebar-brand-row {
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.is-collapsed .brand-copy,
+.is-collapsed .nav-item span,
+.is-collapsed .nav-item small,
+.is-collapsed .mode-copy,
+.is-collapsed .sidebar-bottom p {
+  display: none;
+}
+.modern-shell .is-collapsed .nav-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+.modern-shell .is-collapsed .mode-pill {
+  padding: 8px;
+}
+.modern-shell .topbar {
+  height: 54px;
+  padding: 0 24px;
+  background: #fff;
+}
+.modern-shell .breadcrumbs {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+}
+.modern-shell .page-content {
+  max-width: 1600px;
+  padding: 22px 24px 36px;
+}
+.modern-shell .page-heading {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.modern-shell .page-heading h1 {
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 5px;
+}
+.modern-shell .page-heading .eyebrow {
+  display: none;
+}
+.modern-shell .page-heading .muted {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+.modern-shell .panel,
+.modern-shell .metric-card {
+  box-shadow: none;
+  border-radius: 9px;
+}
+.modern-shell .panel:not(.dl-editor) {
+  padding: 16px;
+}
+.modern-shell .metric-card {
+  padding: 14px;
+}
+.modern-shell .metric-grid {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.modern-shell .metric-value {
+  font-size: 24px;
+  margin-top: 12px;
+}
+.modern-shell .metric-icon {
+  height: 28px;
+  width: 28px;
+  border-radius: 6px;
+}
+.modern-shell .content-grid {
+  gap: 14px;
+}
+.modern-shell .toolbar {
+  margin-bottom: 12px;
+}
+.modern-shell .panel-heading {
+  margin-bottom: 12px;
+}
+/* Compact shared controls outside the approved request editor. */
+.modern-shell
+  .page-content
+  > .page-heading
+  :is(.primary-button, .secondary-button),
+.modern-shell .page-content > .panel :is(.primary-button, .secondary-button),
+.modern-shell .cycles-page :is(.primary-button, .secondary-button),
+.modern-shell .catalog-panel :is(.primary-button, .secondary-button) {
+  min-height: 34px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+.modern-shell .catalog-panel td,
+.modern-shell .cycle-overview-table td {
+  padding-block: 8px;
+}
+.modern-shell .catalog-panel th,
+.modern-shell .cycle-overview-table th {
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.modern-shell .page-content > .panel:not(.dl-editor) h2,
+.modern-shell .cycles-page h2 {
+  font-size: 15px;
+}
+.modern-shell
+  .page-content
+  > .panel:not(.dl-editor)
+  input:not([type="checkbox"]),
+.modern-shell .page-content > .panel:not(.dl-editor) select {
+  min-height: 34px;
+}
+.modern-shell .catalog-panel :is(td, input, select),
+.modern-shell .cycle-overview-table td {
+  text-transform: uppercase;
+}
+.modern-shell :is(button, a):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.orders-navigation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.orders-group {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 0;
+}
+.orders-group h2 {
+  color: var(--text-secondary);
+  font: 700 10px var(--font-body);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.orders-group nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: visible;
+}
+.order-type {
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--background-soft);
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: left;
+}
+.order-type.active {
+  color: var(--primary);
+  background: var(--primary-light);
+  border-color: #c4daf1;
+  font-weight: 700;
+}
+.order-type:hover {
+  color: var(--primary);
+  border-color: var(--border-strong);
+}
+.orders-page > .page-heading:not(:first-child) h2 {
+  font-size: 17px;
+  margin-bottom: 5px;
+}
+.orders-page .order-placeholder {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+.order-placeholder p {
+  margin: 0;
+  font-size: 12px;
+}
+.orders-page > .page-heading:not(:first-child) .muted {
+  max-width: 70ch;
+}
+@media (max-width: 1100px) {
+  .modern-shell .sidebar {
+    width: 200px;
+  }
+  .modern-shell .sidebar.is-collapsed {
+    width: 68px;
+  }
+  .modern-shell .page-content {
+    padding-inline: 18px;
+  }
+  .orders-navigation {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 720px) {
+  .modern-shell {
+    display: block;
+  }
+  .modern-shell .sidebar,
+  .modern-shell .sidebar.is-collapsed {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 10px 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
+  .modern-shell .sidebar-brand-row,
+  .modern-shell .is-collapsed .sidebar-brand-row {
+    flex-direction: row;
+    margin-bottom: 10px;
+  }
+  .modern-shell .brand-copy {
+    display: block;
+  }
+  .modern-shell .sidebar nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+  }
+  .modern-shell .sidebar .nav-item {
+    width: auto;
+    min-height: 38px;
+    padding: 9px 10px;
+  }
+  .modern-shell .sidebar.is-collapsed nav {
+    display: none;
+  }
+  .modern-shell .sidebar.is-collapsed .sidebar-brand-row {
+    margin-bottom: 0;
+  }
+  .modern-shell .sidebar-bottom {
+    display: none;
+  }
+  .modern-shell .topbar {
+    height: 46px;
+    padding-inline: 14px;
+  }
+  .modern-shell .page-content {
+    padding: 16px 12px 28px;
+  }
+  .modern-shell .page-heading {
+    align-items: stretch;
+  }
+  .modern-shell .page-heading h1 {
+    font-size: 20px;
+  }
+  .modern-shell .page-heading .form-actions {
+    flex-wrap: wrap;
+  }
+  .modern-shell .page-heading .form-actions > button {
+    flex: 1;
+  }
+  .modern-shell .panel:not(.dl-editor) {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modern-shell * {
+    scroll-behavior: auto;
+  }
+}
+/* Existing native dialogs become side panels; saving, Escape and focus remain native. */
+.modern-shell .item-edit-dialog[open] {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(660px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  border: 0;
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px #172b3a1a;
+  padding: 20px;
+}
+.modern-shell .item-edit-dialog::backdrop {
+  background: #172b3a33;
+}
+.modern-shell .item-detail-heading {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.modern-shell .item-detail-heading h2 {
+  font-size: 16px;
+}
+.modern-shell .item-detail-heading .muted {
+  font-size: 12px;
+}
+.modern-shell .item-detail-controls {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.modern-shell .item-edit-dialog :is(.primary-button, .secondary-button) {
+  min-height: 34px;
+  font-size: 11px;
+}
+.modern-shell .item-edit-dialog .form-grid {
+  gap: 12px;
+}
+.modern-shell .item-edit-dialog :is(input, select) {
+  min-height: 34px;
+}
+.modern-shell .item-edit-dialog :is(input, textarea, select) {
+  text-transform: uppercase;
+}
+.modern-shell .item-edit-dialog .item-detail-footer {
+  position: sticky;
+  bottom: -20px;
+  margin-bottom: -20px;
+  padding: 12px 0 20px;
+  background: #fff;
+}
+.modern-shell .item-edit-dialog.dl-control-item-dialog[open] {
+  padding: 0;
+}
+.modern-shell .dl-control-item-heading {
+  padding: 18px;
+}
+.modern-shell .dl-control-item-heading h2 {
+  font-size: 16px;
+  text-transform: uppercase;
+}
+.modern-shell .dl-control-item-body {
+  padding: 16px 18px;
+}
+.modern-shell .dl-control-item-footer {
+  padding: 12px 18px;
+}
+@media (max-width: 720px) {
+  .modern-shell .item-edit-dialog[open] {
+    padding: 16px;
+  }
+  .modern-shell .item-detail-heading {
+    flex-direction: column;
+  }
+  .modern-shell .item-detail-footer {
+    bottom: -16px;
+    margin-bottom: -16px;
+    padding-bottom: 16px;
+  }
+  .modern-shell .item-edit-dialog.dl-control-item-dialog[open] {
+    padding: 0;
+  }
+}
