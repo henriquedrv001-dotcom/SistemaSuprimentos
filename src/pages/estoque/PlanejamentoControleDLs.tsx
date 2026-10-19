@@ -1,4 +1,4 @@
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Eye } from "lucide-react";
 import { contractTotal } from "../../services/dlContract";
 import DLControl from "../../components/dl/DLControl";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +17,7 @@ import {
   todayInBrazil,
 } from "../../services/dlPlanning";
 import DLPlanningEditor from "../../components/dl/DLPlanningEditor";
+import "../../components/dl/Acquisitions.css";
 
 export type DLPlanningProps = {
   tab: "planning" | "control";
@@ -37,6 +38,15 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [sort, setSort] = useState("recent");
+  const categories = [
+    ...new Set(
+      props.workspace.plans
+        .map((plan) => plan.category.toLocaleUpperCase("pt-BR"))
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const plan = props.workspace.plans.find((plan) => plan.id === active);
   function create() {
     try {
@@ -70,34 +80,63 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
       `${plan.code} ${plan.title} ${plan.category}`
         .toLocaleLowerCase("pt-BR")
         .includes(query.toLocaleLowerCase("pt-BR")) &&
-      (!stageFilter || plan.stage === stageFilter),
+      (!stageFilter || plan.stage === stageFilter) &&
+      (!categoryFilter ||
+        plan.category.toLocaleUpperCase("pt-BR") === categoryFilter),
   );
-  const hasFilters = !!query || !!stageFilter;
+  filteredPlans.sort((a, b) =>
+    sort === "code"
+      ? a.code.localeCompare(b.code, "pt-BR", { numeric: true })
+      : sort === "oldest"
+        ? a.openedOn.localeCompare(b.openedOn) ||
+          a.sequenceNumber - b.sequenceNumber
+        : b.openedOn.localeCompare(a.openedOn) ||
+          b.sequenceNumber - a.sequenceNumber,
+  );
+  const hasFilters = !!query || !!stageFilter || !!categoryFilter;
   return (
-    <>
-      {(!plan || props.tab === "control") && <div className="page-heading dl-overview-heading">
-        <div>
-          <p className="eyebrow">SUPRIMENTOS</p>
-          <h1>Aquisições</h1>
-          <p className="muted">
-            Da necessidade de aquisição ao acompanhamento do processo.
-          </p>
+    <div
+      className="acquisitions-page"
+      data-area={props.tab}
+      data-detail={!!plan && props.tab === "planning"}
+    >
+      {(!plan || props.tab === "control") && (
+        <div className="page-heading dl-overview-heading">
+          <div>
+            <p className="eyebrow">SUPRIMENTOS</p>
+            <h1>Aquisições</h1>
+          </div>
+          {props.tab === "planning" && (
+            <button
+              className="primary-button"
+              disabled={disabled}
+              onClick={() => {
+                setCreating(true);
+                setError("");
+              }}
+            >
+              <Plus size={16} aria-hidden="true" />
+              Nova DL
+            </button>
+          )}
         </div>
-      </div>}
-      <div className="tabs dl-overview-tabs">
-        <button
-          className={`tab ${props.tab === "planning" ? "active" : ""}`}
-          onClick={() => props.onChange("planning")}
-        >
-          Planejamento de DLs
-        </button>
-        <button
-          className={`tab ${props.tab === "control" ? "active" : ""}`}
-          onClick={() => props.onChange("control")}
-        >
-          Controle de DLs
-        </button>
-      </div>
+      )}
+      {(!plan || props.tab === "control") && (
+        <div className="tabs dl-overview-tabs">
+          <button
+            className={`tab ${props.tab === "planning" ? "active" : ""}`}
+            onClick={() => props.onChange("planning")}
+          >
+            Planejamento de DLs
+          </button>
+          <button
+            className={`tab ${props.tab === "control" ? "active" : ""}`}
+            onClick={() => props.onChange("control")}
+          >
+            Controle de DLs
+          </button>
+        </div>
+      )}
       {props.error && (
         <p className="catalog-error" role="alert">
           {props.error} Nenhum dado salvo será substituído.
@@ -124,26 +163,12 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
           className="panel dl-acquisition-list"
           aria-labelledby="dl-overview-title"
         >
-          <div className="panel-heading">
-            <div>
-              <h2 id="dl-overview-title">Processos de aquisição</h2>
-              <p className="muted" role="status">
-                {hasFilters
-                  ? `${filteredPlans.length} de ${props.workspace.plans.length} processos`
-                  : `${props.workspace.plans.length} ${props.workspace.plans.length === 1 ? "processo cadastrado" : "processos cadastrados"}`}
-              </p>
-            </div>
-            <button
-              className="primary-button"
-              disabled={disabled}
-              onClick={() => {
-                setCreating(true);
-                setError("");
-              }}
-            >
-              <Plus size={15} aria-hidden="true" />
-              Nova DL
-            </button>
+          <div className="dl-list-results">
+            <h2 id="dl-overview-title">Planejamento de DLs</h2>
+            <span role="status">
+              {filteredPlans.length} de {props.workspace.plans.length}{" "}
+              aquisições
+            </span>
           </div>
           <div className="dl-overview-filters">
             <label className="dl-overview-search">
@@ -172,12 +197,38 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                 ))}
               </select>
             </label>
+            <label className="dl-stage-filter">
+              <span>Categoria</span>
+              <select
+                aria-label="Categoria da aquisição"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">Todas as categorias</option>
+                {categories.map((category) => (
+                  <option key={category}>{category}</option>
+                ))}
+              </select>
+            </label>
+            <label className="dl-stage-filter">
+              <span>Ordenar</span>
+              <select
+                aria-label="Ordenar aquisições"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                <option value="recent">Mais recentes</option>
+                <option value="oldest">Mais antigas</option>
+                <option value="code">Número da DL</option>
+              </select>
+            </label>
             {hasFilters && (
               <button
                 className="text-button dl-clear-filters"
                 onClick={() => {
                   setQuery("");
                   setStageFilter("");
+                  setCategoryFilter("");
                 }}
               >
                 <X size={14} aria-hidden="true" />
@@ -197,10 +248,9 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                 <col className="dl-col-title" />
                 <col className="dl-col-category" />
                 <col className="dl-col-date" />
-                <col className="dl-col-count" />
-                <col className="dl-col-money" />
                 <col className="dl-col-money" />
                 <col className="dl-col-stage" />
+                <col className="dl-col-open" />
               </colgroup>
               <thead>
                 <tr>
@@ -208,10 +258,9 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                   <th scope="col">Objeto</th>
                   <th scope="col">Categoria</th>
                   <th scope="col">Abertura</th>
-                  <th scope="col">Materiais</th>
-                  <th scope="col">Orçamento previsto</th>
-                  <th scope="col">Contratação final</th>
-                  <th scope="col">Situação</th>
+                  <th scope="col">Orçamento</th>
+                  <th scope="col">Etapa</th>
+                  <th scope="col">Abrir</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,31 +276,31 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                           {plan.code}
                         </button>
                       </td>
-                      <td>{plan.title}</td>
+                      <td>
+                        <strong>{plan.title}</strong>
+                        <small>{plan.lines.length} materiais</small>
+                      </td>
                       <td>
                         {plan.category?.toLocaleUpperCase("pt-BR") || "—"}
                       </td>
                       <td>{plan.openedOn.split("-").reverse().join("/")}</td>
-                      <td>{plan.lines.length}</td>
                       <td>
                         {formatMoney(budget.totalCents)}
                         {budget.incomplete > 0 && (
                           <small className="muted">Parcial</small>
                         )}
-                      </td>
-                      <td>
-                        {plan.contract?.awards.length ? (
-                          <>
-                            {formatMoney(
-                              contractTotal(plan.contract).totalCents,
-                            )}
-                            {!plan.contract.release && (
-                              <small className="muted">Em conferência</small>
-                            )}
-                          </>
-                        ) : (
-                          "—"
-                        )}
+                        <small>
+                          Contratação final:{" "}
+                          {plan.contract?.awards.length
+                            ? formatMoney(
+                                contractTotal(plan.contract).totalCents,
+                              )
+                            : "A definir"}
+                          {plan.contract?.awards.length &&
+                          !plan.contract.release
+                            ? " · Em conferência"
+                            : ""}
+                        </small>
                       </td>
                       <td>
                         <span
@@ -272,12 +321,21 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
                           {plan.stage}
                         </span>
                       </td>
+                      <td>
+                        <button
+                          className="icon-button"
+                          aria-label={`Consultar ${plan.code}`}
+                          onClick={() => setActive(plan.id)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
                 {!filteredPlans.length && (
                   <tr>
-                    <td colSpan={8} className="empty-state">
+                    <td colSpan={7} className="empty-state">
                       {props.workspace.plans.length
                         ? "Nenhuma DL encontrada. Revise a busca ou a situação selecionada."
                         : "Crie sua primeira DL para começar o planejamento."}
@@ -395,7 +453,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
           </div>
         </DLCreateDialog>
       )}
-    </>
+    </div>
   );
 }
 function DLCreateDialog({

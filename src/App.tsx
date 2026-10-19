@@ -417,7 +417,7 @@ function App() {
   }
 
   return (
-    <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`}>
+    <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`} data-section={section}>
       <a className="skip-navigation" href="#workspace-content">Ir para o conteúdo</a>
       <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL e mudar de tela?")) setSection(next);}} />
 

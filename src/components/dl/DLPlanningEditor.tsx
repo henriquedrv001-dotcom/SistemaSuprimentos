@@ -2,8 +2,15 @@ import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import DLProcessStages, { DLJustificationStep } from "./DLProcessStages";
 import DLContractSummary from "./DLContractSummary";
 import DLPlanningOverview from "./DLPlanningOverview";
+import DLPlanningMaterialDialog from "./DLPlanningMaterialDialog";
 import { canRegisterDLOrder } from "../../services/dlProcess";
-import { CalendarDays, CircleCheck, Clock3 } from "lucide-react";
+import {
+  CalendarDays,
+  CircleCheck,
+  Clock3,
+  Eye,
+  ChevronDown,
+} from "lucide-react";
 import DLHistory from "./DLHistory";
 import DLRequestWorkflow from "./DLRequestWorkflow";
 import type { RequestAction } from "./DLRequestWorkflow";
@@ -73,6 +80,7 @@ export default function DLPlanningEditor({
   const justificationDirty =
     justificationText !== (plan.processFlow?.justification?.text ?? "");
   const [releaseOpen, setReleaseOpen] = useState(false);
+  const [openedMaterial, setOpenedMaterial] = useState<string | null>(null);
   useEffect(() => {
     setDraft(structuredClone(plan));
     setJustificationText(plan.processFlow?.justification?.text ?? "");
@@ -317,11 +325,15 @@ export default function DLPlanningEditor({
           >
             ← Todas as DLs
           </button>
-          <h2>
-            {plan.code} · {plan.title}
-          </h2>
+          <div className="dl-record-title">
+            <h2>
+              {plan.code} · {plan.title}
+            </h2>
+            <span className="dl-record-stage" data-released={released}>
+              {plan.stage}
+            </span>
+          </div>
           <p className="muted">
-            {plan.stage} ·{" "}
             {dirty ? "Alterações não salvas" : "Salvo neste navegador"}
           </p>
         </div>
@@ -373,48 +385,60 @@ export default function DLPlanningEditor({
               Concluir planejamento
             </button>
           ) : (
-            <button
-              className="secondary-button"
-              onClick={() => {
-                try {
-                  if (dirty)
-                    throw new Error(
-                      "Salve ou descarte as alterações antes de reabrir o planejamento.",
-                    );
-                  if (
-                    window.confirm(
-                      "Reabrir o planejamento? As informações serão liberadas para edição e a requisição precisará ser enviada e analisada novamente.",
-                    )
-                  )
-                    onSave(
-                      reopenDLPlanning(plan, true),
-                      "Planejamento reaberto; novo envio e análise necessários",
-                      { reopenPlanning: true },
-                    );
-                } catch (cause) {
-                  setError(
-                    cause instanceof Error
-                      ? cause.message
-                      : "Não foi possível reabrir.",
-                  );
-                }
-              }}
-            >
-              Reabrir planejamento
-            </button>
+            <details className="dl-record-more">
+              <summary className="secondary-button">
+                Mais ações <ChevronDown size={14} />
+              </summary>
+              <div>
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    try {
+                      if (dirty)
+                        throw new Error(
+                          "Salve ou descarte as alterações antes de reabrir o planejamento.",
+                        );
+                      if (
+                        window.confirm(
+                          "Reabrir o planejamento? As informações serão liberadas para edição e a requisição precisará ser enviada e analisada novamente.",
+                        )
+                      )
+                        onSave(
+                          reopenDLPlanning(plan, true),
+                          "Planejamento reaberto; novo envio e análise necessários",
+                          { reopenPlanning: true },
+                        );
+                    } catch (cause) {
+                      setError(
+                        cause instanceof Error
+                          ? cause.message
+                          : "Não foi possível reabrir.",
+                      );
+                    }
+                  }}
+                >
+                  Reabrir planejamento
+                </button>
+              </div>
+            </details>
           )}
         </div>
       </div>
-      <div className="tabs">
+      {!editable && (
+        <DLPlanningOverview plan={plan} showObservation={tab === "items"} />
+      )}
+      <div className="tabs dl-record-tabs">
         {[
           ["items", "Materiais e orçamento"],
           ["request", "Requisição e processo"],
           ["contract", "Contratação e fornecedores"],
+          ["schedule", "Cronograma"],
           ["history", "Histórico"],
         ].map(([id, label]) => (
           <button
             className={`tab ${tab === id ? "active" : ""}`}
             key={id}
+            aria-label={id === "schedule" ? "Cronograma da DL" : label}
             title={
               id === "items"
                 ? editable
@@ -463,7 +487,13 @@ export default function DLPlanningEditor({
                 />
               )
             ) : null}
-            {label}
+            {id === "items"
+              ? "Materiais"
+              : id === "request"
+                ? "Processo"
+                : id === "contract"
+                  ? "Contratação"
+                  : label}
           </button>
         ))}
       </div>
@@ -496,6 +526,22 @@ export default function DLPlanningEditor({
           }}
         />
       )}
+      {openedMaterial &&
+        draft.lines.some((line) => line.id === openedMaterial) && (
+          <DLPlanningMaterialDialog
+            plan={draft}
+            line={draft.lines.find((line) => line.id === openedMaterial)!}
+            item={items.find(
+              (item) =>
+                item.id ===
+                draft.lines.find((line) => line.id === openedMaterial)!.itemId,
+            )}
+            quantity={values[openedMaterial]?.quantity ?? ""}
+            price={values[openedMaterial]?.price ?? ""}
+            dirty={planningDirty}
+            onClose={() => setOpenedMaterial(null)}
+          />
+        )}
       {tab === "items" && (
         <>
           {editable ? (
@@ -574,12 +620,10 @@ export default function DLPlanningEditor({
                 />
               </label>
             </div>
-          ) : (
-            <DLPlanningOverview plan={plan} />
-          )}
+          ) : null}
           <div className="panel-heading dl-budget-heading">
             <div>
-              <h3>Orçamento previsto: {budgetText}</h3>
+              <h3>Materiais do planejamento</h3>
               <p className="muted">
                 {draft.lines.length} materiais ·{" "}
                 {editable
@@ -603,7 +647,6 @@ export default function DLPlanningEditor({
           >
             <table className="dl-budget-table">
               <colgroup>
-                <col className="dl-budget-code" />
                 <col className="dl-budget-material" />
                 <col className="dl-budget-unit" />
                 <col className="dl-budget-quantity" />
@@ -613,12 +656,11 @@ export default function DLPlanningEditor({
               </colgroup>
               <thead>
                 <tr>
-                  <th scope="col">Código</th>
                   <th scope="col">Material</th>
                   <th scope="col">Unidade</th>
-                  <th scope="col">Quantidade</th>
-                  <th scope="col">Preço unitário previsto (R$)</th>
-                  <th scope="col">Subtotal previsto</th>
+                  <th scope="col">QTD</th>
+                  <th scope="col">Preço previsto</th>
+                  <th scope="col">Subtotal</th>
                   <th scope="col">Ação</th>
                 </tr>
               </thead>
@@ -638,9 +680,16 @@ export default function DLPlanningEditor({
                   }
                   return (
                     <tr key={line.id}>
-                      <td>{item?.code ?? "Cadastro indisponível"}</td>
-                      <td>
-                        {item?.description ?? line.itemId}
+                      <td className="dl-budget-description">
+                        <button
+                          className="text-button"
+                          onClick={() => setOpenedMaterial(line.id)}
+                        >
+                          {item?.description ?? line.itemId}
+                        </button>
+                        <small className="dl-budget-item-code">
+                          {item?.code ?? "Cadastro indisponível"}
+                        </small>
                         {item?.technicalSpecification && (
                           <small className="dl-spec">
                             {item.technicalSpecification}
@@ -687,49 +736,69 @@ export default function DLPlanningEditor({
                         />
                       </td>
                       <td>{subtotal}</td>
-                      <td>
+                      <td className="dl-budget-row-actions">
                         <button
-                          className="text-button"
-                          disabled={!editable || justificationDirty}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `Retirar ${item?.code} deste planejamento?`,
-                              )
-                            )
-                              setDraft({
-                                ...draft,
-                                lines: draft.lines.filter(
-                                  (value) => value.id !== line.id,
-                                ),
-                              });
-                          }}
+                          className="icon-button"
+                          aria-label={`Consultar material ${item?.code || line.itemId}`}
+                          onClick={() => setOpenedMaterial(line.id)}
                         >
-                          Retirar
+                          <Eye size={16} />
                         </button>
+                        {editable && (
+                          <button
+                            className="text-button"
+                            disabled={justificationDirty}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Retirar ${item?.code} deste planejamento?`,
+                                )
+                              )
+                                setDraft({
+                                  ...draft,
+                                  lines: draft.lines.filter(
+                                    (value) => value.id !== line.id,
+                                  ),
+                                });
+                            }}
+                          >
+                            Retirar
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
                 })}
                 {!draft.lines.length && (
                   <tr>
-                    <td colSpan={7} className="empty-state">
+                    <td colSpan={6} className="empty-state">
                       Adicione materiais do catálogo MXM para montar o
                       orçamento.
                     </td>
                   </tr>
                 )}
               </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row" colSpan={4}>
+                    Total previsto
+                  </th>
+                  <td className="dl-budget-total">{budgetText}</td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </div>
-          <details className="dl-planning-help">
-            <summary>Sobre quantidades e valores</summary>
+          <section
+            className="dl-planning-help"
+            aria-label="Orientações do orçamento"
+          >
             <p>
               Quantidade: até 3 casas decimais. Preço em R$: até 2 casas, sem
               separador de milhar ao editar. Rascunhos podem ter quantidades ou
               preços em branco. O orçamento não representa saldo contratado.
             </p>
-          </details>
+          </section>
         </>
       )}
       {tab === "request" && (
