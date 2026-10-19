@@ -1,4 +1,63 @@
 /* Aquisições: referências originais enviadas pelo usuário. Não altera outras funções. */
+.modern-shell .acquisitions-page .dl-budget-summary {
+  background: #eef5fd;
+  border-top: 1px solid #d7e5f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  padding: 18px 20px;
+  text-transform: none;
+}
+.modern-shell .acquisitions-page .dl-budget-summary-label > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-budget-summary-label
+  > div
+  > span:first-child {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.modern-shell .acquisitions-page .dl-budget-partial {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  color: #946400;
+  background: #fff0c9;
+  padding: 3px 7px;
+}
+.modern-shell .acquisitions-page .dl-budget-summary p {
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+.modern-shell .acquisitions-page .dl-budget-summary-value {
+  margin-left: auto;
+  text-align: right;
+}
+.modern-shell .acquisitions-page .dl-budget-summary-value > strong {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-budget-summary-value
+  > .dl-budget-summary-error {
+  font-size: 16px;
+  color: #9d400e;
+}
 .modern-shell .acquisitions-page {
   min-width: 0;
   font-size: 13px;

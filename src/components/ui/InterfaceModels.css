@@ -1,4 +1,23 @@
 /* Reusable models. See Docs/Modelos de interface.md. No global select overrides. */
+input.ui-checkbox[type="checkbox"],
+.modern-shell .item-edit-dialog input.ui-checkbox[type="checkbox"] {
+  box-sizing: border-box;
+  appearance: auto;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  max-height: 18px;
+  padding: 0;
+  margin: 0;
+  flex: 0 0 18px;
+  accent-color: var(--primary, #0054b8);
+  cursor: pointer;
+}
+input.ui-checkbox[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--primary, #0054b8);
+  outline-offset: 3px;
+}
 .ui-filterbar {
   display: grid;
   grid-template-columns: var(

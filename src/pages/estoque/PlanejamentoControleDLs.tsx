@@ -2,6 +2,7 @@ import { Plus, X, Eye } from "lucide-react";
 import FilterSelect from "../../components/ui/FilterSelect";
 import FilterSearch from "../../components/ui/FilterSearch";
 import SegmentedControl from "../../components/ui/SegmentedControl";
+import { DEFAULT_DL_REQUESTER } from "../../config/uiDefaults";
 import { contractTotal } from "../../services/dlContract";
 import DLControl from "../../components/dl/DLControl";
 import { useEffect, useRef, useState } from "react";
@@ -57,7 +58,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
         title,
         openedOn: todayInBrazil(),
         category: "",
-        responsible: "",
+        responsible: DEFAULT_DL_REQUESTER,
         justification: "",
         notes: "",
       });

@@ -28,7 +28,8 @@ import {
 import { contractInput, materializeContract } from "./DLContractForm";
 import DLReleaseDialog from "./DLReleaseDialog";
 import { releaseDLPlan } from "../../services/dlContract";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { DEFAULT_DL_REQUESTER } from "../../config/uiDefaults";
 import type { DLPlan } from "../../types/dl";
 import type { DLPlanningProps } from "../../pages/estoque/PlanejamentoControleDLs";
 import {
@@ -50,7 +51,14 @@ export default function DLPlanningEditor({
   onBack,
   onDirtyChange,
 }: DLPlanningProps & { plan: DLPlan; onBack: () => void }) {
-  const [draft, setDraft] = useState<DLPlan>(() => structuredClone(plan));
+  const [draft, setDraft] = useState<DLPlan>(() => {
+    const initial = structuredClone(plan);
+    if (editableDLItems(plan) && !initial.responsible.trim()) {
+      initial.responsible = DEFAULT_DL_REQUESTER;
+    }
+    return initial;
+  });
+  const lastPlan = useRef(plan);
   const [values, setValues] = useState<
     Record<string, { quantity: string; price: string }>
   >(() =>
@@ -82,6 +90,10 @@ export default function DLPlanningEditor({
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [openedMaterial, setOpenedMaterial] = useState<string | null>(null);
   useEffect(() => {
+    // Initial state already includes the suggested requester. Later saves use
+    // exactly the saved values, including an intentionally cleared field.
+    if (lastPlan.current === plan) return;
+    lastPlan.current = plan;
     setDraft(structuredClone(plan));
     setJustificationText(plan.processFlow?.justification?.text ?? "");
     setScheduleDraft(plan.schedule ?? emptyDLSchedule());
@@ -153,13 +165,16 @@ export default function DLPlanningEditor({
     };
   }
   let previewLines: DLPlan["lines"] = [];
-  let budgetText = "";
+  let budgetSummary: { amount: string; incomplete: number } | null = null;
   try {
     previewLines = materialize().lines;
     const budget = planBudget(previewLines);
-    budgetText = `${formatMoney(budget.totalCents)}${budget.incomplete ? ` · parcial, ${budget.incomplete} item(ns) a completar` : ""}`;
+    budgetSummary = {
+      amount: formatMoney(budget.totalCents),
+      incomplete: budget.incomplete,
+    };
   } catch {
-    budgetText = "Revise os valores digitados";
+    /* Invalid inputs are shown explicitly in the summary below. */
   }
   const editable = editableDLItems(plan);
   const canEditContract =
@@ -784,17 +799,44 @@ export default function DLPlanningEditor({
                   </tr>
                 )}
               </tbody>
-              <tfoot>
-                <tr>
-                  <th scope="row" colSpan={4}>
-                    Total previsto
-                  </th>
-                  <td className="dl-budget-total">{budgetText}</td>
-                  <td />
-                </tr>
-              </tfoot>
             </table>
           </div>
+          <section
+            className="dl-budget-summary"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div className="dl-budget-summary-label">
+              <div>
+                <span>Total previsto</span>
+                {budgetSummary && budgetSummary.incomplete > 0 && (
+                  <span className="dl-budget-partial">Parcial</span>
+                )}
+              </div>
+              <p>
+                {budgetSummary?.incomplete
+                  ? "Soma dos materiais com quantidade e preço informados."
+                  : "Orçamento do planejamento."}
+              </p>
+            </div>
+            <div className="dl-budget-summary-value">
+              <strong
+                className={budgetSummary ? "" : "dl-budget-summary-error"}
+              >
+                {budgetSummary?.amount || "Revise os valores digitados"}
+              </strong>
+              <p>
+                {budgetSummary
+                  ? budgetSummary.incomplete
+                    ? `${budgetSummary.incomplete} ${budgetSummary.incomplete === 1 ? "material a completar" : "materiais a completar"}`
+                    : draft.lines.length
+                      ? "Todos os materiais preenchidos"
+                      : "Adicione materiais para começar"
+                  : "Confira as quantidades e os preços."}
+              </p>
+            </div>
+          </section>
           <section
             className="dl-planning-help"
             aria-label="Orientações do orçamento"

@@ -12,6 +12,9 @@ Catálogo persistente para reutilizar elementos quando solicitado pelo usuário.
 | UI-NAV-01 | Seletor segmentado | `src/components/ui/SegmentedControl.tsx` | Planejamento/Controle no cabeçalho, ao lado de Nova DL. Referência: imagem 5 do usuário. |
 | UI-BTN-01 | Ação principal azul | `.primary-button` existente | Base atual, reutilizada em Nova DL; nenhum novo comportamento ou redesenho de todos os botões nesta rodada. |
 | UI-TBL-01 | Tabela compacta de processos | `src/components/dl/Acquisitions.css` | Base atual com cabeçalhos alinhados e rolagem local; colunas dependem da função. |
+| UI-CHK-01 | Checkbox quadrado | `.ui-checkbox` em `InterfaceModels.css` | 18 × 18 px, azul ao marcar, foco visível e estado parcial; aplicado ao seletor de materiais da DL. |
+| UI-PICK-01 | Seletor amplo de materiais | `CycleItemPicker.tsx` no contexto `dl` e `DLMaterialPicker.css` | Janela central ampla, filtros em linha, lista com rolagem própria, ações no topo e paginação no rodapé. Ciclos conserva sua apresentação anterior. |
+| UI-SUM-01 | Resumo financeiro inferior | `.dl-budget-summary` em `Acquisitions.css` e `DLPlanningEditor.tsx` | Valor em destaque à direita e explicação de pendências separada; abaixo da tabela, acessível sem rolagem horizontal no celular. |
 
 Os modelos de filtros e navegação desta rodada ainda precisam do aceite visual do usuário. Exemplo de solicitação futura: “Aplicar UI-FLT-01 e UI-BAR-01 no Catálogo”. Não copiar lógica de saldo ou fluxo ao reutilizar apresentação.
 
@@ -48,3 +51,19 @@ Grupo com botões Planejamento/Controle, estado ativo azul e estado inativo neut
 ## Manutenção
 
 Estilos compartilhados ficam em `src/components/ui/InterfaceModels.css`, limitados às classes `ui-*`; layout específico continua em `Acquisitions.css`. Ao aprovar ou revisar um padrão, atualizar seu estado e descrição aqui. Ao replicá-lo em outra função por solicitação, conferir opções completas, textos longos, teclado, seleção atual, estado vazio, filtros combinados e responsividade. Filtros não devem mudar os seletores que editam dados de formulários (por exemplo, resultado da contratação ou contagem de dias).
+
+## UI-PICK-01 e UI-CHK-01 — seleção de materiais
+
+O seletor de DL ocupa até 1480 px de largura e 920 px de altura, respeitando margens do viewport. No celular, ocupa a tela. Busca/Tipo MXM/Grupo MXM compartilham a linha em telas amplas; em telas estreitas, reorganizam-se com os modelos UI-FLT-01/02. Os popovers permanecem dentro do diálogo nativo, sem perder a interação modal.
+
+Fechar e Adicionar selecionados ficam no cabeçalho; não duplicar Cancelar no rodapé. Anterior, Página N de M e Próxima ficam no canto inferior. Cabeçalho, filtros e paginação permanecem disponíveis enquanto a lista rola. A seleção inicial é vazia; Adicionar só habilita com itens selecionados. Checkboxes nativos têm dimensões quadradas fixas, e a seleção parcial dos resultados usa `indeterminate`.
+
+Preservar a regra de exclusão de materiais já incluídos/inativos, 50 itens por página, seleção entre páginas, filtro de Grupo subordinado ao Tipo e destino do grupo de solicitação quando aplicável. Selecionar resultados abrange todos os resultados filtrados, incluindo outras páginas. Fechar/Escape não inclui os materiais nem salva o planejamento. Seleção, fechamento de popover e confirmação de inclusão são ações diferentes.
+
+## UI-SUM-01 — total previsto
+
+Manter o resumo no rodapé da área de materiais, fora da rolagem horizontal da tabela. Valor de 26 px, azul e alinhado à direita. À esquerda, título e identificação Parcial quando houver dados faltantes. Explicar a base do parcial: soma dos materiais com quantidade e preço informados. Quantidade de materiais pendentes fica abaixo do valor, com singular/plural correto. Quando houver um valor inválido, mostrar revisão necessária, sem substituí-lo por zero. Usar o cálculo de domínio existente, sem arredondamentos paralelos ou mistura com valor contratado.
+
+## Sugestão editável de solicitante
+
+`src/config/uiDefaults.ts` registra o nome padrão solicitado pelo usuário. Novas DLs recebem essa sugestão; rascunhos sem solicitante a recebem ao abrir, apenas no estado de edição até salvar. Nomes já existentes e planos bloqueados/concluídos são preservados. O campo continua editável e pode ser limpo; o salvamento respeita o que foi digitado. É preenchimento sugerido, não autenticação nem lista de colaboradores. Não aplicar automaticamente esse nome a outras funções.
