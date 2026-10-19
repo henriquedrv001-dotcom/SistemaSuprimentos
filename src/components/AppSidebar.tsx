@@ -1,6 +1,6 @@
 import {
-  Boxes,
-  CalendarDays,
+  PackageSearch,
+  RefreshCw,
   ClipboardList,
   LayoutDashboard,
   ListTodo,
@@ -8,7 +8,7 @@ import {
   PanelLeftOpen,
   Settings,
   Truck,
-  WalletCards,
+  ShoppingCart,
 } from "lucide-react";
 
 export type AppSection =
@@ -35,32 +35,32 @@ const items: {
   label: string;
   section?: AppSection;
   matches?: AppSection[];
-  icon: typeof Boxes;
+  icon: typeof PackageSearch;
 }[] = [
   { label: "Visão geral", section: "Painel", icon: LayoutDashboard },
   { label: "Tarefas", section: "Tarefas", icon: ListTodo },
-  { label: "Catálogo de itens", section: "Cadastro de itens", icon: Boxes },
+  { label: "Catálogo", section: "Cadastro de itens", icon: PackageSearch },
   {
-    label: "Ciclos de suprimentos",
+    label: "Ciclos",
     section: "Ciclos de suprimento",
-    icon: CalendarDays,
+    icon: RefreshCw,
   },
   {
     label: "Aquisições",
     section: "Planejamento DLs",
     matches: ["Planejamento DLs", "Controle DLs"],
-    icon: WalletCards,
+    icon: ShoppingCart,
   },
   {
     label: "Pedidos",
     section: "Pedidos diretos",
     matches: orderSections,
-    icon: Truck,
+    icon: ClipboardList,
   },
   {
     label: "Acompanhamento",
     section: "Acompanhamento de pedidos",
-    icon: ClipboardList,
+    icon: Truck,
   },
   { label: "Configurações", icon: Settings },
 ];
