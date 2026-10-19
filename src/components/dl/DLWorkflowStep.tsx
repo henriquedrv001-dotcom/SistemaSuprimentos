@@ -10,6 +10,7 @@ export default function DLWorkflowStep({
   active = false,
   description,
   context,
+  revealKey,
   children,
 }: {
   id: string;
@@ -20,6 +21,7 @@ export default function DLWorkflowStep({
   active?: boolean;
   description: string;
   context?: string;
+  revealKey?: number;
   children: ReactNode;
 }) {
   const roles: Record<number, [string, string]> = {
@@ -32,6 +34,16 @@ export default function DLWorkflowStep({
   };
   const [open, setOpen] = useState(active && !completed);
   useEffect(() => setOpen(active && !completed), [active, completed]);
+  useEffect(() => {
+    if (!revealKey) return;
+    setOpen(true);
+    const frame = requestAnimationFrame(() => {
+      const summary = document.getElementById(id)?.closest("summary");
+      summary?.scrollIntoView({ block: "start" });
+      summary?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [revealKey, id]);
   return (
     <section
       className={`dl-request-step dl-workflow-step${completed ? " is-complete" : active ? " is-active" : ""}`}

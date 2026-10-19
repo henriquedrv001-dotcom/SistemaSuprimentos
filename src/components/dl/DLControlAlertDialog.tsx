@@ -6,6 +6,7 @@ import type {
 } from "../../services/dlControl";
 import { decimalInput } from "../../services/dlPlanning";
 import { contractStatus } from "../../services/dlContract";
+import "../ui/InterfaceModels.css";
 
 export default function DLControlAlertDialog({
   kind,
@@ -42,11 +43,11 @@ export default function DLControlAlertDialog({
   return (
     <dialog
       ref={ref}
-      className="item-edit-dialog dl-control-alert-dialog"
+      className="item-edit-dialog dl-control-alert-dialog ui-data-dialog"
       aria-labelledby="dl-control-alert-title"
       onClose={onClose}
     >
-      <header className="dl-control-alert-heading">
+      <header className="dl-control-alert-heading ui-data-dialog-heading">
         <div>
           <h2 id="dl-control-alert-title">{title}</h2>
           <p>{rule}</p>
@@ -59,7 +60,7 @@ export default function DLControlAlertDialog({
           <X size={18} />
         </button>
       </header>
-      <div className="dl-control-alert-body">
+      <div className="dl-control-alert-body ui-data-dialog-body">
         <p className="muted">
           {groups.length} DL(s) · {count} item(ns). Indicadores consideram todos
           os itens do Controle, independentemente dos filtros.
@@ -138,7 +139,7 @@ export default function DLControlAlertDialog({
           </section>
         ))}
       </div>
-      <footer className="dl-control-alert-footer">
+      <footer className="dl-control-alert-footer ui-data-dialog-footer">
         <button
           className="secondary-button"
           onClick={() => ref.current?.close()}

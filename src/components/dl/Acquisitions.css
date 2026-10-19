@@ -1,4 +1,15 @@
 /* Aquisições: referências originais enviadas pelo usuário. Não altera outras funções. */
+.modern-shell .acquisitions-page .dl-order-documents-shortcut {
+  margin: 16px 0;
+}
+.modern-shell .acquisitions-page .dl-order-documents-shortcut .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .modern-shell .acquisitions-page .dl-budget-summary {
   background: #eef5fd;
   border-top: 1px solid #d7e5f5;

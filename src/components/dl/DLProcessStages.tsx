@@ -175,6 +175,7 @@ export default function DLProcessStages({
   onPersist,
   onSaveContract,
   onApprove,
+  orderRevealKey,
 }: {
   plan: DLPlan;
   items: Item[];
@@ -185,6 +186,7 @@ export default function DLProcessStages({
   onPersist: (plan: DLPlan, label: string, options: DLSaveOptions) => void;
   onSaveContract: () => void;
   onApprove: () => void;
+  orderRevealKey?: number;
 }) {
   const [files, setFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -306,6 +308,7 @@ export default function DLProcessStages({
     <>
       <DLWorkflowStep
         id="dl-order-title"
+        revealKey={orderRevealKey}
         number={4}
         context={
           attachments.length

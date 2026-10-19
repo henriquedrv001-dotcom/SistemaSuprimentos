@@ -1,4 +1,4 @@
-import DLOrderDocumentList from "./DLOrderDocumentList";
+import { FileText } from "lucide-react";
 import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import type { DLPlan } from "../../types/dl";
 import type { Item } from "../../types";
@@ -13,10 +13,12 @@ export default function DLContractSummary({
   plan,
   items,
   onOpenProcess,
+  onOpenOrderDocuments,
 }: {
   plan: DLPlan;
   items: Item[];
   onOpenProcess?: () => void;
+  onOpenOrderDocuments?: () => void;
 }) {
   const contract = plan.contract;
   const budget = planBudget(plan.lines);
@@ -149,7 +151,25 @@ export default function DLContractSummary({
           </dd>
         </div>
       </dl>
-      <DLOrderDocumentList documents={documents} />
+      <div className="dl-order-documents-shortcut">
+        {documents.length ? (
+          onOpenOrderDocuments || onOpenProcess ? (
+            <button
+              className="text-button"
+              onClick={onOpenOrderDocuments || onOpenProcess}
+            >
+              <FileText size={16} aria-hidden="true" />
+              Consultar documentos do pedido
+            </button>
+          ) : (
+            <p className="muted">
+              Documentos disponíveis no Registro do pedido.
+            </p>
+          )
+        ) : (
+          <p className="muted">Nenhum documento do pedido registrado.</p>
+        )}
+      </div>
       <div className="table-wrap dl-final-summary-table-wrap">
         <table className="dl-final-summary-table">
           <thead>

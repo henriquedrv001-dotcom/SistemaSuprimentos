@@ -11,6 +11,7 @@ import {
   formatMoney,
   planBudget,
 } from "../../services/dlPlanning";
+import "../ui/InterfaceModels.css";
 export default function DLReleaseDialog({
   plan,
   items,
@@ -41,11 +42,11 @@ export default function DLReleaseDialog({
   return (
     <dialog
       ref={ref}
-      className="item-edit-dialog dl-release-dialog"
+      className="item-edit-dialog dl-release-dialog ui-data-dialog"
       aria-labelledby="dl-release-title"
       onClose={onClose}
     >
-      <header className="dl-release-heading">
+      <header className="dl-release-heading ui-data-dialog-heading">
         <h2 id="dl-release-title">
           Concluir {plan.code} e disponibilizar no Controle
         </h2>
@@ -54,7 +55,7 @@ export default function DLReleaseDialog({
           conclusão, os valores ficam protegidos.
         </p>
       </header>
-      <div className="dl-release-body">
+      <div className="dl-release-body ui-data-dialog-body">
         <div className="dl-contract-summary">
           <div>
             <span>Previsto</span>
@@ -69,14 +70,27 @@ export default function DLReleaseDialog({
             <strong>{formatMoney(total - budget)}</strong>
           </div>
         </div>
-        <div className="table-wrap">
+        <div
+          className="table-wrap"
+          role="region"
+          aria-label="Conferência dos materiais da DL"
+          tabIndex={0}
+        >
           <table className="dl-release-table">
+            <colgroup>
+              <col className="dl-release-col-material" />
+              <col className="dl-release-col-quantity" />
+              <col className="dl-release-col-quantity" />
+              <col className="dl-release-col-supplier" />
+              <col className="dl-release-col-order" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Material</th>
                 <th>Previsto</th>
                 <th>Contratado</th>
-                <th>Fornecedor / pedido MXM</th>
+                <th>Fornecedor / justificativa</th>
+                <th>Pedido MXM</th>
               </tr>
             </thead>
             <tbody>
@@ -103,11 +117,12 @@ export default function DLReleaseDialog({
                     </td>
                     <td className="dl-release-supplier">
                       {award
-                        ? `${award.supplier} · ${award.mxmOrder}`
+                        ? award.supplier
                         : contract.notAwarded.find(
                             (result) => result.lineId === line.id,
                           )?.reason || "A definir"}
                     </td>
+                    <td>{award?.mxmOrder || "—"}</td>
                   </tr>
                 );
               })}
@@ -122,6 +137,7 @@ export default function DLReleaseDialog({
           <label className="select-all-label">
             <input
               type="checkbox"
+              className="ui-checkbox"
               checked={checked}
               onChange={(e) => setChecked(e.target.checked)}
             />
@@ -140,8 +156,12 @@ export default function DLReleaseDialog({
           </p>
         )}
       </div>
-      <footer className="form-actions dl-release-actions">
-        <button className="secondary-button" autoFocus onClick={onClose}>
+      <footer className="form-actions dl-release-actions ui-data-dialog-footer">
+        <button
+          className="secondary-button"
+          autoFocus
+          onClick={() => ref.current?.close()}
+        >
           Cancelar
         </button>
         <button

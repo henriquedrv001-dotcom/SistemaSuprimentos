@@ -73,6 +73,7 @@ export default function DLPlanningEditor({
     ),
   );
   const [tab, setTab] = useState("items");
+  const [orderRevealKey, setOrderRevealKey] = useState(0);
   const [scheduleDraft, setScheduleDraft] = useState(
     () => plan.schedule ?? emptyDLSchedule(),
   );
@@ -469,7 +470,10 @@ export default function DLPlanningEditor({
                       : "Etapa aguardando"
                     : label
             }
-            onClick={() => setTab(id)}
+            onClick={() => {
+              setOrderRevealKey(0);
+              setTab(id);
+            }}
           >
             {id === "items" || id === "request" || id === "contract" ? (
               (
@@ -529,7 +533,14 @@ export default function DLPlanningEditor({
         <DLContractSummary
           plan={plan}
           items={items}
-          onOpenProcess={() => setTab("request")}
+          onOpenProcess={() => {
+            setOrderRevealKey(0);
+            setTab("request");
+          }}
+          onOpenOrderDocuments={() => {
+            setOrderRevealKey((current) => current + 1);
+            setTab("request");
+          }}
         />
       )}
       {releaseOpen && (
@@ -883,6 +894,7 @@ export default function DLPlanningEditor({
               }}
               onSaveContract={saveContract}
               onApprove={() => setReleaseOpen(true)}
+              orderRevealKey={orderRevealKey}
             />
           }
         />

@@ -15,6 +15,8 @@ Catálogo persistente para reutilizar elementos quando solicitado pelo usuário.
 | UI-CHK-01 | Checkbox quadrado | `.ui-checkbox` em `InterfaceModels.css` | 18 × 18 px, azul ao marcar, foco visível e estado parcial; aplicado ao seletor de materiais da DL. |
 | UI-PICK-01 | Seletor amplo de materiais | `CycleItemPicker.tsx` no contexto `dl` e `DLMaterialPicker.css` | Janela central ampla, filtros em linha, lista com rolagem própria, ações no topo e paginação no rodapé. Ciclos conserva sua apresentação anterior. |
 | UI-SUM-01 | Resumo financeiro inferior | `.dl-budget-summary` em `Acquisitions.css` e `DLPlanningEditor.tsx` | Valor em destaque à direita e explicação de pendências separada; abaixo da tabela, acessível sem rolagem horizontal no celular. |
+| UI-DLG-01 | Área ampla para dados e conferência | `.ui-data-dialog` em `InterfaceModels.css` | Aplicado à conclusão da DL e às listas dos indicadores do Controle. Ocupa o viewport com margens pequenas, corpo rolável e cabeçalho/ações fixos. |
+| UI-DLG-02 | Lateral para consulta ou alteração pontual | Apresentação existente em `modern.css` e `.dl-control-item-dialog` | Mantida para dados de um item e edição pontual de cadastro; não usar para listagens extensas ou conferência de várias linhas. |
 
 Os modelos de filtros e navegação desta rodada ainda precisam do aceite visual do usuário. Exemplo de solicitação futura: “Aplicar UI-FLT-01 e UI-BAR-01 no Catálogo”. Não copiar lógica de saldo ou fluxo ao reutilizar apresentação.
 
@@ -67,3 +69,13 @@ Manter o resumo no rodapé da área de materiais, fora da rolagem horizontal da 
 ## Sugestão editável de solicitante
 
 `src/config/uiDefaults.ts` registra o nome padrão solicitado pelo usuário. Novas DLs recebem essa sugestão; rascunhos sem solicitante a recebem ao abrir, apenas no estado de edição até salvar. Nomes já existentes e planos bloqueados/concluídos são preservados. O campo continua editável e pode ser limpo; o salvamento respeita o que foi digitado. É preenchimento sugerido, não autenticação nem lista de colaboradores. Não aplicar automaticamente esse nome a outras funções.
+
+## Escolha de área — diretriz do usuário
+
+Telas com muitos dados, tabelas de vários materiais, seletores e conferências devem usar uma área ampla. A lateral funciona para edição de cadastro ou consulta pontual de um item, com pouca informação. A quantidade de dados e o trabalho a executar definem o modelo; não converter automaticamente todo diálogo em lateral.
+
+UI-DLG-01: `dialog.item-edit-dialog.ui-data-dialog`, com filhos `.ui-data-dialog-heading`, `.ui-data-dialog-body` e `.ui-data-dialog-footer`. Em desktop, ocupa o viewport menos 32 px; em celular, ocupa toda a área disponível. Apenas o corpo rola verticalmente; as ações permanecem acessíveis. Tabelas devem aproveitar a largura e quebrar descrições extensas, deixando rolagem horizontal local apenas quando a tela não comportar as colunas. Preservar Escape, foco e todas as confirmações de negócio. Aplicado nesta rodada aos diálogos de Aquisições; demais funções seguem suas respectivas rodadas.
+
+## Acesso ao registro sem repetir documentos
+
+Na consulta de Contratação, apresentar apenas **Consultar documentos do pedido** quando houver documentos. O atalho deve navegar para Processo, expandir Registro do pedido e posicionar/focar seu cabeçalho. A visualização e o download ficam no registro original. Planos antigos sem documentos recebem uma indicação textual, sem atalho sem destino. Navegar/consultar não pode regravar o plano, mudar etapa, conceder permissões nem duplicar ou excluir arquivos. `DLWorkflowStep.revealKey` permite a abertura pontual da etapa sem impedir seu recolhimento manual.
