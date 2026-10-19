@@ -24,6 +24,8 @@ Os modelos de filtros e navegação desta rodada ainda precisam do aceite visual
 
 ## UI-FLT-01 — seleção
 
+Nas listagens de Processos de Compra, título principal, subtítulo da seção, filtros e tabela compartilham a mesma margem esquerda, sem o recuo automático de `panel`. Planejamento e Controle usam subtítulos de 14 px, peso 700, linha 1,4, caixa normal; cabeçalhos de tabela têm 11 px, peso 600 e preenchimento 12 × 10 px. A linha do subtítulo tem altura mínima de 24 px e 14 px até os filtros. Em desktop, reservar a área da barra de rolagem evita deslocamento horizontal entre telas curtas e longas. No celular, o título e as ações permanecem alinhados à esquerda. Indicadores e campos específicos de cada função são preservados.
+
 - Campo de 38 px, raio de 7 px, fundo branco, borda suave e seta à direita.
 - Rótulo de 11 px acima do campo. Opções de 12 px, caixa alta apenas visual: valores e textos originais não são regravados.
 - Lista própria branca, cantos arredondados, destaque azul claro e check na opção selecionada. Abertura para cima quando faltar espaço, limite de altura e rolagem interna.

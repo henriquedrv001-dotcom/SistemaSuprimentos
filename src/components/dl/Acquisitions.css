@@ -1,4 +1,9 @@
 /* Aquisições: referências originais enviadas pelo usuário. Não altera outras funções. */
+@media (min-width: 721px) {
+  html:has(.modern-shell .acquisitions-page) {
+    scrollbar-gutter: stable;
+  }
+}
 .modern-shell .acquisitions-page .item-edit-dialog.dl-manual-debit-dialog[open] {
   inset: 0;
   width: min(540px, calc(100% - 32px));
@@ -108,6 +113,8 @@
   font-size: 13px;
 }
 .modern-shell .acquisitions-page .dl-overview-heading {
+  margin-top: 0;
+  padding: 0;
   margin-bottom: 24px;
   align-items: center;
   flex-wrap: wrap;
@@ -116,6 +123,7 @@
 .modern-shell .acquisitions-page .dl-overview-heading h1 {
   margin: 0;
   font-size: 23px;
+  line-height: 1.3;
   letter-spacing: -0.6px;
   text-transform: none;
 }
@@ -127,6 +135,14 @@
 }
 .modern-shell .acquisitions-page .dl-overview-actions > .primary-button {
   min-height: 40px;
+}
+@media (max-width: 720px) {
+  .modern-shell .acquisitions-page .dl-overview-heading {
+    align-items: stretch;
+  }
+  .modern-shell .acquisitions-page .dl-overview-actions {
+    justify-content: flex-start;
+  }
 }
 .modern-shell .acquisitions-page .dl-acquisition-list,
 .modern-shell .acquisitions-page .dl-control-list {
@@ -201,26 +217,39 @@
   text-transform: none;
   padding: 10px 14px;
 }
-.modern-shell .acquisitions-page .dl-acquisition-list {
+.modern-shell .acquisitions-page .panel.dl-acquisition-list,
+.modern-shell .acquisitions-page .panel.dl-control-list {
   padding: 0;
   border: 0;
+  margin: 0;
+  border-radius: 0;
   box-shadow: none;
   background: transparent;
 }
-.modern-shell .acquisitions-page .dl-list-results {
+.modern-shell .acquisitions-page .dl-list-results,
+.modern-shell .acquisitions-page .dl-control-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  min-height: 24px;
+  margin: 0 0 14px;
   gap: 12px;
+  flex-wrap: wrap;
+  text-transform: none;
 }
-.modern-shell .acquisitions-page .dl-list-results h2 {
+.modern-shell .acquisitions-page .dl-list-results h2,
+.modern-shell .acquisitions-page .dl-control-heading h2 {
   margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
 }
-.modern-shell .acquisitions-page .dl-list-results > span {
+.modern-shell .acquisitions-page .dl-list-results > span,
+.modern-shell .acquisitions-page .dl-control-heading-tools > .muted {
   font-size: 11px;
+  line-height: 1.5;
   color: var(--text-secondary);
 }
 .modern-shell .acquisitions-page .dl-overview-filters {
@@ -1120,12 +1149,20 @@
 }
 .modern-shell .acquisitions-page .dl-control .dl-control-table-wrap {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 7px;
 }
 .modern-shell .acquisitions-page .dl-control .dl-control-items-table th {
   font-size: 10px;
   text-transform: none;
   padding: 11px 9px;
+}
+.modern-shell .acquisitions-page .dl-overview-table th,
+.modern-shell .acquisitions-page .dl-control .dl-control-items-table th {
+  padding: 12px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 600;
+  text-transform: none;
 }
 .modern-shell .acquisitions-page .dl-control .dl-control-items-table td {
   padding: 11px 9px;
