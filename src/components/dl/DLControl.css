@@ -436,7 +436,7 @@
 .dl-control .dl-control-sort-controls {display:flex;gap:5px;min-width:0}
 .dl-control .dl-control-sort-controls select {height:34px;min-width:0;width:100%;padding:0 7px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:#fff;color:var(--text);font:inherit;font-size:11px}
 .dl-control .dl-control-sort-controls select:focus {outline:none;box-shadow:var(--focus-ring);border-color:var(--primary)}
-.dl-control .dl-control-sort-controls button {min-height:34px;width:34px;padding:0;flex-shrink:0}
+.dl-control .dl-control-sort-controls > button {min-height:34px;width:34px;padding:0;flex-shrink:0}
 .dl-control .dl-control-items-table th {font-size:10px;font-weight:600;line-height:1.4;text-transform:uppercase;padding:8px 7px;vertical-align:middle;white-space:nowrap}
 .dl-control .dl-control-items-table td {padding:6px 7px;line-height:1.35;height:37px}
 .dl-control .dl-control-items-table .dl-control-open-item {display:flex;align-items:center;gap:7px;justify-content:space-between;width:100%;padding:2px 0;border:0;background:transparent;color:var(--text);font:inherit;font-size:11px;line-height:1.4;text-align:left;text-transform:uppercase}

@@ -1,3 +1,4 @@
+import FilterSelect from "../ui/FilterSelect";
 import { useEffect, useState } from "react";
 import {
   BadgeCheck,
@@ -60,30 +61,22 @@ export default function DLHistory({
     <div className="dl-history">
       <div className="dl-history-toolbar">
         {heading && <h3 id="dl-history-title">{heading}</h3>}
-        <label>
+        <div className="dl-history-filter">
           <Filter size={15} aria-hidden="true" />
-          <span>Atividade</span>
-          <select
+          <FilterSelect
+            label="Atividade"
             aria-label="Filtrar histórico por atividade"
             value={type}
-            onChange={(event) =>
-              setType(event.target.value as DLActivityType | "")
-            }
-          >
-            <option value="">Todas as atividades</option>
-            {types.map((key) => (
-              <option key={key} value={key}>
-                {dlActivityLabels[key]} (
-                {
-                  entries.filter(
-                    (event) => dlActivityType(event.action) === key,
-                  ).length
-                }
-                )
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={(value) => setType(value as DLActivityType | "")}
+            options={[
+              { value: "", label: "Todas as atividades" },
+              ...types.map((key) => ({
+                value: key,
+                label: `${dlActivityLabels[key]} (${entries.filter((event) => dlActivityType(event.action) === key).length})`,
+              })),
+            ]}
+          />
+        </div>
         <span role="status">
           {matched.length} de {entries.length} registros
         </span>

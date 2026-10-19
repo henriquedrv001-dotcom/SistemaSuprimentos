@@ -1,0 +1,223 @@
+/* Reusable models. See Docs/Modelos de interface.md. No global select overrides. */
+.ui-filterbar {
+  display: grid;
+  grid-template-columns: var(
+    --ui-filter-columns,
+    minmax(0, 2fr) repeat(3, minmax(0, 1fr))
+  );
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.ui-filterbar > *,
+.ui-filter-field {
+  min-width: 0;
+}
+.ui-filter-field {
+  display: grid;
+  gap: 6px;
+}
+.ui-filter-field > label,
+.ui-filter-field > .ui-filter-label {
+  display: block;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #596a7a);
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ui-filter-field.ui-select .ui-select-trigger,
+.ui-search-control {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  border: 1px solid var(--border-strong, #c7d5e5);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text, #172b3a);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+.ui-filter-field.ui-select .ui-select-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
+  cursor: pointer;
+  text-align: left;
+  text-transform: uppercase;
+}
+.ui-select-trigger > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ui-select-trigger > svg {
+  flex-shrink: 0;
+  color: var(--text-secondary, #596a7a);
+  transition: transform 0.15s;
+}
+.ui-select-trigger[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.ui-filter-field.ui-select .ui-select-trigger:hover {
+  border-color: #8ba6c5;
+  background: #fbfdff;
+}
+.ui-filter-field.ui-select
+  .ui-select-trigger:is(:focus-visible, [aria-expanded="true"]),
+.ui-search-control:focus-within {
+  outline: none;
+  border-color: var(--primary, #0054b8);
+  box-shadow: 0 0 0 3px #0054b812;
+}
+.ui-filter-field.ui-select .ui-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: #f5f7fa;
+}
+.ui-search-control {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+}
+.ui-search-control > svg {
+  color: var(--text-secondary, #596a7a);
+  flex-shrink: 0;
+}
+.ui-filter-search .ui-search-control > input {
+  box-sizing: border-box;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-transform: uppercase;
+}
+.ui-select-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 5px;
+  box-sizing: border-box;
+  border: 1px solid #d5e1ee;
+  border-radius: 9px;
+  background: #fff;
+  color: #172b3a;
+  box-shadow: 0 8px 28px #172b3a24;
+  overflow: auto;
+  overscroll-behavior: contain;
+  z-index: 1000;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 12px;
+  scrollbar-width: thin;
+}
+.ui-select-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  min-height: 36px;
+  border-radius: 5px;
+  line-height: 1.4;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.ui-select-option > span {
+  overflow-wrap: anywhere;
+}
+.ui-select-option > svg {
+  color: #0054b8;
+  flex-shrink: 0;
+}
+.ui-select-option[aria-selected="true"] {
+  color: #0054b8;
+  background: #edf5ff;
+  font-weight: 600;
+}
+.ui-select-option[data-active="true"] {
+  background: #e4effc;
+}
+.ui-select-option[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ui-select-empty {
+  padding: 10px;
+  color: #596a7a;
+}
+.ui-filter-actions {
+  grid-column: 1/-1;
+  justify-self: end;
+}
+.ui-segmented {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #cbd9e9;
+  border-radius: 7px;
+  padding: 3px;
+  background: #f5f8fc;
+  gap: 3px;
+  width: fit-content;
+  max-width: 100%;
+}
+.ui-segmented > button[aria-pressed] {
+  min-height: 32px;
+  padding: 7px 17px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #596a7a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ui-segmented > button[aria-pressed="true"] {
+  background: var(--primary, #0054b8);
+  color: white;
+  box-shadow: 0 1px 3px #0054b81a;
+}
+.ui-segmented > button:hover:not([aria-pressed="true"]) {
+  background: #e7eff8;
+  color: #0054b8;
+}
+.ui-segmented > button:focus-visible {
+  outline: 2px solid #0054b8;
+  outline-offset: 2px;
+}
+@container (max-width: 850px) {
+  .ui-filterbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ui-filterbar > .ui-filter-search {
+    grid-column: 1/-1;
+  }
+}
+@container (max-width: 400px) {
+  .ui-filterbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-select-trigger > svg {
+    transition: none;
+  }
+}

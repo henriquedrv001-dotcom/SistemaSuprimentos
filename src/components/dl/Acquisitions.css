@@ -4,12 +4,88 @@
   font-size: 13px;
 }
 .modern-shell .acquisitions-page .dl-overview-heading {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 .modern-shell .acquisitions-page .dl-overview-heading h1 {
-  font-size: 24px;
+  font-size: 23px;
   letter-spacing: -0.6px;
   text-transform: none;
+}
+.modern-shell .acquisitions-page .dl-overview-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.modern-shell .acquisitions-page .dl-overview-actions > .primary-button {
+  min-height: 40px;
+}
+.modern-shell .acquisitions-page .dl-acquisition-list,
+.modern-shell .acquisitions-page .dl-control-list {
+  container-type: inline-size;
+}
+.modern-shell .acquisitions-page .dl-control-filterbar {
+  --ui-filter-columns: minmax(0, 1.8fr) repeat(3, minmax(0, 1fr))
+    minmax(0, 1.1fr);
+}
+.modern-shell
+  .acquisitions-page
+  .dl-control-filterbar
+  .dl-control-sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.modern-shell .acquisitions-page .dl-control-sort-controls > .ui-select {
+  flex: 1;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-control-filterbar
+  .dl-control-sort-controls
+  > button {
+  height: 38px;
+  min-height: 38px;
+  width: 34px;
+  padding: 0;
+}
+.modern-shell .acquisitions-page .dl-history-filter {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-left: auto;
+  min-width: 0;
+}
+.modern-shell .acquisitions-page .dl-history-filter > svg {
+  flex-shrink: 0;
+}
+.modern-shell .acquisitions-page .dl-history-filter .ui-select {
+  width: 230px;
+  max-width: 100%;
+}
+@media (max-width: 650px) {
+  .modern-shell .acquisitions-page .dl-overview-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .modern-shell .acquisitions-page .dl-overview-heading h1 {
+    font-size: 21px;
+  }
+  .modern-shell .acquisitions-page .dl-overview-actions .ui-segmented > button {
+    padding-inline: 11px;
+  }
+  .modern-shell .acquisitions-page .dl-history-filter {
+    margin-left: 0;
+    width: 100%;
+  }
+  .modern-shell .acquisitions-page .dl-history-filter .ui-select {
+    width: auto;
+    flex: 1;
+  }
 }
 .modern-shell .acquisitions-page .dl-overview-tabs {
   margin-top: 0;

@@ -1,4 +1,7 @@
-import { Plus, Search, X, Eye } from "lucide-react";
+import { Plus, X, Eye } from "lucide-react";
+import FilterSelect from "../../components/ui/FilterSelect";
+import FilterSearch from "../../components/ui/FilterSearch";
+import SegmentedControl from "../../components/ui/SegmentedControl";
 import { contractTotal } from "../../services/dlContract";
 import DLControl from "../../components/dl/DLControl";
 import { useEffect, useRef, useState } from "react";
@@ -105,37 +108,40 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
         <div className="page-heading dl-overview-heading">
           <div>
             <p className="eyebrow">SUPRIMENTOS</p>
-            <h1>
-              {props.tab === "control" ? "Controle de DLs" : "Aquisições"}
-            </h1>
+            <h1>PROCESSOS DE COMPRA</h1>
           </div>
-          <button
-            className="primary-button"
-            disabled={disabled}
-            onClick={() => {
-              setCreating(true);
-              setError("");
-            }}
-          >
-            <Plus size={16} aria-hidden="true" />
-            Nova DL
-          </button>
-        </div>
-      )}
-      {(!plan || props.tab === "control") && (
-        <div className="tabs dl-overview-tabs">
-          <button
-            className={`tab ${props.tab === "planning" ? "active" : ""}`}
-            onClick={() => props.onChange("planning")}
-          >
-            Planejamento de DLs
-          </button>
-          <button
-            className={`tab ${props.tab === "control" ? "active" : ""}`}
-            onClick={() => props.onChange("control")}
-          >
-            Controle de DLs
-          </button>
+          <div className="dl-overview-actions">
+            <SegmentedControl
+              label="Visualização dos processos de compra"
+              value={props.tab}
+              onChange={(value) =>
+                props.onChange(value as "planning" | "control")
+              }
+              options={[
+                {
+                  value: "planning",
+                  label: "Planejamento",
+                  ariaLabel: "Planejamento de DLs",
+                },
+                {
+                  value: "control",
+                  label: "Controle",
+                  ariaLabel: "Controle de DLs",
+                },
+              ]}
+            />
+            <button
+              className="primary-button"
+              disabled={disabled}
+              onClick={() => {
+                setCreating(true);
+                setError("");
+              }}
+            >
+              <Plus size={16} aria-hidden="true" />
+              Nova DL
+            </button>
+          </div>
         </div>
       )}
       {props.error && (
@@ -171,61 +177,49 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
               aquisições
             </span>
           </div>
-          <div className="dl-overview-filters">
-            <label className="dl-overview-search">
-              <span>Buscar DL</span>
-              <span className="catalog-search">
-                <Search size={16} aria-hidden="true" />
-                <input
-                  type="search"
-                  aria-label="Buscar DL"
-                  placeholder="Número, objeto ou categoria"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </span>
-            </label>
-            <label className="dl-stage-filter">
-              <span>Situação</span>
-              <select
-                aria-label="Situação"
-                value={stageFilter}
-                onChange={(e) => setStageFilter(e.target.value)}
-              >
-                <option value="">Todas as situações</option>
-                {dlStages.map((stage) => (
-                  <option key={stage}>{stage}</option>
-                ))}
-              </select>
-            </label>
-            <label className="dl-stage-filter">
-              <span>Categoria</span>
-              <select
-                aria-label="Categoria da aquisição"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="">Todas as categorias</option>
-                {categories.map((category) => (
-                  <option key={category}>{category}</option>
-                ))}
-              </select>
-            </label>
-            <label className="dl-stage-filter">
-              <span>Ordenar</span>
-              <select
-                aria-label="Ordenar aquisições"
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                <option value="recent">Mais recentes</option>
-                <option value="oldest">Mais antigas</option>
-                <option value="code">Número da DL</option>
-              </select>
-            </label>
+          <div className="ui-filterbar dl-planning-filterbar">
+            <FilterSearch
+              label="Buscar DL"
+              placeholder="Número, objeto ou categoria"
+              value={query}
+              onChange={setQuery}
+            />
+            <FilterSelect
+              label="Situação"
+              value={stageFilter}
+              onChange={setStageFilter}
+              options={[
+                { value: "", label: "Todas as situações" },
+                ...dlStages.map((stage) => ({ value: stage, label: stage })),
+              ]}
+            />
+            <FilterSelect
+              label="Categoria"
+              aria-label="Categoria da aquisição"
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              options={[
+                { value: "", label: "Todas as categorias" },
+                ...categories.map((category) => ({
+                  value: category,
+                  label: category,
+                })),
+              ]}
+            />
+            <FilterSelect
+              label="Ordenar"
+              aria-label="Ordenar aquisições"
+              value={sort}
+              onChange={setSort}
+              options={[
+                { value: "recent", label: "Mais recentes" },
+                { value: "oldest", label: "Mais antigas" },
+                { value: "code", label: "Número da DL" },
+              ]}
+            />
             {hasFilters && (
               <button
-                className="text-button dl-clear-filters"
+                className="text-button dl-clear-filters ui-filter-actions"
                 onClick={() => {
                   setQuery("");
                   setStageFilter("");

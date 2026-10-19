@@ -75,3 +75,15 @@ As oito vistas de Aquisições das referências originais foram adequadas: lista
 - Nova conferência de cabeçalhos e consulta dos materiais, com capturas aquisicoes-revisao-materiais.png e aquisicoes-revisao-contratacao.png.
 
 Este fechamento é técnico, não substitui o aceite visual do usuário nem afirma ausência absoluta de defeitos. As alterações permanecem locais até solicitação explícita de sincronização. Pedidos, Acompanhamento, Ciclos, Catálogo e Tarefas não foram reformulados nesta rodada. Baixas diretas, movimentos do ERP e autenticação por perfil continuam fora desta alteração visual.
+
+## Rodada seguinte — cabeçalho e modelos de filtros
+
+Por solicitação do usuário: título **PROCESSOS DE COMPRA** em Planejamento e Controle; alternância segmentada no topo, ao lado de Nova DL; remoção da antiga faixa de abas dessas duas vistas. Navegação, proteção de alterações e ações mantidas.
+
+Corrigida a composição dos filtros, que herdava larguras fixas e causava sobreposição. Busca e caixas compartilham altura de 38 px, rótulos alinhados e grade responsiva pela largura do conteúdo. As caixas de seleção dos filtros de Planejamento, Controle e Histórico usam o novo modelo com lista própria, indicação da seleção, teclado, digitação por prefixo, rolagem e posicionamento acima/abaixo. A antiga regra de largura do botão de ordenação foi limitada ao botão de sentido, preservando a largura do seletor.
+
+Modelos registrados em [Modelos de interface](Modelos%20de%20interface.md), com componentes em `src/components/ui`. Aplicação a outras funções somente quando solicitada. Os seletores que editam formulários não foram convertidos em filtros.
+
+Conferência: 128 testes existentes aprovados; build/TypeScript; Chromium com mouse, teclado (incluindo palavras com acentos), toque, fechamento por Escape/Tab/clique externo, filtros combinados, limpeza, ordenação, zerados e histórico. Geometria dos campos conferida de 320 a 1920 px, sem sobreposição/transbordamento da página; popup verificado com pouca altura disponível. Consulta/filtros não regravaram o workspace de teste. Capturas locais `processos-compra-planejamento.png`, `processos-compra-controle.png`, `processos-compra-lista-opcoes.png` e `processos-compra-mobile.png` usam dados de teste.
+
+Esta rodada permanece aguardando avaliação visual e pedido de sincronização.

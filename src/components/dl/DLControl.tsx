@@ -1,3 +1,5 @@
+import FilterSelect from "../ui/FilterSelect";
+import FilterSearch from "../ui/FilterSearch";
 import DLControlItemDialog from "./DLControlItemDialog";
 import {
   ArrowDownWideNarrow,
@@ -330,86 +332,71 @@ export default function DLControl({
               </span>
             </div>
           </div>
-          <div className="dl-control-filters">
-            <label className="dl-control-search">
-              <span>Buscar</span>
-              <span className="catalog-search">
-                <input
-                  aria-label="Buscar no Controle de DLs"
-                  placeholder="Buscar DL, objeto, código, material, fornecedor ou MXM"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
+          <div className="ui-filterbar dl-control-filterbar">
+            <FilterSearch
+              label="Buscar"
+              aria-label="Buscar no Controle de DLs"
+              placeholder="DL, objeto, código, material, fornecedor ou MXM"
+              value={query}
+              onChange={setQuery}
+            />
+            <FilterSelect
+              label="Situação"
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: "", label: "Todas" },
+                ...[
+                  "Ativa",
+                  "Vence em até 30 dias",
+                  "Vigência futura",
+                  "Vigência encerrada",
+                ].map((status) => ({ value: status, label: status })),
+              ]}
+            />
+            <FilterSelect
+              label="Fornecedor"
+              value={supplier}
+              onChange={setSupplier}
+              options={[
+                { value: "", label: "Todos" },
+                ...providers.map((supplier) => ({
+                  value: supplier,
+                  label: supplier,
+                })),
+              ]}
+            />
+            <FilterSelect
+              label="Categoria"
+              value={category}
+              onChange={setCategory}
+              options={[
+                { value: "", label: "Todas" },
+                ...[
+                  ...new Set(
+                    plans.map((plan) => plan.category).filter(Boolean),
+                  ),
+                ]
+                  .sort()
+                  .map((category) => ({ value: category, label: category })),
+              ]}
+            />
+            <div className="ui-filter-field">
+              <span className="ui-filter-label" id="dl-control-sort-label">
+                Ordenar por
               </span>
-            </label>
-            <div className="form-grid dl-control-selects">
-              <label>
-                Situação
-                <select
-                  aria-label="Situação"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="">Todas</option>
-                  {[
-                    "Ativa",
-                    "Vence em até 30 dias",
-                    "Vigência futura",
-                    "Vigência encerrada",
-                  ].map((status) => (
-                    <option key={status}>{status}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Fornecedor
-                <select
-                  aria-label="Fornecedor"
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {providers.map((supplier) => (
-                    <option key={supplier}>{supplier}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Categoria
-                <select
-                  aria-label="Categoria"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  <option value="">Todas</option>
-                  {[
-                    ...new Set(
-                      plans.map((plan) => plan.category).filter(Boolean),
-                    ),
-                  ]
-                    .sort()
-                    .map((category) => (
-                      <option key={category}>{category}</option>
-                    ))}
-                </select>
-              </label>
-            </div>
-            <div className="dl-control-sort-field">
-              <label htmlFor="dl-control-sort">Ordenar por</label>
               <div className="dl-control-sort-controls">
-                <select
-                  id="dl-control-sort"
+                <FilterSelect
                   aria-label="Ordenar itens por"
                   value={sortBy}
-                  onChange={(event) =>
-                    setSortBy(event.target.value as DLControlSort)
-                  }
-                >
-                  <option value="dl">DL</option>
-                  <option value="supplier">Fornecedor</option>
-                  <option value="item">Item</option>
-                  <option value="balance">Saldo</option>
-                </select>
+                  onChange={(value) => setSortBy(value as DLControlSort)}
+                  options={[
+                    { value: "dl", label: "DL" },
+                    { value: "supplier", label: "Fornecedor" },
+                    { value: "item", label: "Item" },
+                    { value: "balance", label: "Saldo" },
+                  ]}
+                />
                 <button
                   className="secondary-button"
                   aria-label={`Ordenação ${direction === "asc" ? "crescente" : "decrescente"}`}
