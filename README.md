@@ -2,7 +2,7 @@
 
 Padrões reutilizáveis de filtros, navegação e elementos: [Catálogo de modelos de interface](Docs/Modelos%20de%20interface.md). Aplicar a outras funções quando solicitado.
 
-Pedidos DLs: [preparação de rascunhos e regras pendentes](Docs/Pedidos%20DLs.md). Esta etapa salva rascunhos locais, sem reservar ou baixar saldo.
+Pedidos: [fluxos locais, recebimentos e regras de saldo](Docs/Pedidos%20DLs.md). Cinco tipos com acompanhamento; PDLs reservam ao salvar e baixam somente o recebido, sem integração com o MXM.
 
 Este repositório contém a primeira estrutura de código baseada no documento de requisitos.
 

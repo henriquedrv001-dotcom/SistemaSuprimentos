@@ -18,6 +18,8 @@ Catálogo persistente para reutilizar elementos quando solicitado pelo usuário.
 | UI-DLG-01 | Área ampla para dados e conferência | `.ui-data-dialog` em `InterfaceModels.css` | Aplicado à conclusão da DL e às listas dos indicadores do Controle. Ocupa o viewport com margens pequenas, corpo rolável e cabeçalho/ações fixos. |
 | UI-DLG-02 | Lateral para consulta ou alteração pontual | Apresentação existente em `modern.css` e `.dl-control-item-dialog` | Mantida para dados de um item e edição pontual de cadastro; não usar para listagens extensas ou conferência de várias linhas. |
 
+A área Pedidos reutiliza UI-FLT-01/02, UI-BAR-01, UI-NAV-01, UI-CHK-01 e o resumo inferior. Preparação e consulta de vários materiais ocupam a área principal; recebimento usa UI-DLG-01 com conferência por item. Ações curtas e Nova DL usam janelas compactas centrais, com altura ajustada ao conteúdo. A consulta de um item continua lateral. A baixa manual abre uma janela compacta de quantidade, responsável e justificativa.
+
 Os modelos de filtros e navegação desta rodada ainda precisam do aceite visual do usuário. Exemplo de solicitação futura: “Aplicar UI-FLT-01 e UI-BAR-01 no Catálogo”. Não copiar lógica de saldo ou fluxo ao reutilizar apresentação.
 
 ## UI-FLT-01 — seleção

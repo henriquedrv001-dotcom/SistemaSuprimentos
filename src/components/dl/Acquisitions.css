@@ -1,4 +1,19 @@
 /* Aquisições: referências originais enviadas pelo usuário. Não altera outras funções. */
+.modern-shell .acquisitions-page .item-edit-dialog.dl-manual-debit-dialog[open] {
+  inset: 0;
+  width: min(540px, calc(100% - 32px));
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.dl-manual-debit-dialog h2 { font-size: 19px; }
+.dl-manual-debit-dialog > p { margin: 12px 0; font-size: 12px; line-height: 1.6; }
+.dl-manual-debit-dialog > label { display: grid; gap: 7px; margin: 14px 0; font-size: 12px; }
+.dl-manual-debit-dialog textarea { border: 1px solid var(--border); border-radius: 7px; padding: 10px; font: inherit; }
+.dl-manual-debit-dialog > footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .modern-shell .acquisitions-page .item-edit-dialog.dl-overview-create[open] {
   inset: 0;
   width: min(560px, calc(100% - 32px));

@@ -8,14 +8,18 @@ import {
   ChevronDown, ClipboardList, FileText, PackageSearch,
   Search, Truck, WalletCards, FileUp, Trash2, Download, ArrowDownAZ
 } from "lucide-react";
-import { demoCycles, demoItems, demoOrders } from "./data";
+import { demoCycles, demoItems } from "./data";
 import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
 import OrdersNavigation from "./components/OrdersNavigation";
-import DLOrders from "./components/DLOrders";
+import OrdersWorkspace from "./components/OrdersWorkspace";
+import { addManualDLAdjustment, emptyOrderWorkspace, importLegacyDLOrders, orderControlRows, orderWorkspaceKey, readOrderWorkspace } from "./services/orders";
+import type { OrderContext } from "./services/orders";
+import type { OrderKind, OrderWorkspace } from "./types/orders";
+import { dlOrderDraftsKey } from "./services/dlOrderDrafts";
+import { todayInBrazil } from "./services/dlPlanning";
 import AppSidebar, { navigationLocation, orderSections } from "./components/AppSidebar";
 import type { AppSection } from "./components/AppSidebar";
 import PlanejamentoControleDLs from "./pages/estoque/PlanejamentoControleDLs";
-import AcompanhamentoATAContratos from "./pages/compras/AcompanhamentoATAContratos";
 import CiclosSuprimento from "./pages/estoque/CiclosSuprimento";
 import CycleDestinationDialog from "./components/CycleDestinationDialog";
 import { addPlanningItems, cycleWorkspaceKey, emptyCycleWorkspace, readCycleWorkspace, validateCycle, writeLocalTransaction } from "./services/cyclePlanning";
@@ -88,8 +92,35 @@ function App() {
   const [dlDirty, setDLDirty] = useState(false);
   const dlWorkspace = dlState.workspace;
   const cycleWorkspace = cycleState.workspace;
+  const orderContext = useMemo<OrderContext>(() => ({ items, plans: dlWorkspace.plans, cycles, cycleWorkspace, today: todayInBrazil() }), [items, dlWorkspace, cycles, cycleWorkspace]);
+  const [orderState, setOrderState] = useState(() => {
+    try {
+      const raw = localStorage.getItem(orderWorkspaceKey);
+      const legacyRaw = localStorage.getItem(dlOrderDraftsKey);
+      const workspace = raw === null ? importLegacyDLOrders(legacyRaw, orderContext) : readOrderWorkspace(raw);
+      orderControlRows(orderContext, workspace);
+      return { raw, legacyRaw, workspace, error: "" };
+    } catch (cause) {
+      return { raw: null, legacyRaw: null, workspace: emptyOrderWorkspace(), error: cause instanceof Error ? cause.message : "Não foi possível ler os pedidos. Os dados originais foram preservados." };
+    }
+  });
+  function commitOrders(change: (current: OrderWorkspace, context: OrderContext) => OrderWorkspace) {
+    if (orderState.error || dlState.error || cycleState.error) throw new Error(orderState.error || dlState.error || cycleState.error);
+    if (localStorage.getItem(orderWorkspaceKey) !== orderState.raw || localStorage.getItem(dlOrderDraftsKey) !== orderState.legacyRaw) throw new Error("Os pedidos mudaram em outra aba. Recarregue antes de salvar; as alterações atuais continuam abertas.");
+    const liveItems = JSON.parse(localStorage.getItem("suprimentos:items:v1") || JSON.stringify(items)) as Item[];
+    const liveCycles = JSON.parse(localStorage.getItem("suprimentos:cycles:v1") || JSON.stringify(cycles)) as SupplyCycle[];
+    if (!Array.isArray(liveItems) || !Array.isArray(liveCycles)) throw new Error("Não foi possível conferir o catálogo e os ciclos salvos.");
+    const liveContext = { items: liveItems, cycles: liveCycles, plans: readDLWorkspace(localStorage.getItem(dlWorkspaceKey)).plans, cycleWorkspace: readCycleWorkspace(localStorage.getItem(cycleWorkspaceKey)), today: todayInBrazil() };
+    const next = change(orderState.workspace, liveContext);
+    const raw = JSON.stringify(next);
+    readOrderWorkspace(raw);
+    orderControlRows(liveContext, next);
+    localStorage.setItem(orderWorkspaceKey, raw);
+    setOrderState({ ...orderState, workspace: next, raw });
+  }
   const [cycleDestinationItems, setCycleDestinationItems] = useState<Item[] | null>(null);
   const [openCycleId, setOpenCycleId] = useState<string | null>(null);
+  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ code: "", description: "", unit: "KG", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" as Item["criterion"] });
 
   useEffect(() => writeLocalCollection("suprimentos:items:v1", items), [items]);
@@ -157,7 +188,7 @@ function App() {
     return () => observer.disconnect();
   }, [filteredItems?.length, section, filterType, filterGroup]);
 
-  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace, dlWorkspace }), [items, cycles, history, cycleWorkspace, dlWorkspace]);
+  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace, dlWorkspace, orderWorkspace: orderState.workspace }), [items, cycles, history, cycleWorkspace, dlWorkspace, orderState.workspace]);
 
   function cancelImport() {
     importReadId.current++;
@@ -246,6 +277,8 @@ function App() {
 
   function deleteSelectedItems() {
     if (!selectedItemIds.length) return;
+    if (localStorage.getItem(orderWorkspaceKey) !== orderState.raw || localStorage.getItem(dlOrderDraftsKey) !== orderState.legacyRaw) { window.alert("Os pedidos mudaram em outra aba. Recarregue para conferir os vínculos antes de excluir materiais."); return; }
+    if (orderState.error || orderState.workspace.orders.some(order => order.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há materiais vinculados a pedidos ou vínculos que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
     if (dlState.error || dlWorkspace.plans.some(plan => plan.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há vínculos com DLs ou dados que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
     if (cycleState.error) { window.alert("Não é possível conferir os vínculos dos ciclos agora. A exclusão foi bloqueada para preservar seus dados."); return; }
     if (cycleWorkspace.lines.some(line => selectedItemIds.includes(line.itemId))) {
@@ -257,7 +290,7 @@ function App() {
     items.filter((item) => selected.has(item.id)).forEach((item) => recordHistory(item, "Exclusão do catálogo", "Item removido do catálogo local mediante confirmação."));
     setItems((current) => current.filter((item) => !selected.has(item.id)));
     setSelectedItemIds([]);
-    window.alert("Itens removidos deste catálogo de demonstração. Isso não exclui registros de banco de dados nem verifica vínculos com pedidos nesta versão.");
+    window.alert("Itens removidos do catálogo local. Os vínculos com ciclos, DLs e pedidos foram conferidos.");
   }
 
   function downloadTemplate() {
@@ -268,8 +301,8 @@ function App() {
 
   const activeCycle = cycles[0] ?? demoCycles[0];
   const cycleRows = cycleWorkspace.lines.filter((line) => line.cycleId === activeCycle.id);
-  const pendingOrders = demoOrders.filter((order) => order.status !== "Concluído").length;
-  const directOrders = demoOrders.filter((order) => order.type === "PCD");
+  const pendingOrders = orderState.workspace.orders.filter((order) => !["Concluído", "Cancelado", "Rascunho"].includes(order.status)).length;
+  const sectionOrderKinds: Partial<Record<AppSection, OrderKind>> = { "Pedidos diretos": "PCD", "Pedidos FRs": "PFR", "Pedidos DLs": "PDL", "ATA / Contratos": "ATA", "Pedidos Material Entrada e Saída": "MOV" };
 
   function addItem() {
     if (!newItem.code.trim() || !newItem.description.trim()) return;
@@ -420,7 +453,7 @@ function App() {
   return (
     <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`} data-section={section}>
       <a className="skip-navigation" href="#workspace-content">Ir para o conteúdo</a>
-      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) setSection(next);}} />
+      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) {setOpenOrderId(null);setSection(next);}}} />
 
       <main className="main-area" id="workspace-content" tabIndex={-1}>
         <header className="topbar">
@@ -429,9 +462,8 @@ function App() {
         </header>
 
         <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
-          {orderSections.includes(section) && <OrdersNavigation section={section} onNavigate={next => { if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) setSection(next); }} />}
-          {section === "Pedidos DLs" && <DLOrders plans={dlWorkspace.plans} items={items} cycles={cycles} storageError={dlState.error} onDirtyChange={setDLDirty} />}
-          {(section === "Pedidos FRs" || section === "Pedidos Material Entrada e Saída") && <section className="panel order-placeholder"><span className="tag tag-neutral">Em breve</span><h2>{section}</h2><p className="muted">Área reservada para este tipo de pedido. O fluxo de criação e movimentação será definido em etapa própria.</p></section>}
+          {orderSections.includes(section) && <OrdersNavigation section={section} onNavigate={next => { if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) {setOpenOrderId(null);setSection(next);} }} />}
+          {orderSections.includes(section) && <OrdersWorkspace key={section} kind={sectionOrderKinds[section]} initialOrderId={section === "Pedidos DLs" ? openOrderId || undefined : undefined} workspace={orderState.workspace} context={orderContext} error={orderState.error || dlState.error || cycleState.error} onCommit={commitOrders} onDirtyChange={setDLDirty} />}
           {bulkMessage && section !== "Cadastro de itens" && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
           {section === "Painel" && (
             <>
@@ -570,30 +602,12 @@ function App() {
             <CiclosSuprimento items={items} cycles={cycles} workspace={cycleWorkspace} storageError={cycleState.error} initialCycleId={openCycleId} onSaveCycle={saveCycle} onCommit={(next, events) => commitCycleChange(cycles, next, events)} />
           </>}
 
-          {section === "Pedidos diretos" && (
-            <>
-              <div className="page-heading"><div><p className="eyebrow">EXECUÇÃO</p><h2>Pedidos CDs</h2><p className="muted">Pedidos do tipo PCD registrados no protótipo.</p></div><button className="secondary-button" onClick={() => window.alert("O fluxo de criação de pedidos diretos será implementado após a validação das regras de compromisso e saldo.")}>Preparar pedido <FileText size={17} /></button></div>
-              <section className="panel">
-                <div className="toolbar"><div><h2>Fila de pedidos diretos</h2><p>{directOrders.length} pedidos demonstrativos</p></div></div>
-                <div className="table-wrap"><table><thead><tr><th>Item</th><th>Ciclo</th><th>Solicitado</th><th>Recebido</th><th>Entrega prevista</th><th>Status</th></tr></thead><tbody>
-                  {directOrders.map((order) => <tr key={order.id}><td><strong>{order.itemDescription}</strong></td><td>{order.cycleName}</td><td>{order.requestedQuantity}</td><td>{order.receivedQuantity}</td><td>{order.expectedDelivery}</td><td><span className={`tag ${order.status === "Recebimento parcial" ? "tag-amber" : "tag-neutral"}`}>{order.status}</span></td></tr>)}
-                  {directOrders.length === 0 && <tr><td colSpan={6} className="empty-state">Nenhum pedido direto cadastrado na demonstração.</td></tr>}
-                </tbody></table></div>
-              </section>
-            </>
-          )}
+          {(section === "Planejamento DLs" || section === "Controle DLs") && <PlanejamentoControleDLs items={items} workspace={dlWorkspace} error={dlState.error} onSave={saveDLPlan} pendingItems={dlPendingItems} onPendingClose={() => setDLPendingItems(null)} onDirtyChange={setDLDirty} orderWorkspace={orderState.workspace} orderError={orderState.error} onManualDebit={input => commitOrders((current, context) => addManualDLAdjustment(current, context, input))} onOpenOrder={id => {setOpenOrderId(id);setSection("Pedidos DLs");}} tab={section === "Controle DLs" ? "control" : "planning"} onChange={tab => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL?")) setSection(tab === "control" ? "Controle DLs" : "Planejamento DLs");}} />}
 
-          {(section === "Planejamento DLs" || section === "Controle DLs") && <PlanejamentoControleDLs items={items} workspace={dlWorkspace} error={dlState.error} onSave={saveDLPlan} pendingItems={dlPendingItems} onPendingClose={() => setDLPendingItems(null)} onDirtyChange={setDLDirty} tab={section === "Controle DLs" ? "control" : "planning"} onChange={tab => {if (!dlDirty || window.confirm("Descartar alterações não salvas desta DL?")) setSection(tab === "control" ? "Controle DLs" : "Planejamento DLs");}} />}
-
-          {section === "Acompanhamento de pedidos" && (
-            <>
-              <div className="page-heading"><div><p className="eyebrow">EXECUÇÃO</p><h1>Acompanhamento de pedidos</h1><p className="muted">Visão consolidada dos pedidos registrados e de seus recebimentos.</p></div><button className="secondary-button" onClick={() => window.alert("O fluxo de criação de pedidos será implementado depois da validação das regras de compromisso e saldo.")}>Preparar pedido <FileText size={17} /></button></div>
-              <section className="panel"><div className="toolbar"><div><h2>Fila de acompanhamento</h2><p>Dados demonstrativos; referências ERP são ilustrativas.</p></div></div><div className="table-wrap"><table><thead><tr><th>Tipo</th><th>Item</th><th>Ciclo</th><th>Pedido ERP</th><th>Solicitado</th><th>Recebido</th><th>Entrega prevista</th><th>Status</th></tr></thead><tbody>{demoOrders.map((order) => <tr key={order.id}><td><span className="tag tag-neutral">{order.type}</span></td><td><strong>{order.itemDescription}</strong></td><td>{order.cycleName}</td><td>{order.erpOrderNumber ?? "Pendente"}</td><td>{order.requestedQuantity}</td><td>{order.receivedQuantity}</td><td>{order.expectedDelivery}</td><td><span className={`tag ${order.status === "Recebimento parcial" ? "tag-amber" : "tag-neutral"}`}>{order.status}</span></td></tr>)}</tbody></table></div><div className="notice"><AlertTriangle size={17} /><span>Um pedido atrasado não deve liberar automaticamente a quantidade comprometida. É necessária confirmação de cancelamento ou não entrega.</span></div></section>
-            </>
-          )}
+          {section === "Acompanhamento de pedidos" && <OrdersWorkspace key="tracking" workspace={orderState.workspace} context={orderContext} error={orderState.error || dlState.error || cycleState.error} onCommit={commitOrders} onDirtyChange={setDLDirty} />}
 
           {section === "Tarefas" && <Tarefas />}
-          {section === "ATA / Contratos" && <AcompanhamentoATAContratos />}
+
 
         </div>
       </main>

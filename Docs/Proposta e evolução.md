@@ -353,3 +353,8 @@ Validação da rodada: 128 testes, TypeScript e build aprovados. Chromium confer
 Preparado /workspace/revisao-telas-reais.html com 19 capturas do aplicativo em execução e dados explícitos de teste. Não são imagens geradas nem demonstram funcionalidades futuras implementadas. Capturas abrangem visão geral, catálogo, ciclos, planejamento/consulta/processo/contratação/histórico/cronograma da DL, Controle e item, tarefas em lista/kanban/detalhe, áreas de Pedidos e acompanhamento. O arquivo é um artefato local de revisão, não é incluído no aplicativo nem enviado ao GitHub.
 
 A revisão desta rodada está pronta para conferência do usuário. Isso não significa equivalência integral entre as pranchas conceituais e as telas existentes; funções futuras, integrações, autenticação e autorização seguem fora do escopo. Alterações locais aguardam pedido de sincronização.
+
+
+## Pedidos — execução local e saldo por origem (19/10/2026)
+
+As cinco áreas de Pedidos e o Acompanhamento passam a usar registros locais reais do protótipo. O fluxo inclui rascunho, análise/devolução, aprovação manual, registro de envio, recebimento parcial ou integral, encerramento com faltas e cancelamento com motivo. O usuário confirmou que PDL reserva ao salvar os materiais; recebimento baixa somente o entregue e o restante fica reservado até entrega ou encerramento explícito. A consulta do item permite baixa manual apenas do saldo livre, com responsável e justificativa. Não há envio externo nem autenticação por perfil. Detalhes e limites atuais em `Pedidos DLs.md`; as seções anteriores que descrevem saldos apenas iniciais ou pedidos futuros são históricas.

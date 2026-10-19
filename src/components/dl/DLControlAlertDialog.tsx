@@ -124,11 +124,11 @@ export default function DLControlAlertDialog({
                         {decimalInput(origin.quantityMilli, 3)} {origin.unit}
                       </td>
                       <td>
-                        {decimalInput(origin.remainingMilli, 3)} {origin.unit}
+                        {decimalInput(origin.availableMilli, 3)} {origin.unit}
                       </td>
                       <td>
                         {origin.quantityMilli > 0
-                          ? `${((origin.remainingMilli * 100) / origin.quantityMilli).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`
+                          ? `${((origin.availableMilli * 100) / origin.quantityMilli).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`
                           : "—"}
                       </td>
                     </tr>

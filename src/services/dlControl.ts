@@ -6,7 +6,7 @@ import { contractOrigins, contractStatus } from "./dlContract.ts";
 export const DEFAULT_DL_LOW_BALANCE_PERCENT = 20;
 export type DLControlRow = {
   plan: DLPlan;
-  origin: ReturnType<typeof contractOrigins>[number];
+  origin: ReturnType<typeof contractOrigins>[number] & { manualDebitedMilli?: number };
   item?: Item;
 };
 export type DLControlSort = "dl" | "supplier" | "item" | "balance";
@@ -58,7 +58,7 @@ export function selectDLControlRows(
         (!status || contractStatus(plan, today) === status) &&
         (!supplier || origin.supplier === supplier) &&
         (!category || plan.category === category) &&
-        (showZeroBalances || origin.remainingMilli !== 0) &&
+        (showZeroBalances || origin.availableMilli !== 0) &&
         `${plan.code} ${plan.title} ${plan.request.officialDLNumber} ${origin.supplier} ${origin.mxmOrder} ${item?.code ?? ""} ${item?.description ?? ""}`
           .toLocaleLowerCase("pt-BR")
           .includes(needle),
@@ -73,7 +73,7 @@ export function selectDLControlRows(
           b.item?.description || b.origin.itemId,
         );
       else if (sortBy === "balance")
-        primary = a.origin.remainingMilli - b.origin.remainingMilli;
+        primary = a.origin.availableMilli - b.origin.availableMilli;
       else primary = a.plan.sequenceNumber - b.plan.sequenceNumber;
       return (
         primary * (direction === "desc" ? -1 : 1) ||
@@ -95,7 +95,7 @@ export function isDLLowBalance(
     throw new Error(
       "O limite de saldo baixo deve ser um percentual inteiro de 0 a 100.",
     );
-  const { quantityMilli, remainingMilli } = row.origin;
+  const { quantityMilli, availableMilli: remainingMilli } = row.origin;
   return (
     quantityMilli > 0 &&
     remainingMilli > 0 &&
@@ -115,7 +115,7 @@ export function dlControlAlertGroups(
       kind === "lowBalance"
         ? isDLLowBalance(row, limit)
         : kind === "zeroBalance"
-          ? row.origin.remainingMilli === 0
+          ? row.origin.availableMilli === 0
           : contractStatus(row.plan, today) === "Vence em até 30 dias";
     if (!affected) continue;
     const group = groups.get(row.plan.id) ?? { plan: row.plan, rows: [] };

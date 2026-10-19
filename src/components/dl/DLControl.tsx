@@ -10,7 +10,6 @@ import {
 import DLControlAlertDialog from "./DLControlAlertDialog";
 import {
   DEFAULT_DL_LOW_BALANCE_PERCENT,
-  dlControlRows,
   selectDLControlRows,
   dlControlAlertGroups,
 } from "../../services/dlControl";
@@ -26,9 +25,11 @@ import { emptyDLSchedule } from "../../services/dlSchedule";
 import { useState } from "react";
 import type { DLPlan, DLWorkspace } from "../../types/dl";
 import type { Item } from "../../types";
+import type { OrderWorkspace, DLManualDebitInput } from "../../types/orders";
+import { orderControlRows, emptyOrderWorkspace } from "../../services/orders";
+import { originKey } from "../../services/dlOrderDrafts";
 import {
   awardTotal,
-  contractOrigins,
   contractStatus,
   contractTotal,
 } from "../../services/dlContract";
@@ -43,10 +44,18 @@ export default function DLControl({
   workspace,
   items,
   onOpenPlanning,
+  orders = emptyOrderWorkspace(),
+  orderError,
+  onOpenOrder,
+  onManualDebit,
 }: {
   workspace: DLWorkspace;
   items: Item[];
   onOpenPlanning: (id: string) => void;
+  orders?: OrderWorkspace;
+  orderError?: string;
+  onOpenOrder?: (id: string) => void;
+  onManualDebit?: (input: DLManualDebitInput) => void;
 }) {
   const plans = workspace.plans.filter(
     (plan) => plan.stage === "Concluído" && plan.contract?.release,
@@ -64,11 +73,22 @@ export default function DLControl({
   const [openedOrigin, setOpenedOrigin] = useState<string | null>(null);
   const today = todayInBrazil();
   const selected = plans.find((plan) => plan.id === active);
+  const lastOrder = (planId: string, originId: string) =>
+    orders.orders
+      .filter(
+        (order) =>
+          order.kind === "PDL" &&
+          order.code &&
+          order.lines.some(
+            (line) => line.planId === planId && line.originId === originId,
+          ),
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   const consolidated = plans.reduce(
     (sum, plan) => sum + BigInt(contractTotal(plan.contract!).totalCents),
     0n,
   );
-  const rows = dlControlRows(plans, items);
+  const rows = orderControlRows({ plans, items }, orders);
   const providers = [
     ...new Set(rows.map(({ origin }) => origin.supplier)),
   ].sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -78,7 +98,7 @@ export default function DLControl({
     today,
   );
   const openedItem: DLControlRow | undefined = rows.find(
-    (row) => row.origin.id === openedOrigin,
+    (row) => originKey(row.plan.id, row.origin.id) === openedOrigin,
   );
   const limit = DEFAULT_DL_LOW_BALANCE_PERCENT;
   const alerts = {
@@ -111,6 +131,12 @@ export default function DLControl({
   ];
   return (
     <section className="dl-control">
+      {orderError && (
+        <p role="alert" className="catalog-error">
+          {orderError} Os saldos abaixo não incluem os pedidos que não puderam
+          ser lidos.
+        </p>
+      )}
       {!selected && (
         <>
           <div className="dl-control-indicators">
@@ -141,14 +167,14 @@ export default function DLControl({
             <Info size={16} aria-hidden="true" />
             <div>
               <p className="dl-control-metric-rule">
-                Saldo baixo: positivo e até {limit}% da quantidade contratada,
-                por item; cada DL conta uma vez. Indicadores globais; os filtros
-                afetam apenas a lista.
+                Saldo disponível baixo: positivo e até {limit}% da quantidade
+                contratada, por item; cada DL conta uma vez. Indicadores
+                globais; os filtros afetam apenas a lista.
               </p>
               <p className="dl-control-note">
-                Saldos iniciais das contratações. Reservas, recebimentos e
-                movimentações do ERP ainda não integrados; estes valores não
-                incluem consumos anteriores.
+                Saldo disponível: contratado menos recebimentos, reservas dos
+                pedidos DLs e baixas manuais locais. Movimentações externas e
+                consumos anteriores não estão integrados ao MXM.
               </p>
             </div>
           </div>
@@ -287,7 +313,11 @@ export default function DLControl({
             </>
           )}
           {tab === "balances" && (
-            <DLBalanceTable plan={selected} items={items} />
+            <DLBalanceTable
+              plan={selected}
+              items={items}
+              rows={rows.filter((row) => row.plan.id === selected.id)}
+            />
           )}
           {tab === "schedule" && (
             <DLSchedulePanel
@@ -298,10 +328,66 @@ export default function DLControl({
             />
           )}
           {tab === "orders" && (
-            <p className="empty-state">
-              A integração dos pedidos PDL será a próxima etapa. Nenhum pedido
-              foi criado automaticamente ao concluir esta DL.
-            </p>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Solicitante</th>
+                    <th>Itens desta DL</th>
+                    <th>Entrega prevista</th>
+                    <th>Situação</th>
+                    {onOpenOrder && <th>Consultar</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.orders
+                    .filter(
+                      (order) =>
+                        order.kind === "PDL" &&
+                        order.lines.some((line) => line.planId === selected.id),
+                    )
+                    .map((order) => (
+                      <tr key={order.id}>
+                        <td>
+                          {order.code || `Rascunho · ${order.id.slice(0, 8)}`}
+                        </td>
+                        <td>{order.requester}</td>
+                        <td>
+                          {
+                            order.lines.filter(
+                              (line) => line.planId === selected.id,
+                            ).length
+                          }
+                        </td>
+                        <td>{date(order.expectedDelivery)}</td>
+                        <td>{order.status}</td>
+                        {onOpenOrder && (
+                          <td>
+                            <button
+                              className="text-button"
+                              onClick={() => onOpenOrder(order.id)}
+                            >
+                              Consultar pedido
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  {!orders.orders.some(
+                    (order) =>
+                      order.kind === "PDL" &&
+                      order.lines.some((line) => line.planId === selected.id),
+                  ) && (
+                    <tr>
+                      <td colSpan={onOpenOrder ? 6 : 5} className="empty-state">
+                        Nenhum pedido ligado a esta DL.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
           {tab === "history" && (
             <DLHistory
@@ -442,7 +528,7 @@ export default function DLControl({
                   <th scope="col">Fornecedor</th>
                   <th
                     scope="col"
-                    title="Saldo inicial contratado; movimentações ainda não vinculadas"
+                    title="Disponível para novos pedidos: contratado menos recebido e reservado nos pedidos locais"
                   >
                     Saldo
                   </th>
@@ -451,7 +537,7 @@ export default function DLControl({
               </thead>
               <tbody>
                 {matched.map(({ plan, origin, item }) => (
-                  <tr key={origin.id}>
+                  <tr key={originKey(plan.id, origin.id)}>
                     <td>
                       <button
                         className="text-button"
@@ -468,7 +554,9 @@ export default function DLControl({
                       <button
                         className="dl-control-open-item"
                         aria-label={`Abrir item ${item?.description || origin.itemId} da ${plan.code}`}
-                        onClick={() => setOpenedOrigin(origin.id)}
+                        onClick={() =>
+                          setOpenedOrigin(originKey(plan.id, origin.id))
+                        }
                       >
                         <span>
                           {item?.description || "Cadastro indisponível"}
@@ -487,13 +575,20 @@ export default function DLControl({
                     <td className="dl-control-number dl-control-balance">
                       <span
                         className="dl-control-balance-value"
-                        data-zero={origin.remainingMilli === 0}
+                        data-zero={origin.availableMilli === 0}
                       >
-                        {decimalInput(origin.remainingMilli, 3)}
+                        {decimalInput(origin.availableMilli, 3)}
                         <span className="dl-control-unit">{origin.unit}</span>
                       </span>
                     </td>
-                    <td title="Nenhum pedido PDL registrado">—</td>
+                    <td
+                      title={
+                        lastOrder(plan.id, origin.id)?.status ||
+                        "Nenhum pedido PDL registrado"
+                      }
+                    >
+                      {lastOrder(plan.id, origin.id)?.code || "—"}
+                    </td>
                   </tr>
                 ))}
                 {!matched.length && (
@@ -519,6 +614,8 @@ export default function DLControl({
       {openedItem && (
         <DLControlItemDialog
           row={openedItem}
+          orders={orders}
+          onManualDebit={onManualDebit}
           onClose={() => setOpenedOrigin(null)}
           onOpenDL={(id) => {
             setOpenedOrigin(null);
@@ -547,7 +644,15 @@ export default function DLControl({
 function date(value: string) {
   return value ? value.split("-").reverse().join("/") : "—";
 }
-function DLBalanceTable({ plan, items }: { plan: DLPlan; items: Item[] }) {
+function DLBalanceTable({
+  plan,
+  items,
+  rows,
+}: {
+  plan: DLPlan;
+  items: Item[];
+  rows: DLControlRow[];
+}) {
   return (
     <>
       <p className="muted dl-control-note">
@@ -556,7 +661,7 @@ function DLBalanceTable({ plan, items }: { plan: DLPlan; items: Item[] }) {
         {plan.contract?.validUntil && plan.contract.validUntil < todayInBrazil()
           ? "vigência encerrada"
           : "controle inicial"}
-        ; elegibilidade para pedidos será validada na integração.
+        ; recebimentos e reservas consideram os pedidos locais.
       </p>
       <div
         className="table-wrap dl-control-table-wrap"
@@ -574,13 +679,14 @@ function DLBalanceTable({ plan, items }: { plan: DLPlan; items: Item[] }) {
               <th>Contratado</th>
               <th>Recebido</th>
               <th>Reservado</th>
-              <th>Saldo inicial</th>
+              <th>Baixas manuais</th>
+              <th>Disponível</th>
               <th>Preço final</th>
               <th>Valor inicial</th>
             </tr>
           </thead>
           <tbody>
-            {contractOrigins(plan).map((origin) => {
+            {rows.map(({ origin }) => {
               const item = items.find((item) => item.id === origin.itemId);
               const award = plan.contract!.awards.find(
                 (award) => award.id === origin.id,
@@ -600,9 +706,10 @@ function DLBalanceTable({ plan, items }: { plan: DLPlan; items: Item[] }) {
                   <td>{origin.mxmOrder}</td>
                   <td>{origin.unit}</td>
                   <td>{decimalInput(origin.quantityMilli, 3)}</td>
-                  <td>Não conectado</td>
-                  <td>Não conectado</td>
-                  <td>{decimalInput(origin.remainingMilli, 3)}</td>
+                  <td>{decimalInput(origin.receivedMilli, 3)}</td>
+                  <td>{decimalInput(origin.reservedMilli, 3)}</td>
+                  <td>{decimalInput(origin.manualDebitedMilli || 0, 3)}</td>
+                  <td>{decimalInput(origin.availableMilli, 3)}</td>
                   <td>{formatMoney(origin.unitPriceCents)}</td>
                   <td>{formatMoney(awardTotal(award)!)}</td>
                 </tr>

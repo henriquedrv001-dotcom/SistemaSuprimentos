@@ -8,6 +8,7 @@ import DLControl from "../../components/dl/DLControl";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Item } from "../../types";
+import type { OrderWorkspace, DLManualDebitInput } from "../../types/orders";
 import { dlStages } from "../../types/dl";
 import type { DLPlan, DLWorkspace, DLSaveOptions } from "../../types/dl";
 import {
@@ -33,6 +34,10 @@ export type DLPlanningProps = {
   pendingItems: Item[] | null;
   onPendingClose: () => void;
   onDirtyChange: (dirty: boolean) => void;
+  orderWorkspace?: OrderWorkspace;
+  orderError?: string;
+  onOpenOrder?: (id: string) => void;
+  onManualDebit?: (input: DLManualDebitInput) => void;
 };
 export default function PlanejamentoControleDLs(props: DLPlanningProps) {
   const [active, setActive] = useState<string | null>(null);
@@ -154,6 +159,10 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
         <DLControl
           workspace={props.workspace}
           items={props.items}
+          orders={props.orderWorkspace}
+          orderError={props.orderError}
+          onOpenOrder={props.onOpenOrder}
+          onManualDebit={props.orderError ? undefined : props.onManualDebit}
           onOpenPlanning={(id) => {
             setActive(id);
             props.onChange("planning");

@@ -54,11 +54,6 @@ export default function OrdersNavigation({
                   onClick={() => onNavigate(item.section)}
                 >
                   <span>{item.label}</span>
-                  <small>
-                    {item.section === "Pedidos diretos"
-                      ? "Exemplo"
-                      : item.section === "Pedidos DLs" ? "Rascunhos" : "Em breve"}
-                  </small>
                 </button>
               ))}
             </nav>

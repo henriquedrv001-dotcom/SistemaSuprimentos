@@ -1,27 +1,43 @@
-# Pedidos DLs — preparação
+# Pedidos — execução local
 
-## Implementado nesta etapa
+## Áreas e comportamento
 
-Em Pedidos → Estoque → Pedidos DLs é possível criar, consultar, editar e excluir rascunhos locais. A edição usa a área principal, sem lateral. A listagem tem busca por material, código, DL, fornecedor, MXM ou solicitante; filtros por DL e fornecedor; ordenação por atualização ou criação. A seleção de origens usa os modelos compartilhados de filtros e checkbox, com 30 materiais por página e seleção preservada entre páginas.
+Pedidos mantém a divisão Estoque (CDs, FRs e DLs) e Compras (ATA/Contrato e Material Entrada e Saída). Cada tipo tem listagem, busca por referências e materiais, filtros por situação/fornecedor/ciclo, ordenação, indicadores e edição na área principal. Acompanhamento usa os mesmos registros, com visões Todos, Em aberto, Parciais, Atrasados e Concluídos. Não são inseridos pedidos de demonstração.
 
-Cada linha referencia o ID da DL e o ID da origem contratada. Quantidades usam milésimos da unidade, até três casas decimais; preços vêm da origem, sem edição. Não misturar origens do mesmo material. O total usa arredondamento em centavos por linha. Solicitante recebe sugestão editável do nome padrão; ciclo e entrega são opcionais. As datas de vigência das origens ficam disponíveis na seleção.
+- CD: seleciona materiais presentes no planejamento do ciclo escolhido. O planejamento é uma estimativa e não representa estoque físico.
+- FR: seleciona materiais ativos do catálogo; exige justificativa ao encaminhar. O ciclo é opcional.
+- DL: seleciona origens liberadas e vigentes. A identidade é o par ID da DL + ID da contratação, com unidade, fornecedor, preço e MXM protegidos. Rascunhos podem reunir fornecedores; para encaminhar, precisam conter um único fornecedor. Não há separação automática.
+- ATA/Contrato: informa referência da ata/contrato e fornecedor; materiais vêm do catálogo. Ainda não há um cadastro mestre de atas nem leitura de seu saldo oficial.
+- Material Entrada e Saída: identifica Entrada ou Saída; a saída usa a ação Registrar atendimento. Não altera o estoque físico ou contábil do MXM.
 
-Rascunhos não são pedidos enviados e não recebem numeração oficial PDL. Podem reunir diferentes origens e fornecedores para preparação; a regra de agrupamento para emissão ainda precisa ser confirmada. Rascunhos não reservam, baixam, recebem ou liberam saldo, não alteram DLs nem geram tarefas.
+Solicitante recebe sugestão editável do nome padrão. Preços não informados deixam o valor explicitamente parcial; não são apresentados como orçamento completo. Quantidades têm até três casas decimais, preços até duas; totais arredondam centavos por linha.
 
-## Persistência e proteções
+## Etapas
 
-Chave separada `suprimentos:dl-order-drafts:v1`, no navegador atual. Falha de leitura bloqueia gravação, preservando o conteúdo original. A gravação compara a versão bruta lida com a chave atual para impedir sobrescrita de alterações de outra aba. Falhas de armazenamento mantêm o editor aberto. A confirmação de saída protege alterações não salvas. Antes de salvar, as origens liberadas são relidas; quantidades precisam ser positivas e não superar o disponível da origem. Isso não garante disponibilidade futura: rascunhos não comprometem saldo. Não há compartilhamento entre usuários ou integração com o MXM.
+Rascunho → Em análise → Aprovado → Enviado → Recebimento parcial → Concluído. Devolução da análise ou aprovação retorna para rascunho, com motivo obrigatório e preservação de número/histórico. Envio e recebimento são registros manuais: o aplicativo não envia mensagens ao fornecedor nem integra com MXM. Aprovação registra o nome informado, sem autenticação nem autorização por perfil.
 
-## Definições pendentes para execução
+Recebimento informa apenas o adicional daquela entrega, limitado ao pendente de cada linha. Receber tudo conclui o pedido. Cancelamento exige motivo, preserva recebimentos anteriores e encerra apenas o restante; pedidos concluídos não podem ser cancelados. Atraso é calculado a partir da entrega prevista e nunca cancela nem libera reserva automaticamente.
 
-- Um fornecedor por pedido emitido ou múltiplos; separação automática de rascunhos, se aplicável.
-- Perfis que solicitam, aprovam e registram envio; estados e transições.
-- Quando reservar e quando baixar; regras de cancelamento, entrega parcial e não entrega.
-- Numeração, vínculo obrigatório ou opcional com ciclo e tratamento de vigência futura/vencida na emissão.
-- Dados e regras próprios de CDs, FRs, ATA/Contrato e Material Entrada e Saída.
+A numeração interna por tipo (PCD-0001, PFR-0001, PDL-0001, ATA-0001 e MOV-0001) é atribuída somente ao encaminhar; não renumera DLs nem substitui referência MXM. Rascunhos nunca encaminhados podem ser excluídos. Após encaminhar, usar cancelamento para preservar o histórico.
 
-Não ativar emissão, aprovação, envio ou movimentação antes de definir essas regras. Os outros tipos permanecem no estado anterior; esta etapa não representa a conclusão do módulo inteiro.
+## Saldo da DL — regra confirmada pelo usuário
+
+Ao salvar os materiais em um PDL, suas quantidades já ficam reservadas, inclusive enquanto o pedido está em rascunho. Não esperar aprovação nem envio. Editar um rascunho reconcilia a própria reserva: diminuir quantidade, retirar material ou excluir o rascunho libera a diferença; aumentar exige saldo livre. Devolver para correção mantém a reserva até uma alteração explícita. Rascunhos antigos, criados quando não existia reserva, recebem indicação para editar e salvar (ou encaminhar) antes de ativá-la; abrir a versão nova não cria reservas retroativas.
+
+Recebimentos são informados por item. A conferência identifica Integral, Parcial ou Não veio conforme as quantidades daquela entrega. Só o que foi recebido gera baixa; o que falta permanece reservado enquanto o pedido estiver aberto. Receber todo o pendente conclui o pedido. Para concluir com faltas, marcar **Encerrar entrega: o que não veio não será mais entregue**: o restante de cada item é registrado como não entregue e liberado da reserva, sem baixa. Campos vazios nesse encerramento contam como zero recebido, com explicação na tela. Cancelamento também libera o pendente e preserva as baixas anteriores. Um pedido concluído com faltas distingue Recebido, Pendente (zero) e Não entregue.
+
+Na consulta de item no Controle de DLs, **Baixa manual** permite registrar consumo fora do PDL, com quantidade, responsável e justificativa. Não pode usar quantidade reservada. Para uma entrega vinculada a pedido, usar o recebimento no PDL para evitar duplicidade. Baixas manuais têm histórico próprio e não alteram o documento original da DL.
+
+Disponível = contratado − recebimentos locais − reservas abertas − baixas manuais. Cada cálculo usa a origem exata (DL + contratação), sem juntar contratos ou unidades de um mesmo material. Controle de DLs, indicadores, ordenação, últimos pedidos, consulta de origem e aba Pedidos vinculados usam os registros locais. O valor financeiro contratado inicial continua original. Não há atualização de estoque físico do MXM nem sincronização externa.
+
+## Persistência e compatibilidade
+
+Chave nova: `suprimentos:orders:v1`, incluindo tipos, contadores, reservas, recebimentos, faltas e histórico de baixas manuais. A chave anterior `suprimentos:dl-order-drafts:v1` não é removida. Quando a chave nova não existe, seus rascunhos são importados em memória com os mesmos IDs, origens, quantidades, datas e observações; só a primeira alteração explícita grava a chave nova. Abrir telas não grava pedidos.
+
+Falha de leitura bloqueia escrita e preserva os dados originais. Escritas comparam as chaves nova e antiga com as lidas pela aba; conflito mantém a edição aberta. O contexto de catálogo, ciclos e DLs é relido antes de validar a alteração. A gravação dos pedidos é uma única substituição de chave; não modifica o documento original da DL. O catálogo protege itens vinculados a pedidos contra exclusão. O backup de catálogo inclui o workspace de pedidos. Trocar de tela ou recarregar com alterações não salvas pede confirmação.
+
+É um fluxo local por navegador, sem compartilhamento entre usuários, backend transacional, envio externo ou integração de estoque físico. Essas integrações e autorização por perfil continuam fora desta entrega.
 
 ## Validação
 
-`tests/dlOrderDrafts.test.mjs` cobre identidade da origem, quantidades, total com arredondamento, datas, estrutura de armazenamento e conflito de gravação. Validação em Chromium cobre criação, reabertura após recarregar, edição, exclusão, limites, preservação dos saldos, filtros e larguras de 1540, 980, 390 e 320 px.
+`tests/orders.test.mjs` cobre os cinco fluxos, reserva ao salvar, recebimento parcial/encerramento com faltas/cancelamento e baixa manual, conflito por origem, limites, dados específicos, vigência, numeração, imutabilidade e migração de rascunhos. Os testes antigos de rascunhos são mantidos para o formato legado. Validação Chromium cobre os cinco tipos, campos específicos, filtros, persistência ao recarregar, saldos no Controle, migração sem regravar a DL, documentos e responsividade.
