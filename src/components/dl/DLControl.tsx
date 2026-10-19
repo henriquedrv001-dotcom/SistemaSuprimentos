@@ -1,3 +1,20 @@
+import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  ChevronRight,
+} from "lucide-react";
+import DLControlAlertDialog from "./DLControlAlertDialog";
+import {
+  DEFAULT_DL_LOW_BALANCE_PERCENT,
+  dlControlRows,
+  selectDLControlRows,
+  dlControlAlertGroups,
+} from "../../services/dlControl";
+import type {
+  DLControlSort,
+  DLControlDirection,
+  DLControlAlert,
+} from "../../services/dlControl";
 import DLHistory from "./DLHistory";
 import DLSchedulePanel from "./DLSchedulePanel";
 import { emptyDLSchedule } from "../../services/dlSchedule";
@@ -35,71 +52,85 @@ export default function DLControl({
   const [supplier, setSupplier] = useState("");
   const [category, setCategory] = useState("");
   const [tab, setTab] = useState("overview");
+  const [sortBy, setSortBy] = useState<DLControlSort>("dl");
+  const [direction, setDirection] = useState<DLControlDirection>("asc");
+  const [showZeroBalances, setShowZeroBalances] = useState(true);
+  const [alert, setAlert] = useState<DLControlAlert | null>(null);
   const today = todayInBrazil();
   const selected = plans.find((plan) => plan.id === active);
   const consolidated = plans.reduce(
     (sum, plan) => sum + BigInt(contractTotal(plan.contract!).totalCents),
     0n,
   );
-  const itemById = new Map(items.map((item) => [item.id, item]));
-  const rows = plans.flatMap((plan) =>
-    contractOrigins(plan).map((origin) => ({
-      plan,
-      origin,
-      item: itemById.get(origin.itemId),
-    })),
-  );
+  const rows = dlControlRows(plans, items);
   const providers = [
     ...new Set(rows.map(({ origin }) => origin.supplier)),
   ].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const matched = rows.filter(
-    ({ plan, origin, item }) =>
-      (!status || contractStatus(plan, today) === status) &&
-      (!category || plan.category === category) &&
-      (!supplier || origin.supplier === supplier) &&
-      `${plan.code} ${plan.title} ${plan.request.officialDLNumber} ${origin.supplier} ${origin.mxmOrder} ${item?.code ?? ""} ${item?.description ?? ""}`
-        .toLocaleLowerCase("pt-BR")
-        .includes(query.trim().toLocaleLowerCase("pt-BR")),
+  const matched = selectDLControlRows(
+    rows,
+    { query, status, supplier, category, showZeroBalances, sortBy, direction },
+    today,
   );
+  const limit = DEFAULT_DL_LOW_BALANCE_PERCENT;
+  const alerts = {
+    lowBalance: dlControlAlertGroups(rows, "lowBalance", today, limit),
+    zeroBalance: dlControlAlertGroups(rows, "zeroBalance", today, limit),
+    expiring: dlControlAlertGroups(rows, "expiring", today, limit),
+  };
+  const alertCards = [
+    {
+      kind: "lowBalance" as const,
+      label: "DLs com saldo próximo ao fim",
+      value: alerts.lowBalance.length,
+      note: `${alerts.lowBalance.reduce((sum, group) => sum + group.rows.length, 0)} item(ns) com saldo positivo até ${limit}%`,
+    },
+    {
+      kind: "zeroBalance" as const,
+      label: "Itens com saldo zerado",
+      value: alerts.zeroBalance.reduce(
+        (sum, group) => sum + group.rows.length,
+        0,
+      ),
+      note: `${alerts.zeroBalance.length} DL(s) com itens sem saldo`,
+    },
+    {
+      kind: "expiring" as const,
+      label: "DLs vencendo em até 30 dias",
+      value: alerts.expiring.length,
+      note: "Vigência contratual próxima do fim",
+    },
+  ];
   return (
     <section className="panel dl-control">
-      <div className="dl-contract-summary dl-control-stats">
-        <div>
+      <div className="dl-control-indicators">
+        {alertCards.map((card) => (
+          <button
+            key={card.kind}
+            className="dl-control-indicator"
+            onClick={() => setAlert(card.kind)}
+            aria-label={`Ver detalhes: ${card.label}`}
+          >
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+            <small>{card.note}</small>
+            <ChevronRight size={15} aria-hidden="true" />
+          </button>
+        ))}
+        <div className="dl-control-indicator dl-control-financial">
           <span>Valor contratado inicial</span>
           <strong>
             {consolidated <= BigInt(Number.MAX_SAFE_INTEGER)
               ? formatMoney(Number(consolidated))
               : "Consulte por DL"}
           </strong>
-        </div>
-        <div>
-          <span>DLs concluídas</span>
-          <strong>{plans.length}</strong>
-        </div>
-        <div>
-          <span>Ativas / vencendo</span>
-          <strong>
-            {
-              plans.filter((plan) =>
-                ["Ativa", "Vence em até 30 dias"].includes(
-                  contractStatus(plan, today),
-                ),
-              ).length
-            }
-          </strong>
-        </div>
-        <div>
-          <span>Vencem em até 30 dias</span>
-          <strong>
-            {
-              plans.filter(
-                (plan) =>
-                  contractStatus(plan, today) === "Vence em até 30 dias",
-              ).length
-            }
-          </strong>
+          <small>{plans.length} DL(s) concluída(s)</small>
         </div>
       </div>
+      <p className="dl-control-metric-rule">
+        Saldo próximo ao fim: maior que zero e até {limit}% da quantidade
+        contratada, por item. Cada DL é contada uma vez. Indicadores consideram
+        todas as DLs; os filtros abaixo afetam apenas a lista.
+      </p>
       <p className="catalog-feedback dl-control-note">
         Saldos iniciais das contratações registradas. Reservas, recebimentos e
         movimentações do ERP ainda não estão conectados. Estes valores não
@@ -331,6 +362,47 @@ export default function DLControl({
               </label>
             </div>
           </div>
+          <div className="dl-control-list-options">
+            <div className="dl-control-ordering">
+              <label>
+                Ordenar por
+                <select
+                  aria-label="Ordenar itens por"
+                  value={sortBy}
+                  onChange={(event) =>
+                    setSortBy(event.target.value as DLControlSort)
+                  }
+                >
+                  <option value="dl">DL</option>
+                  <option value="supplier">Fornecedor</option>
+                  <option value="item">Item</option>
+                  <option value="balance">Saldo</option>
+                </select>
+              </label>
+              <button
+                className="secondary-button"
+                aria-label={`Ordenação ${direction === "asc" ? "crescente" : "decrescente"}`}
+                onClick={() =>
+                  setDirection(direction === "asc" ? "desc" : "asc")
+                }
+              >
+                {direction === "asc" ? (
+                  <ArrowUpNarrowWide size={15} aria-hidden="true" />
+                ) : (
+                  <ArrowDownWideNarrow size={15} aria-hidden="true" />
+                )}
+                {direction === "asc" ? "Crescente" : "Decrescente"}
+              </button>
+            </div>
+            <label className="select-all-label">
+              <input
+                type="checkbox"
+                checked={showZeroBalances}
+                onChange={(event) => setShowZeroBalances(event.target.checked)}
+              />
+              Mostrar itens com saldo zerado
+            </label>
+          </div>
           <div
             className="table-wrap dl-control-table-wrap"
             tabIndex={0}
@@ -428,6 +500,20 @@ export default function DLControl({
             pedido fica sem informação enquanto não há solicitação vinculada.
           </p>
         </>
+      )}
+      {alert && (
+        <DLControlAlertDialog
+          kind={alert}
+          groups={alerts[alert]}
+          limit={limit}
+          today={today}
+          onClose={() => setAlert(null)}
+          onOpen={(id) => {
+            setActive(id);
+            setTab("balances");
+            setAlert(null);
+          }}
+        />
       )}
     </section>
   );

@@ -380,3 +380,48 @@
 .dl-control .dl-control-items-table .dl-control-balance {color:var(--primary);font-weight:600;background:#F5F9FE}
 .dl-control .dl-control-items-table .empty-state {text-align:center;white-space:normal}
 .dl-control .dl-control-items-note {font-size:10px;line-height:1.5;margin:9px 0 0}
+
+/* Indicadores globais e ordenação da lista. */
+.dl-control .dl-control-indicators {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dl-control .dl-control-indicator {position:relative;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:11px 12px;border:1px solid var(--border);border-radius:7px;background:var(--background-soft);text-align:left;color:var(--text);font:inherit}
+.dl-control button.dl-control-indicator:hover {border-color:var(--primary);background:var(--primary-light)}
+.dl-control .dl-control-indicator:focus-visible {outline:2px solid var(--primary);outline-offset:2px}
+.dl-control .dl-control-indicator > span {font-size:11px;line-height:1.4;color:var(--text-secondary);padding-right:12px}
+.dl-control .dl-control-indicator strong {font-size:20px;line-height:1.2;font-weight:700;font-variant-numeric:tabular-nums}
+.dl-control .dl-control-indicator small {font-size:10px;line-height:1.4;color:var(--text-muted)}
+.dl-control .dl-control-indicator > svg {position:absolute;right:8px;top:11px;color:var(--primary)}
+.dl-control .dl-control-financial strong {font-size:17px;overflow-wrap:anywhere}
+.dl-control .dl-control-metric-rule {margin:8px 0 6px;font-size:10px;line-height:1.5;color:var(--text-secondary)}
+.dl-control .dl-control-list-options {display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.dl-control .dl-control-ordering {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dl-control .dl-control-ordering label {display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-secondary)}
+.dl-control .dl-control-ordering select {height:34px;width:145px;min-width:0;padding:0 28px 0 9px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font:inherit;color:var(--text);background:#fff}
+.dl-control .dl-control-ordering select:focus {outline:none;border-color:var(--primary);box-shadow:var(--focus-ring)}
+.dl-control .dl-control-ordering button {min-height:34px;padding:0 10px;font-size:11px}
+.dl-control .dl-control-list-options .select-all-label {line-height:1.5;white-space:normal}
+
+/* Detalhamento dos indicadores, sem alteração das informações da DL. */
+.item-edit-dialog.dl-control-alert-dialog[open] {display:flex;flex-direction:column;width:min(980px,calc(100% - 28px));max-height:calc(100dvh - 36px);padding:0;overflow:hidden}
+.dl-control-alert-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--border)}
+.dl-control-alert-heading > div {min-width:0}
+.dl-control-alert-heading h2 {font-size:16px;margin:0;line-height:1.4}
+.dl-control-alert-heading p {font-size:11px;line-height:1.5;margin:5px 0 0;color:var(--text-secondary)}
+.dl-control-alert-heading .icon-button {flex-shrink:0}
+.dl-control-alert-body {min-height:0;overflow:auto;padding:12px 18px 16px}
+.dl-control-alert-body > p {font-size:10px;line-height:1.5;margin:0 0 12px}
+.dl-control-alert-group {border:1px solid var(--border);border-radius:7px;padding:11px;margin-top:12px;min-width:0}
+.dl-control-alert-group-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.dl-control .dl-control-alert-group-heading h3 {font-size:12px;margin:0;line-height:1.5;overflow-wrap:anywhere;text-transform:uppercase}
+.dl-control-alert-group-heading p {font-size:10px;color:var(--text-secondary);margin:3px 0 0}
+.dl-control-alert-group-heading button {min-height:32px;font-size:11px;padding:0 10px}
+.dl-control-alert-group table {min-width:610px;table-layout:fixed;font-size:11px}
+.dl-control-alert-group th {padding:8px;font-size:10px}
+.dl-control-alert-group td {padding:9px 8px;vertical-align:top}
+.dl-control-alert-group th:first-child {width:49%}
+.dl-control-alert-group td:first-child {white-space:normal;overflow-wrap:anywhere;text-transform:uppercase}
+.dl-control-alert-group td small {font-size:10px;line-height:1.5;margin-top:3px}
+.dl-control-alert-group th:not(:first-child),.dl-control-alert-group td:not(:first-child) {text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dl-control-alert-group .table-wrap:focus-visible {outline:2px solid var(--primary);outline-offset:2px}
+.dl-control-alert-footer {display:flex;justify-content:flex-end;padding:11px 18px;border-top:1px solid var(--border)}
+.dl-control-alert-footer button {min-height:34px;font-size:11px}
+@media(max-width:650px) {.dl-control .dl-control-indicators {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dl-control .dl-control-indicator {padding:10px}.dl-control .dl-control-ordering {width:100%}.dl-control .dl-control-ordering label {flex:1}.dl-control .dl-control-ordering select {flex:1;width:110px}.dl-control-alert-heading {padding:12px}.dl-control-alert-body {padding:10px 12px 12px}.dl-control-alert-group {padding:9px}.dl-control-alert-heading h2 {font-size:14px}}

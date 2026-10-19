@@ -289,3 +289,14 @@ Validação: build e Chromium com oito colunas, somente itens contratados/libera
 ### Correção da nomenclatura da planilha — 18/10/2026
 
 Confirmado pelo usuário: os antigos PDLs da planilha representam as aquisições hoje chamadas DLs. A primeira coluna do Controle é DL e exibe o código existente da aquisição, clicável para os detalhes. Retirada a repetição do código da DL na descrição. Último pedido continua reservado à solicitação vinculada, sem inferir datas da contratação. Nenhuma renumeração ou migração de registros. PDL permanece o termo do futuro pedido ao fornecedor ligado ao ciclo e ao saldo.
+
+
+### Ordenação e indicadores estratégicos do Controle — 18/10/2026
+
+Lista ordenável por DL (nomenclatura atual do antigo PDL da planilha), fornecedor, item ou saldo, em ambos os sentidos. Mostrar itens com saldo zerado vem habilitado; desabilitar oculta somente essas linhas e combina com os filtros existentes. A ordenação numérica de DL e item respeita números e comparação em português, sem alterar origens.
+
+Novos indicadores: DLs com saldo próximo ao fim, itens com saldo zerado, DLs vencendo em até 30 dias e valor contratado inicial. Saldo próximo ao fim é positivo e até 20% da quantidade contratada do próprio item; zero fica separado. Cada DL conta uma vez, independentemente do número de itens, sem somar unidades distintas. Regra visível na tela e centralizada em DEFAULT_DL_LOW_BALANCE_PERCENT; funções aceitam limite alternativo para conexão futura das configurações. Os indicadores são globais; os filtros afetam apenas a lista.
+
+Clicar nos três indicadores de alerta abre detalhes agrupados por DL com item, fornecedor, pedido MXM, contratado, saldo, percentual restante e acesso à aquisição. O Controle ainda usa os saldos iniciais das origens; não foram criados consumos ou saldos fictícios para alimentar alertas.
+
+Validação: 124 testes aprovados, build e Chromium com ordenações, filtros combinados, controle de zerados, indicadores independentes dos filtros, diálogos vazios e preenchidos, abertura das DLs e visualização móvel. Cenários de saldo baixo/zerado foram verificados em testes unitários e em dados explícitos de teste somente em memória, sem gravar movimentos no workspace.
