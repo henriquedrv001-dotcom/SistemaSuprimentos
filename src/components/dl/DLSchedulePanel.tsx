@@ -70,187 +70,7 @@ export default function DLSchedulePanel({
           previsões ficam no histórico.
         </p>
       </header>
-      <fieldset disabled={readOnly} className="dl-contract-fields">
-        <section
-          className="dl-schedule-group"
-          aria-labelledby="dl-schedule-coverage-title"
-        >
-          <h4 id="dl-schedule-coverage-title">Abastecimento</h4>
-          <div className="form-grid dl-schedule-fields">
-            <label>
-              Início do período de abastecimento
-              <input
-                type="date"
-                value={value.coverageStart}
-                onChange={(e) =>
-                  onChange({ ...value, coverageStart: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Fim previsto do abastecimento
-              <input readOnly value={date(dates?.coverageEnd ?? "")} />
-            </label>
-            <label>
-              Período de abastecimento (meses)
-              <input
-                type="number"
-                min="1"
-                max="1200"
-                step="1"
-                aria-label="Período de abastecimento (meses)"
-                aria-describedby="dl-schedule-coverage-help"
-                value={value.coverageMonths ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    coverageMonths:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-              />
-            </label>
-          </div>
-          <p id="dl-schedule-coverage-help" className="muted dl-schedule-help">
-            Período que as quantidades devem atender; separado da vigência da
-            contratação.
-          </p>
-        </section>
-        <section
-          className="dl-schedule-group"
-          aria-labelledby="dl-schedule-deadlines-title"
-        >
-          <h4 id="dl-schedule-deadlines-title">Prazos e previsões</h4>
-          <div className="form-grid dl-schedule-fields">
-            <label>
-              Início do planejamento
-              <input readOnly value={date(plan.openedOn)} />
-            </label>
-            {(
-              [
-                ["plannedAuthorizationOn", "Autorização prevista para"],
-                ["plannedRequestOn", "Data prevista da requisição MXM"],
-              ] as const
-            ).map(([field, label]) => (
-              <label key={field}>
-                {label}
-                <input
-                  type="date"
-                  value={value[field]}
-                  onChange={(e) =>
-                    onChange({ ...value, [field]: e.target.value })
-                  }
-                />
-              </label>
-            ))}
-            <label>
-              Prazo previsto do processo (meses)
-              <input
-                type="number"
-                min="1"
-                max="1200"
-                step="1"
-                value={value.processMonths ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    processMonths:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-              />
-            </label>
-            <label>
-              Prazo de entrega após o pedido (dias)
-              <input
-                type="number"
-                min="0"
-                max="3650"
-                step="1"
-                value={value.deliveryDays ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    deliveryDays:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-              />
-            </label>
-            <label>
-              Contagem do prazo de entrega
-              <select
-                aria-label="Contagem do prazo de entrega"
-                aria-describedby="dl-schedule-day-basis-help"
-                value={value.deliveryDayBasis}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    deliveryDayBasis: e.target
-                      .value as DLSchedule["deliveryDayBasis"],
-                  })
-                }
-              >
-                <option value="">Escolha a contagem</option>
-                <option value="calendar">Dias corridos</option>
-                <option value="business">Dias úteis (segunda a sexta)</option>
-              </select>
-            </label>
-          </div>
-          <p id="dl-schedule-day-basis-help" className="muted dl-schedule-help">
-            Dias úteis excluem sábados e domingos; feriados ainda não são
-            considerados.
-          </p>
-        </section>
-        <section
-          className="dl-schedule-group"
-          aria-labelledby="dl-schedule-actuals-title"
-        >
-          <h4 id="dl-schedule-actuals-title">Acompanhamento</h4>
-          <div className="form-grid dl-schedule-fields dl-schedule-tracking">
-            <label>
-              Entrega realizada em (acompanhamento)
-              <input
-                type="date"
-                aria-label="Entrega realizada em (acompanhamento)"
-                aria-describedby="dl-schedule-delivery-help"
-                value={value.deliveredOn}
-                onChange={(e) =>
-                  onChange({ ...value, deliveredOn: e.target.value })
-                }
-              />
-            </label>
-            <details className="dl-schedule-actuals">
-              <summary>Registrar autorização da gerência</summary>
-              <div className="form-grid">
-                {(
-                  [
-                    [
-                      "authorizationRequestedOn",
-                      "Autorização solicitada à gerência em",
-                    ],
-                    ["authorizationGrantedOn", "Autorização recebida em"],
-                  ] as const
-                ).map(([field, label]) => (
-                  <label key={field}>
-                    {label}
-                    <input
-                      type="date"
-                      value={value[field]}
-                      onChange={(e) =>
-                        onChange({ ...value, [field]: e.target.value })
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-            </details>
-          </div>
-          <p id="dl-schedule-delivery-help" className="muted dl-schedule-help">
-            Registro informativo: não confirma recebimento nem movimenta saldos.
-          </p>
-        </section>
-      </fieldset>
+
       {error && (
         <p className="catalog-error" role="alert">
           {error}
@@ -308,6 +128,204 @@ export default function DLSchedulePanel({
         usam os prazos contados da requisição e do pedido reais, quando
         registrados. Os avisos não bloqueiam o andamento do processo.
       </p>
+      <details className="dl-schedule-settings">
+        <summary>
+          {readOnly
+            ? "Consultar parâmetros e acompanhamento"
+            : "Editar previsões e acompanhamento"}
+        </summary>{" "}
+        <fieldset disabled={readOnly} className="dl-contract-fields">
+          <section
+            className="dl-schedule-group"
+            aria-labelledby="dl-schedule-coverage-title"
+          >
+            <h4 id="dl-schedule-coverage-title">Abastecimento</h4>
+            <div className="form-grid dl-schedule-fields">
+              <label>
+                Início do período de abastecimento
+                <input
+                  type="date"
+                  value={value.coverageStart}
+                  onChange={(e) =>
+                    onChange({ ...value, coverageStart: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Fim previsto do abastecimento
+                <input readOnly value={date(dates?.coverageEnd ?? "")} />
+              </label>
+              <label>
+                Período de abastecimento (meses)
+                <input
+                  type="number"
+                  min="1"
+                  max="1200"
+                  step="1"
+                  aria-label="Período de abastecimento (meses)"
+                  aria-describedby="dl-schedule-coverage-help"
+                  value={value.coverageMonths ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      coverageMonths:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+            </div>
+            <p
+              id="dl-schedule-coverage-help"
+              className="muted dl-schedule-help"
+            >
+              Período que as quantidades devem atender; separado da vigência da
+              contratação.
+            </p>
+          </section>
+          <section
+            className="dl-schedule-group"
+            aria-labelledby="dl-schedule-deadlines-title"
+          >
+            <h4 id="dl-schedule-deadlines-title">Prazos e previsões</h4>
+            <div className="form-grid dl-schedule-fields">
+              <label>
+                Início do planejamento
+                <input readOnly value={date(plan.openedOn)} />
+              </label>
+              {(
+                [
+                  ["plannedAuthorizationOn", "Autorização prevista para"],
+                  ["plannedRequestOn", "Data prevista da requisição MXM"],
+                ] as const
+              ).map(([field, label]) => (
+                <label key={field}>
+                  {label}
+                  <input
+                    type="date"
+                    value={value[field]}
+                    onChange={(e) =>
+                      onChange({ ...value, [field]: e.target.value })
+                    }
+                  />
+                </label>
+              ))}
+              <label>
+                Prazo previsto do processo (meses)
+                <input
+                  type="number"
+                  min="1"
+                  max="1200"
+                  step="1"
+                  value={value.processMonths ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      processMonths:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Prazo de entrega após o pedido (dias)
+                <input
+                  type="number"
+                  min="0"
+                  max="3650"
+                  step="1"
+                  value={value.deliveryDays ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      deliveryDays:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Contagem do prazo de entrega
+                <select
+                  aria-label="Contagem do prazo de entrega"
+                  aria-describedby="dl-schedule-day-basis-help"
+                  value={value.deliveryDayBasis}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      deliveryDayBasis: e.target
+                        .value as DLSchedule["deliveryDayBasis"],
+                    })
+                  }
+                >
+                  <option value="">Escolha a contagem</option>
+                  <option value="calendar">Dias corridos</option>
+                  <option value="business">Dias úteis (segunda a sexta)</option>
+                </select>
+              </label>
+            </div>
+            <p
+              id="dl-schedule-day-basis-help"
+              className="muted dl-schedule-help"
+            >
+              Dias úteis excluem sábados e domingos; feriados ainda não são
+              considerados.
+            </p>
+          </section>
+          <section
+            className="dl-schedule-group"
+            aria-labelledby="dl-schedule-actuals-title"
+          >
+            <h4 id="dl-schedule-actuals-title">Acompanhamento</h4>
+            <div className="form-grid dl-schedule-fields dl-schedule-tracking">
+              <label>
+                Entrega realizada em (acompanhamento)
+                <input
+                  type="date"
+                  aria-label="Entrega realizada em (acompanhamento)"
+                  aria-describedby="dl-schedule-delivery-help"
+                  value={value.deliveredOn}
+                  onChange={(e) =>
+                    onChange({ ...value, deliveredOn: e.target.value })
+                  }
+                />
+              </label>
+              <details className="dl-schedule-actuals">
+                <summary>Registrar autorização da gerência</summary>
+                <div className="form-grid">
+                  {(
+                    [
+                      [
+                        "authorizationRequestedOn",
+                        "Autorização solicitada à gerência em",
+                      ],
+                      ["authorizationGrantedOn", "Autorização recebida em"],
+                    ] as const
+                  ).map(([field, label]) => (
+                    <label key={field}>
+                      {label}
+                      <input
+                        type="date"
+                        value={value[field]}
+                        onChange={(e) =>
+                          onChange({ ...value, [field]: e.target.value })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+              </details>
+            </div>
+            <p
+              id="dl-schedule-delivery-help"
+              className="muted dl-schedule-help"
+            >
+              Registro informativo: não confirma recebimento nem movimenta
+              saldos.
+            </p>
+          </section>
+        </fieldset>
+      </details>
     </section>
   );
 }

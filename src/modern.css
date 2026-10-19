@@ -795,3 +795,77 @@
     gap: 14px;
   }
 }
+
+/* Focused working areas: global overview is separate from record consultation. */
+.modern-shell .dl-control {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.modern-shell .dl-control .dl-control-indicators {
+  margin-bottom: 10px;
+}
+.modern-shell .dl-control-list,
+.modern-shell .dl-control-detail {
+  min-width: 0;
+}
+.modern-shell .dl-control-data-note {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+}
+.modern-shell .dl-control-data-note summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.modern-shell .dl-control-data-note p {
+  margin-top: 8px;
+  max-width: 110ch;
+}
+.modern-shell .tasks-page > .tasks-counts {
+  margin: 0 0 16px;
+}
+.modern-shell .tasks-page > .tasks-counts > div {
+  background: #fff;
+  padding: 14px;
+}
+.modern-shell .tasks-filters {
+  margin-bottom: 18px;
+}
+.modern-shell .dl-schedule-settings {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+}
+.modern-shell .dl-schedule-settings > summary {
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.modern-shell .dl-schedule-settings > fieldset {
+  padding: 0 14px 14px;
+}
+.modern-shell .dl-schedule-heading {
+  max-width: 100ch;
+}
+.modern-shell .dl-schedule-panel > .table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.modern-shell .order-type {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.modern-shell .order-type small {
+  font-size: 8px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.modern-shell .order-type.active small {
+  color: var(--primary);
+}

@@ -339,3 +339,17 @@ Retomada a reorganização de conteúdo: consulta de planejamento concluído usa
 Visão geral prioriza atalhos de aquisição, saldos e tarefas, com orientações operacionais expansíveis. Catálogo coloca busca e filtros na mesma faixa, com modelo CSV em Mais ações e importação/criação preservadas. Datas do detalhe de Ciclo passam para um resumo de quatro campos. Nenhum serviço, chave de armazenamento ou regra de negócio foi alterado.
 
 Validação: 128 testes e build aprovados; TypeScript; Chromium com consulta de DL sem escrita, campos de consulta, divulgação da justificativa, ações indisponíveis ocultas, reabertura/edição/salvamento, preservação visual das seis etapas, atalhos da visão geral, busca/filtros alinhados, download do modelo CSV e datas do ciclo em desktop/tablet/celular. As capturas reais desta rodada estão em /workspace/dl-consulta-reorganizada.png e /workspace/reorganizado-*.png. Reorganização ainda em andamento; não equivale à aprovação visual final de todas as telas.
+
+### Continuação da revisão das telas reais — 19/10/2026
+
+Controle separa os indicadores globais da área de trabalho da lista; abrir uma DL mostra consulta focada, sem repetir o painel global, preservando filtros ao voltar. A regra de saldo baixo continua explícita; o esclarecimento sobre saldo inicial e integrações fica em seção expansível. Não há movimentos de saldo novos.
+
+Tarefas mostra o resumo da fila antes da área de filtros/lista/kanban, mantendo o caráter demonstrativo e todas as simulações existentes. Navegação interna de Pedidos indica Exemplo em CDs e Em breve nas áreas futuras, sem alterar fluxos ou criar registros.
+
+Cronograma prioriza o comparativo entre previsão e realização e a vigência contratual. Os mesmos campos e validações ficam na seção Editar previsões e acompanhamento; no Controle, a seção é Consultar parâmetros e acompanhamento e mantém os campos bloqueados. Recolher não apaga o rascunho. A gravação continua no botão Salvar alterações existente.
+
+Validação da rodada: 128 testes, TypeScript e build aprovados. Chromium conferiu Controle, navegação e áreas de Pedidos, painel do item, tarefas por perfil/lista/kanban/encaminhamento/devolução/aprovação, filtros e teclado, cronograma com edição, validação e persistência. Reexecutadas consulta/reabertura de planejamento, visão geral, filtros do catálogo, download do CSV e datas de ciclos em desktop/tablet/celular. Estilos internos das seis etapas aprovadas permanecem iguais com e sem a nova camada visual.
+
+Preparado /workspace/revisao-telas-reais.html com 19 capturas do aplicativo em execução e dados explícitos de teste. Não são imagens geradas nem demonstram funcionalidades futuras implementadas. Capturas abrangem visão geral, catálogo, ciclos, planejamento/consulta/processo/contratação/histórico/cronograma da DL, Controle e item, tarefas em lista/kanban/detalhe, áreas de Pedidos e acompanhamento. O arquivo é um artefato local de revisão, não é incluído no aplicativo nem enviado ao GitHub.
+
+A revisão desta rodada está pronta para conferência do usuário. Isso não significa equivalência integral entre as pranchas conceituais e as telas existentes; funções futuras, integrações, autenticação e autorização seguem fora do escopo. Alterações locais aguardam pedido de sincronização.

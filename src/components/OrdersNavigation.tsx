@@ -49,10 +49,16 @@ export default function OrdersNavigation({
                   type="button"
                   key={item.section}
                   className={`order-type ${section === item.section ? "active" : ""}`}
+                  aria-label={item.label}
                   aria-current={section === item.section ? "page" : undefined}
                   onClick={() => onNavigate(item.section)}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  <small>
+                    {item.section === "Pedidos diretos"
+                      ? "Exemplo"
+                      : "Em breve"}
+                  </small>
                 </button>
               ))}
             </nav>

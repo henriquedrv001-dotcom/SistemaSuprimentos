@@ -108,43 +108,50 @@ export default function DLControl({
     },
   ];
   return (
-    <section className="panel dl-control">
-      <div className="dl-control-indicators">
-        {alertCards.map((card) => (
-          <button
-            key={card.kind}
-            className="dl-control-indicator"
-            onClick={() => setAlert(card.kind)}
-            aria-label={`Ver detalhes: ${card.label}`}
-          >
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-            <small>{card.note}</small>
-            <ChevronRight size={15} aria-hidden="true" />
-          </button>
-        ))}
-        <div className="dl-control-indicator dl-control-financial">
-          <span>Valor contratado inicial</span>
-          <strong>
-            {consolidated <= BigInt(Number.MAX_SAFE_INTEGER)
-              ? formatMoney(Number(consolidated))
-              : "Consulte por DL"}
-          </strong>
-          <small>{plans.length} DL(s) concluída(s)</small>
-        </div>
-      </div>
-      <p className="dl-control-metric-rule">
-        Saldo próximo ao fim: maior que zero e até {limit}% da quantidade
-        contratada, por item. Cada DL é contada uma vez. Indicadores consideram
-        todas as DLs; os filtros abaixo afetam apenas a lista.
-      </p>
-      <p className="catalog-feedback dl-control-note">
-        Saldos iniciais das contratações registradas. Reservas, recebimentos e
-        movimentações do ERP ainda não estão conectados. Estes valores não
-        incluem consumos anteriores.
-      </p>
-      {selected ? (
+    <section className="dl-control">
+      {!selected && (
         <>
+          <div className="dl-control-indicators">
+            {alertCards.map((card) => (
+              <button
+                key={card.kind}
+                className="dl-control-indicator"
+                onClick={() => setAlert(card.kind)}
+                aria-label={`Ver detalhes: ${card.label}`}
+              >
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+                <small>{card.note}</small>
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
+            ))}
+            <div className="dl-control-indicator dl-control-financial">
+              <span>Valor contratado inicial</span>
+              <strong>
+                {consolidated <= BigInt(Number.MAX_SAFE_INTEGER)
+                  ? formatMoney(Number(consolidated))
+                  : "Consulte por DL"}
+              </strong>
+              <small>{plans.length} DL(s) concluída(s)</small>
+            </div>
+          </div>
+          <p className="dl-control-metric-rule">
+            Saldo próximo ao fim: maior que zero e até {limit}% da quantidade
+            contratada, por item. Cada DL é contada uma vez. Indicadores
+            consideram todas as DLs; os filtros abaixo afetam apenas a lista.
+          </p>
+          <details className="dl-control-data-note">
+            <summary>Saldos iniciais · integrações pendentes</summary>
+            <p className="dl-control-note">
+              Saldos iniciais das contratações registradas. Reservas,
+              recebimentos e movimentações do ERP ainda não estão conectados.
+              Estes valores não incluem consumos anteriores.
+            </p>
+          </details>
+        </>
+      )}
+      {selected ? (
+        <section className="panel dl-control-detail">
           <button
             className="text-button dl-control-back"
             onClick={() => setActive(null)}
@@ -295,9 +302,9 @@ export default function DLControl({
           {tab === "history" && (
             <DLHistory planId={selected.id} events={workspace.events} />
           )}
-        </>
+        </section>
       ) : (
-        <>
+        <section className="panel dl-control-list">
           <div className="panel-heading dl-control-heading">
             <h2>Materiais no Controle</h2>
             <div className="dl-control-heading-tools">
@@ -510,7 +517,7 @@ export default function DLControl({
             QTD é a quantidade contratada; Valor é o preço unitário. Último
             pedido fica sem informação enquanto não há solicitação vinculada.
           </p>
-        </>
+        </section>
       )}
       {openedItem && (
         <DLControlItemDialog

@@ -88,6 +88,14 @@ export default function Tarefas() {
         <strong>ESBOÇO INTERATIVO</strong> Exemplos para testar as filas. As
         simulações não alteram DLs, pedidos ou saldos.
       </p>
+      <div className="tasks-counts">
+        {states.map((id) => (
+          <div key={id}>
+            <span>{previewStates[id]}</span>
+            <strong>{shown.filter((flow) => flow.state === id).length}</strong>
+          </div>
+        ))}
+      </div>
       <section
         className="panel tasks-workspace"
         aria-label="Fila de tarefas por perfil"
@@ -161,16 +169,6 @@ export default function Tarefas() {
               Kanban
             </button>
           </div>
-        </div>
-        <div className="tasks-counts">
-          {states.map((id) => (
-            <div key={id}>
-              <span>{previewStates[id]}</span>
-              <strong>
-                {shown.filter((flow) => flow.state === id).length}
-              </strong>
-            </div>
-          ))}
         </div>
         <div className="tasks-queue-heading">
           <h2>
