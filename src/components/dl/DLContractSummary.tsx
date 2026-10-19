@@ -1,3 +1,4 @@
+import DLOrderDocumentList from "./DLOrderDocumentList";
 import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import type { DLPlan } from "../../types/dl";
 import type { Item } from "../../types";
@@ -11,9 +12,11 @@ import "./DLContractSummary.css";
 export default function DLContractSummary({
   plan,
   items,
+  onOpenProcess,
 }: {
   plan: DLPlan;
   items: Item[];
+  onOpenProcess?: () => void;
 }) {
   const contract = plan.contract;
   const budget = planBudget(plan.lines);
@@ -32,6 +35,12 @@ export default function DLContractSummary({
   const comparable =
     hasValue && pendingResults === 0 && budget.incomplete === 0;
   const documents = dlOrderDocuments(plan);
+  const orderNumbers = [
+    ...new Set(
+      contract?.awards.map((award) => award.mxmOrder).filter(Boolean) ?? [],
+    ),
+  ];
+  const difference = comparable && total ? total.totalCents - estimated : null;
   const date = (value?: string) =>
     value ? value.split("-").reverse().join("/") : "A definir";
   const validityPeriod = contract?.validFrom
@@ -47,7 +56,14 @@ export default function DLContractSummary({
       aria-labelledby="dl-final-summary-heading"
     >
       <header className="dl-final-summary-heading">
-        <h3 id="dl-final-summary-heading">Resumo da contratação</h3>
+        <div className="dl-consult-heading">
+          <h3 id="dl-final-summary-heading">Resumo da contratação</h3>
+          {onOpenProcess && (
+            <button className="secondary-button" onClick={onOpenProcess}>
+              Ver processo
+            </button>
+          )}
+        </div>
         <p className="muted">
           {contract?.release
             ? "Dados finais aprovados e disponibilizados no Controle de DLs."
@@ -79,11 +95,30 @@ export default function DLContractSummary({
         </div>
         <div>
           <span>Diferença sobre o previsto</span>
-          <strong>
+          <strong
+            data-difference={
+              difference === null
+                ? "unknown"
+                : difference < 0
+                  ? "lower"
+                  : difference > 0
+                    ? "higher"
+                    : "equal"
+            }
+          >
             {comparable && total
               ? formatMoney(total.totalCents - estimated)
               : "—"}
           </strong>
+          {difference !== null && estimated > 0 && (
+            <small>
+              {((difference / estimated) * 100).toLocaleString("pt-BR", {
+                maximumFractionDigits: 2,
+                minimumFractionDigits: 2,
+              })}
+              % sobre o previsto
+            </small>
+          )}
         </div>
       </div>
       <dl className="dl-final-facts">
@@ -108,20 +143,13 @@ export default function DLContractSummary({
           <dd>{validityPeriod}</dd>
         </div>
         <div>
-          <dt>Anexos do pedido</dt>
+          <dt>Pedido MXM</dt>
           <dd>
-            {documents.length ? (
-              <ul className="dl-final-summary-documents">
-                {documents.map((document) => (
-                  <li key={document.id}>{document.name}</li>
-                ))}
-              </ul>
-            ) : (
-              "Nenhum anexo registrado"
-            )}
+            {orderNumbers.length ? orderNumbers.join(", ") : "Não informado"}
           </dd>
         </div>
       </dl>
+      <DLOrderDocumentList documents={documents} />
       <div className="table-wrap dl-final-summary-table-wrap">
         <table className="dl-final-summary-table">
           <thead>
@@ -146,9 +174,11 @@ export default function DLContractSummary({
               return (
                 <tr key={line.id}>
                   <td>
-                    <strong>{item?.code || line.itemId}</strong>
-                    <small className="dl-material-name">
+                    <strong>
                       {item?.description || "Cadastro indisponível"}
+                    </strong>
+                    <small className="dl-material-name">
+                      {item?.code || line.itemId}
                     </small>
                   </td>
                   <td>
@@ -177,6 +207,18 @@ export default function DLContractSummary({
               );
             })}
           </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colSpan={5}>
+                Total da contratação
+              </th>
+              <td className="dl-final-summary-number">
+                {hasValue && total
+                  ? formatMoney(total.totalCents)
+                  : "A definir"}
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       {contract?.release && (

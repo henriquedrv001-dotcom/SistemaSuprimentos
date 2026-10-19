@@ -520,3 +520,369 @@
 .modern-shell .acquisitions-page .dl-budget-table tfoot :is(th, td) {
   background: var(--primary-light);
 }
+/* Processo: contexto e perfil visíveis, sem alterar transições ou permissões. */
+.modern-shell .acquisitions-page .dl-workflow-step .dl-step-heading {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.1fr) minmax(180px, 1.2fr)
+    auto auto 16px;
+  gap: 12px;
+  padding: 12px;
+}
+.modern-shell .acquisitions-page .dl-workflow-step .dl-step-heading h3 {
+  font-size: 13px;
+  min-width: 0;
+  gap: 10px;
+}
+.modern-shell .acquisitions-page .dl-step-number {
+  border-radius: 4px;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-step-context {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.modern-shell .acquisitions-page .dl-step-role {
+  font-size: 10px;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 4px 7px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.modern-shell .acquisitions-page .dl-workflow-step {
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.modern-shell .acquisitions-page .dl-workflow-step.is-active {
+  background: #f2f7fd;
+}
+.modern-shell .acquisitions-page .dl-workflow-body {
+  padding: 12px 16px 16px;
+}
+.modern-shell .acquisitions-page .dl-step-pill {
+  font-size: 10px;
+}
+.modern-shell .acquisitions-page .dl-consult-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modern-shell .acquisitions-page .dl-consult-heading h3 {
+  font-size: 19px;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-final-summary
+  .dl-final-summary-heading
+  h3 {
+  font-size: 19px;
+}
+.modern-shell .acquisitions-page .dl-final-summary .dl-final-summary-heading p {
+  font-size: 11px;
+  margin-top: 10px;
+}
+.modern-shell .acquisitions-page .dl-final-summary-totals > div {
+  background: var(--background-soft);
+  padding: 15px;
+}
+.modern-shell .acquisitions-page .dl-final-summary-totals strong {
+  font-size: 22px;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-final-summary-totals
+  strong[data-difference="lower"] {
+  color: var(--success);
+}
+.modern-shell
+  .acquisitions-page
+  .dl-final-summary-totals
+  strong[data-difference="higher"] {
+  color: var(--warning);
+}
+.modern-shell .acquisitions-page .dl-final-summary .dl-final-facts {
+  background: white;
+  padding: 14px;
+  grid-template-columns: 1.1fr 0.8fr 1.2fr 1fr;
+}
+.modern-shell .acquisitions-page .dl-final-summary .dl-final-facts dd {
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-consult-documents {
+  margin: 18px 0;
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-consult-documents h4 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.modern-shell .acquisitions-page .dl-consult-documents ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.modern-shell .acquisitions-page .dl-consult-documents li {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fff;
+}
+.modern-shell .acquisitions-page .dl-consult-documents li > svg {
+  color: var(--primary);
+}
+.modern-shell .acquisitions-page .dl-consult-documents li > div {
+  flex: 1;
+  min-width: 160px;
+}
+.modern-shell .acquisitions-page .dl-consult-documents strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.modern-shell .acquisitions-page .dl-consult-documents small {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.modern-shell .acquisitions-page .dl-consult-documents .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.modern-shell .acquisitions-page .dl-final-summary-table :is(th, td) {
+  padding: 11px;
+}
+.modern-shell .acquisitions-page .dl-final-summary-table td {
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-final-summary-table td strong {
+  font-weight: 500;
+}
+.modern-shell .acquisitions-page .dl-final-summary-table tfoot {
+  background: var(--primary-light);
+}
+.modern-shell .acquisitions-page .dl-final-summary-table tfoot th {
+  text-align: right;
+  background: transparent;
+}
+.modern-shell .acquisitions-page .dl-final-summary-table tfoot td {
+  color: var(--primary);
+  font-weight: 700;
+}
+@media (max-width: 1100px) {
+  .modern-shell .acquisitions-page .dl-workflow-step .dl-step-heading {
+    grid-template-columns: minmax(200px, 1fr) auto auto 16px;
+  }
+  .modern-shell .acquisitions-page .dl-step-context {
+    grid-column: 1/-1;
+    grid-row: 2;
+  }
+}
+@media (max-width: 650px) {
+  .modern-shell .acquisitions-page .dl-workflow-step .dl-step-heading {
+    grid-template-columns: minmax(0, 1fr) auto 16px;
+    gap: 8px;
+  }
+  .modern-shell .acquisitions-page .dl-workflow-step .dl-step-heading h3 {
+    font-size: 12px;
+  }
+  .modern-shell .acquisitions-page .dl-step-role {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+  }
+  .modern-shell .acquisitions-page .dl-step-pill {
+    grid-column: 2;
+    grid-row: 1;
+    white-space: normal;
+    max-width: 110px;
+  }
+  .modern-shell .acquisitions-page .dl-step-chevron {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .modern-shell .acquisitions-page .dl-final-summary .dl-final-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+/* Cronograma: parâmetros à vista em três áreas, seguidos dos marcos. */
+.modern-shell .acquisitions-page .dl-schedule-panel .dl-schedule-heading h3 {
+  font-size: 19px;
+}
+.modern-shell .acquisitions-page .dl-schedule-settings {
+  margin: 20px 0;
+}
+.modern-shell .acquisitions-page .dl-schedule-settings > fieldset {
+  display: grid;
+  grid-template-columns: 0.95fr 1.2fr 1fr;
+  gap: 0;
+}
+.modern-shell .acquisitions-page .dl-schedule-group {
+  padding: 0 18px;
+  border-top: 0;
+  border-right: 1px solid var(--border);
+}
+.modern-shell .acquisitions-page .dl-schedule-group:first-child {
+  padding-left: 0;
+}
+.modern-shell .acquisitions-page .dl-schedule-group:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+.modern-shell .acquisitions-page .dl-schedule-group > h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+.modern-shell .acquisitions-page .dl-schedule-group > h4 svg {
+  color: var(--primary);
+}
+.modern-shell .acquisitions-page .dl-schedule-group .dl-schedule-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.modern-shell .acquisitions-page .dl-schedule-group .form-grid label {
+  font-size: 10px;
+}
+.modern-shell
+  .acquisitions-page
+  .dl-schedule-group
+  .form-grid
+  :is(input, select) {
+  font-size: 12px;
+  width: 100%;
+}
+.modern-shell .acquisitions-page .dl-schedule-group .form-grid input:disabled {
+  opacity: 1;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+}
+.modern-shell .acquisitions-page .dl-schedule-actuals {
+  grid-column: 1/-1;
+  margin-top: 8px;
+}
+.modern-shell .acquisitions-page .dl-schedule-actuals .form-grid {
+  grid-template-columns: 1fr;
+}
+.modern-shell .acquisitions-page .dl-schedule-milestones-title {
+  font-size: 12px;
+  margin: 22px 0 12px;
+}
+.modern-shell .acquisitions-page .dl-schedule-table :is(th, td) {
+  padding: 11px 12px;
+}
+.modern-shell .acquisitions-page .dl-schedule-table th {
+  font-size: 10px;
+}
+.modern-shell .acquisitions-page .dl-schedule-table td {
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-schedule-validity {
+  border: 1px solid #d3e3f5;
+  background: #edf5fe;
+  border-radius: 6px;
+  padding: 12px;
+}
+/* Histórico: responsável, descrição e data sempre legíveis na linha. */
+.modern-shell .acquisitions-page .dl-history-toolbar {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.modern-shell .acquisitions-page .dl-history-toolbar h3 {
+  font-size: 19px;
+  margin: 0 auto 0 0;
+}
+.modern-shell .acquisitions-page .dl-history-toolbar label {
+  font-size: 11px;
+}
+.modern-shell .acquisitions-page .dl-history-list {
+  border-radius: 7px;
+}
+.modern-shell .acquisitions-page .dl-history-row {
+  grid-template-columns: 18px 135px minmax(0, 1fr) 175px 145px 14px;
+  gap: 12px;
+  padding: 14px 12px;
+  font-size: 12px;
+}
+.modern-shell .acquisitions-page .dl-history-description {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.5;
+}
+.modern-shell .acquisitions-page .dl-history-type {
+  font-size: 11px;
+}
+.modern-shell .acquisitions-page .dl-history-detail {
+  background: #f2f7fd;
+}
+.modern-shell .acquisitions-page .dl-history-row time,
+.modern-shell .acquisitions-page .dl-history-actor {
+  font-size: 10px;
+  line-height: 1.5;
+}
+@media (max-width: 1200px) {
+  .modern-shell .acquisitions-page .dl-schedule-settings > fieldset {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 20px;
+  }
+  .modern-shell .acquisitions-page .dl-schedule-group:nth-child(2) {
+    border-right: 0;
+  }
+  .modern-shell .acquisitions-page .dl-schedule-group:last-child {
+    grid-column: 1/-1;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--border);
+  }
+  .modern-shell .acquisitions-page .dl-schedule-actuals .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .modern-shell .acquisitions-page .dl-history-row {
+    grid-template-columns: 18px 120px minmax(0, 1fr) 14px;
+  }
+}
+@media (max-width: 650px) {
+  .modern-shell .acquisitions-page .dl-schedule-settings > fieldset {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .modern-shell .acquisitions-page .dl-schedule-group,
+  .modern-shell .acquisitions-page .dl-schedule-group:last-child {
+    padding: 16px 0 0;
+    border-right: 0;
+    border-top: 1px solid var(--border);
+  }
+  .modern-shell .acquisitions-page .dl-schedule-group:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .modern-shell .acquisitions-page .dl-history-row {
+    grid-template-columns: 18px minmax(0, 1fr) 14px;
+    gap: 6px 8px;
+  }
+  .modern-shell .acquisitions-page .dl-history-toolbar h3 {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
+.modern-shell .acquisitions-page .dl-workflow-step .dl-step-pill {
+  margin: 0;
+  justify-self: end;
+  display: inline-flex;
+}

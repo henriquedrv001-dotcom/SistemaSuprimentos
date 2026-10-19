@@ -510,7 +510,13 @@ export default function DLPlanningEditor({
           readOnly={justificationDirty}
         />
       )}
-      {tab === "contract" && <DLContractSummary plan={plan} items={items} />}
+      {tab === "contract" && (
+        <DLContractSummary
+          plan={plan}
+          items={items}
+          onOpenProcess={() => setTab("request")}
+        />
+      )}
       {releaseOpen && (
         <DLReleaseDialog
           plan={plan}
@@ -844,8 +850,11 @@ export default function DLPlanningEditor({
           className="dl-history-section"
           aria-labelledby="dl-history-title"
         >
-          <h3 id="dl-history-title">Histórico desta DL</h3>
-          <DLHistory planId={plan.id} events={workspace.events} />
+          <DLHistory
+            heading="Histórico de atividades"
+            planId={plan.id}
+            events={workspace.events}
+          />
         </section>
       )}
       {picker && (

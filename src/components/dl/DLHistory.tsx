@@ -41,9 +41,11 @@ const icons = {
 export default function DLHistory({
   planId,
   events,
+  heading,
 }: {
   planId: string;
   events: DLPlanEvent[];
+  heading?: string;
 }) {
   const [type, setType] = useState<DLActivityType | "">("");
   useEffect(() => setType(""), [planId]);
@@ -57,6 +59,7 @@ export default function DLHistory({
   return (
     <div className="dl-history">
       <div className="dl-history-toolbar">
+        {heading && <h3 id="dl-history-title">{heading}</h3>}
         <label>
           <Filter size={15} aria-hidden="true" />
           <span>Atividade</span>

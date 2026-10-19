@@ -79,6 +79,11 @@ export function DLJustificationStep({
     <DLWorkflowStep
       id="dl-justification-title"
       number={1}
+      context={
+        plan.processFlow?.justification?.completedAt
+          ? "Justificativa registrada."
+          : "Justificativa do processo a preparar."
+      }
       title="Gerar justificativa"
       status={
         plan.processFlow?.justification?.completedAt
@@ -302,6 +307,11 @@ export default function DLProcessStages({
       <DLWorkflowStep
         id="dl-order-title"
         number={4}
+        context={
+          attachments.length
+            ? `${attachments.length} anexo(s) do pedido registrado(s).`
+            : "Pedido emitido a registrar."
+        }
         title="Registro do pedido"
         status={
           needsRegistration && hasAttachments && eligible
@@ -472,6 +482,7 @@ export default function DLProcessStages({
       <DLWorkflowStep
         id="dl-suppliers-title"
         number={5}
+        context={`${plan.lines.length} material(is) para conferência dos dados finais.`}
         title="Definição de fornecedores"
         status={
           released
@@ -531,6 +542,11 @@ export default function DLProcessStages({
       <DLWorkflowStep
         id="dl-approval-title"
         number={6}
+        context={
+          released
+            ? "Conferência final concluída."
+            : "Conferência final dos dados da aquisição."
+        }
         title="Aprovação"
         status={
           released

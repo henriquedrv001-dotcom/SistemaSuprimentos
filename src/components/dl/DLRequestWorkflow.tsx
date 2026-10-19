@@ -51,6 +51,11 @@ export default function DLRequestWorkflow({
       <DLWorkflowStep
         id="dl-generation-title"
         number={2}
+        context={
+          plan.request.mxmNumber
+            ? `Requisição MXM ${plan.request.mxmNumber}.`
+            : "Requisição MXM a registrar."
+        }
         title="Gerar requisição"
         status={
           generating
@@ -151,6 +156,11 @@ export default function DLRequestWorkflow({
       <DLWorkflowStep
         id="dl-analysis-title"
         number={3}
+        context={
+          plan.request.mxmNumber
+            ? `Conferência da requisição MXM ${plan.request.mxmNumber}.`
+            : "Conferência da requisição."
+        }
         title="Analisar requisição"
         status={
           analyzing

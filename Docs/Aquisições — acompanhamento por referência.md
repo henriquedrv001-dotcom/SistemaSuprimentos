@@ -12,7 +12,7 @@ Essas referências originais substituem as propostas posteriores geradas pelo as
 ## Etapas
 
 1. Lista e estrutura de detalhe/material: primeiro checkpoint implementado e conferido nesta sessão.
-2. Processo, Contratação, Cronograma e Histórico: pendentes de adequação completa às referências.
+2. Processo, Contratação, Cronograma e Histórico: checkpoint 2 implementado e validado; revisão conjunta ainda pendente.
 3. Controle e painel do item: pendentes de adequação completa às referências.
 4. Revisão visual conjunta e validação final: pendente.
 
@@ -38,3 +38,17 @@ CSS de Aquisições isolado em src/components/dl/Acquisitions.css. Em App.tsx, a
 - Scripts locais: /workspace/onboarding-tools/acquisitions-reference-stage1.cjs e acquisitions-material-consult.cjs. Não integram as dependências do aplicativo.
 
 Nenhum serviço, tipo de domínio, chave de armazenamento ou integração corporativa foi modificado. Este checkpoint não significa que toda a função Aquisições esteja concluída. Envio ao GitHub somente por solicitação de sincronização.
+
+## Checkpoint 2 — Processo, Contratação, Cronograma e Histórico
+
+- Processo com seis linhas numeradas, contexto resumido e perfil funcional previsto. Papéis reais mantidos: estoque em justificativa/análise/aprovação; aprendiz em requisição/fornecedores; compradora em pedido. Os chips não introduzem autenticação nem permissões de servidor. Conteúdo das etapas, validações e ações existentes preservados.
+- Contratação com resumo financeiro, diferença percentual quando há base válida, dados contratuais completos, números MXM de todas as origens, anexos em área própria e total da contratação no rodapé. Diferença acima do previsto não é apresentada como economia. Atalho Ver processo usa a navegação existente.
+- Visualizar e Baixar na consulta reutilizam os mesmos documentos e serviços locais. Ausência do arquivo original continua sendo erro explícito, sem gerar arquivos fictícios nem apagar metadados.
+- Cronograma com Abastecimento/Prazos/Acompanhamento à vista, sem recolhimento dos parâmetros ou da autorização. Marcos e vigência separados do formulário. Mantidos dados automáticos, calendário e regra de dias úteis existentes.
+- Histórico com título e filtro na mesma faixa, descrições sem reticências e responsáveis/datas legíveis, mantendo os detalhes expansíveis aprovados e a leitura dos eventos antigos.
+
+Validação: build e 128 testes aprovados; percurso Chromium completo com rascunho da requisição, envio, devolução obrigatória com motivo, correção, reenvio, cancelamento de aprovação, análise, registro de dois anexos, contratação automática, fornecedores, envio para aprovação, checkbox e confirmação/cancelamento finais. Nenhum saldo antes da confirmação final; uma origem após concluir. Conferidos PDF/imagem, download sem alteração do workspace, filtro/detalhes do histórico sem escrita, comparação fora do fieldset do cronograma e todas as abas em desktop/tablet/celular sem transbordamento global.
+
+Script local: /workspace/onboarding-tools/acquisitions-reference-flow.cjs. Capturas: /workspace/aquisicoes-etapa2-processo.png, aquisicoes-etapa2-contratacao.png, aquisicoes-etapa2-cronograma.png e aquisicoes-etapa2-historico.png.
+
+Adequação de Controle/painel do item e revisão visual conjunta continuam pendentes. Nada deste checkpoint foi enviado ao GitHub.

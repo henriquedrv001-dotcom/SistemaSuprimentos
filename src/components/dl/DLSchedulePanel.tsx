@@ -1,3 +1,4 @@
+import { CalendarDays, Clock3, ChartNoAxesColumn } from "lucide-react";
 import type { DLPlan, DLSchedule } from "../../types/dl";
 import { milestoneStatus, scheduleDates } from "../../services/dlSchedule";
 import { todayInBrazil } from "../../services/dlPlanning";
@@ -81,7 +82,10 @@ export default function DLSchedulePanel({
             className="dl-schedule-group"
             aria-labelledby="dl-schedule-coverage-title"
           >
-            <h4 id="dl-schedule-coverage-title">Abastecimento</h4>
+            <h4 id="dl-schedule-coverage-title">
+              <CalendarDays size={16} aria-hidden="true" />
+              Abastecimento
+            </h4>
             <div className="form-grid dl-schedule-fields">
               <label>
                 Início do período de abastecimento
@@ -129,7 +133,10 @@ export default function DLSchedulePanel({
             className="dl-schedule-group"
             aria-labelledby="dl-schedule-deadlines-title"
           >
-            <h4 id="dl-schedule-deadlines-title">Prazos e previsões</h4>
+            <h4 id="dl-schedule-deadlines-title">
+              <Clock3 size={16} aria-hidden="true" />
+              Prazos e previsões
+            </h4>
             <div className="form-grid dl-schedule-fields">
               <label>
                 Início do planejamento
@@ -218,7 +225,10 @@ export default function DLSchedulePanel({
             className="dl-schedule-group"
             aria-labelledby="dl-schedule-actuals-title"
           >
-            <h4 id="dl-schedule-actuals-title">Acompanhamento</h4>
+            <h4 id="dl-schedule-actuals-title">
+              <ChartNoAxesColumn size={16} aria-hidden="true" />
+              Acompanhamento
+            </h4>
             <div className="form-grid dl-schedule-fields dl-schedule-tracking">
               <label>
                 Entrega realizada em (acompanhamento)
@@ -257,66 +267,6 @@ export default function DLSchedulePanel({
                   ))}
                 </div>
               </section>
-              {error && (
-                <p className="catalog-error" role="alert">
-                  {error}
-                </p>
-              )}
-              <div className="table-wrap">
-                <table className="dl-schedule-table">
-                  <thead>
-                    <tr>
-                      <th>Etapa</th>
-                      <th>Previsão / prazo</th>
-                      <th>Realizado</th>
-                      <th>Prazo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.label}>
-                        <td>
-                          <strong>{row.label}</strong>
-                          <small>{row.note}</small>
-                        </td>
-                        <td>{date(row.expected)}</td>
-                        <td>{date(row.actual)}</td>
-                        <td>
-                          <MilestoneIndicator
-                            expected={
-                              row.label === "Entrega"
-                                ? dates?.orderDeliveryDue || row.expected
-                                : row.label === "Emissão do pedido"
-                                  ? dates?.actualProcessDue || row.expected
-                                  : row.expected
-                            }
-                            actual={row.actual}
-                            today={today}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="dl-schedule-validity">
-                <strong>Vigência da contratação</strong>
-                <p>
-                  {plan.contract?.validFrom
-                    ? `${date(plan.contract.validFrom)} a ${date(dates?.validUntil ?? "")}${plan.contract.validityMonths ? ` · ${plan.contract.validityMonths} mês(es)` : ""}`
-                    : "Definida ao registrar o pedido, conforme a vigência informada no planejamento."}
-                </p>
-                {plan.contract?.release && (
-                  <span>{contractStatus(plan, today)}</span>
-                )}
-              </div>
-              <p className="muted dl-schedule-footnote">
-                As previsões usam a data prevista da requisição; quando ela não
-                é informada, usam a data real. Os indicadores do processo e da
-                entrega usam os prazos contados da requisição e do pedido reais,
-                quando registrados. Os avisos não bloqueiam o andamento do
-                processo.
-              </p>
             </div>
             <p
               id="dl-schedule-delivery-help"
@@ -328,6 +278,74 @@ export default function DLSchedulePanel({
           </section>
         </fieldset>
       </section>
+      {error && (
+        <p className="catalog-error" role="alert">
+          {error}
+        </p>
+      )}
+      <h4
+        id="dl-schedule-milestones-title"
+        className="dl-schedule-milestones-title"
+      >
+        Marcos e etapas
+      </h4>
+      <div
+        className="table-wrap"
+        role="region"
+        aria-labelledby="dl-schedule-milestones-title"
+        tabIndex={0}
+      >
+        <table className="dl-schedule-table">
+          <thead>
+            <tr>
+              <th>Etapa</th>
+              <th>Previsão / prazo</th>
+              <th>Realizado</th>
+              <th>Prazo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.label}>
+                <td>
+                  <strong>{row.label}</strong>
+                  <small>{row.note}</small>
+                </td>
+                <td>{date(row.expected)}</td>
+                <td>{date(row.actual)}</td>
+                <td>
+                  <MilestoneIndicator
+                    expected={
+                      row.label === "Entrega"
+                        ? dates?.orderDeliveryDue || row.expected
+                        : row.label === "Emissão do pedido"
+                          ? dates?.actualProcessDue || row.expected
+                          : row.expected
+                    }
+                    actual={row.actual}
+                    today={today}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="dl-schedule-validity">
+        <strong>Vigência da contratação</strong>
+        <p>
+          {plan.contract?.validFrom
+            ? `${date(plan.contract.validFrom)} a ${date(dates?.validUntil ?? "")}${plan.contract.validityMonths ? ` · ${plan.contract.validityMonths} mês(es)` : ""}`
+            : "Definida ao registrar o pedido, conforme a vigência informada no planejamento."}
+        </p>
+        {plan.contract?.release && <span>{contractStatus(plan, today)}</span>}
+      </div>
+      <p className="muted dl-schedule-footnote">
+        As previsões usam a data prevista da requisição; quando ela não é
+        informada, usam a data real. Os indicadores do processo e da entrega
+        usam os prazos contados da requisição e do pedido reais, quando
+        registrados. Os avisos não bloqueiam o andamento do processo.
+      </p>
     </section>
   );
 }

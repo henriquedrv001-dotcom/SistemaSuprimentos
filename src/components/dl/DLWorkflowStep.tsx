@@ -9,6 +9,7 @@ export default function DLWorkflowStep({
   completed = false,
   active = false,
   description,
+  context,
   children,
 }: {
   id: string;
@@ -18,8 +19,17 @@ export default function DLWorkflowStep({
   completed?: boolean;
   active?: boolean;
   description: string;
+  context?: string;
   children: ReactNode;
 }) {
+  const roles: Record<number, [string, string]> = {
+    1: ["Estoque", "Responsável pelo estoque"],
+    2: ["Aprendiz", "Jovem aprendiz"],
+    3: ["Estoque", "Responsável pelo estoque"],
+    4: ["Compradora", "Compradora"],
+    5: ["Aprendiz", "Jovem aprendiz"],
+    6: ["Estoque", "Responsável pelo estoque"],
+  };
   const [open, setOpen] = useState(active && !completed);
   useEffect(() => setOpen(active && !completed), [active, completed]);
   return (
@@ -34,9 +44,25 @@ export default function DLWorkflowStep({
       >
         <summary className="dl-step-heading">
           <h3 id={id}>
-            <span className="dl-step-number">{number}.</span>{" "}
+            <span className="dl-step-number">{number}</span>{" "}
             <span>{title}</span>
           </h3>
+          <span className="dl-step-context">
+            {context ||
+              (completed
+                ? "Etapa concluída."
+                : active
+                  ? "Etapa disponível para execução."
+                  : "Aguardando etapa anterior.")}
+          </span>
+          {roles[number] && (
+            <span
+              className="dl-step-role"
+              title={`Perfil previsto: ${roles[number][1]}`}
+            >
+              {roles[number][0]}
+            </span>
+          )}
           <span
             className={`dl-step-pill ${completed ? "is-complete" : active ? "is-current" : "is-pending"}`}
           >
