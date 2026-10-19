@@ -329,3 +329,13 @@ Detalhes de Tarefas seguem o painel lateral dos itens, com conteúdo rolável e 
 Limpar filtros de tarefas restaura perfil/situação/busca, sem reiniciar os fluxos de exemplo. Limpar filtros de ciclos restaura busca e visualização Abertos, sem alterar ciclos. Ações aparecem somente quando há filtro ativo. Atalho Ir para o conteúdo permite saltar a navegação com teclado.
 
 Validação: build e TypeScript; Chromium com limpeza dos filtros, contagens restauradas, atalho por teclado, painel lateral de tarefa em desktop/celular e fechamento por Escape. Reexecutados os percursos de Controle e demonstração completa de Tarefas, edição/bloqueio de planejamento, resumo, histórico, cronograma e comparação dos estilos das seis etapas. Sem alteração nos serviços ou dados de domínio.
+
+### Correção de escopo após avaliação do usuário — 19/10/2026
+
+O usuário confirmou que viu o menu atualizado, mas considerou as telas praticamente iguais. A entrega anterior corresponde à base visual/navegação e acabamento, não à reorganização integral das telas dos esboços. Não tratar o conjunto das pranchas como integralmente implementado ou aprovado na aplicação.
+
+Retomada a reorganização de conteúdo: consulta de planejamento concluído usa fatos textuais (categoria, abertura, entrega, vigência prevista e solicitante), justificativa expansível, orçamento sem ações de edição indisponíveis e ajuda secundária recolhível. Reabrir mantém as regras e restaura o formulário existente. Cabeçalho geral redundante de Aquisições deixa de aparecer quando já há uma DL aberta.
+
+Visão geral prioriza atalhos de aquisição, saldos e tarefas, com orientações operacionais expansíveis. Catálogo coloca busca e filtros na mesma faixa, com modelo CSV em Mais ações e importação/criação preservadas. Datas do detalhe de Ciclo passam para um resumo de quatro campos. Nenhum serviço, chave de armazenamento ou regra de negócio foi alterado.
+
+Validação: 128 testes e build aprovados; TypeScript; Chromium com consulta de DL sem escrita, campos de consulta, divulgação da justificativa, ações indisponíveis ocultas, reabertura/edição/salvamento, preservação visual das seis etapas, atalhos da visão geral, busca/filtros alinhados, download do modelo CSV e datas do ciclo em desktop/tablet/celular. As capturas reais desta rodada estão em /workspace/dl-consulta-reorganizada.png e /workspace/reorganizado-*.png. Reorganização ainda em andamento; não equivale à aprovação visual final de todas as telas.

@@ -359,12 +359,7 @@ export default function CiclosSuprimento({
             <div>
               <p className="eyebrow">ESTOQUE · CICLO DE SUPRIMENTOS</p>
               <h1>{cycle.name}</h1>
-              <p className="muted">
-                Solicitações: {formatDate(cycle.solicitationStart)} · Entregas:{" "}
-                {formatDate(cycle.firstDelivery)} a{" "}
-                {formatDate(cycle.lastDelivery)} · Fechamento:{" "}
-                {formatDate(cycle.closingDate)}
-              </p>
+
             </div>
             <div className="cycle-inline-actions">
               <span
@@ -389,6 +384,12 @@ export default function CiclosSuprimento({
               </button>
             </div>
           </div>
+          <dl className="cycle-dates-summary" aria-label="Datas do ciclo">
+            <div><dt>Solicitações a partir de</dt><dd>{formatDate(cycle.solicitationStart)}</dd></div>
+            <div><dt>Primeira entrega</dt><dd>{formatDate(cycle.firstDelivery)}</dd></div>
+            <div><dt>Última entrega</dt><dd>{formatDate(cycle.lastDelivery)}</dd></div>
+            <div><dt>Fechamento</dt><dd>{formatDate(cycle.closingDate)}</dd></div>
+          </dl>
           {closed && (
             <p className="demo-notice">
               Este ciclo está encerrado. Para alterar materiais e grupos,

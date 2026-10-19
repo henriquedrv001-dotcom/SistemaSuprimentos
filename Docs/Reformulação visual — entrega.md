@@ -1,6 +1,8 @@
-# Reformulação visual — entrega de 19/10/2026
+# Reformulação visual — registro de 19/10/2026
 
-## Concluído
+Após a avaliação do usuário, a reorganização integral das telas foi retomada: a entrega inicial alterou principalmente a base visual e a navegação. Este documento registra a validação dessa base, não a conclusão de todas as telas dos esboços.
+
+## Base visual e acabamento implementados
 
 - Navegação única, sem divisão lateral entre Estoque e Compras, recolhível e utilizável por teclado e em celular.
 - Aquisições com Planejamento de DLs e Controle de DLs.

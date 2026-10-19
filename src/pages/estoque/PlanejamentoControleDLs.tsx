@@ -75,7 +75,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
   const hasFilters = !!query || !!stageFilter;
   return (
     <>
-      <div className="page-heading dl-overview-heading">
+      {(!plan || props.tab === "control") && <div className="page-heading dl-overview-heading">
         <div>
           <p className="eyebrow">SUPRIMENTOS</p>
           <h1>Aquisições</h1>
@@ -83,7 +83,7 @@ export default function PlanejamentoControleDLs(props: DLPlanningProps) {
             Da necessidade de aquisição ao acompanhamento do processo.
           </p>
         </div>
-      </div>
+      </div>}
       <div className="tabs dl-overview-tabs">
         <button
           className={`tab ${props.tab === "planning" ? "active" : ""}`}

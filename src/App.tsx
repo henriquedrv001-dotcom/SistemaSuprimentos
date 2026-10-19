@@ -463,13 +463,15 @@ function App() {
                   </div>
                   <div className="panel-footer"><span>{cycleRows.length} itens distintos no ciclo</span><button className="text-button" onClick={() => setSection("Ciclos de suprimento")}>Ver ciclo <span>→</span></button></div>
                 </section>
-                <section className="panel">
+                <div className="dashboard-side">
+                  <section className="panel quick-access"><h2>Acessos rápidos</h2><p className="muted">Escolha o que precisa fazer.</p><button type="button" onClick={() => setSection("Planejamento DLs")}><WalletCards size={18}/><span><strong>Planejar aquisição</strong><small>Planejamento de DLs</small></span><span aria-hidden="true">→</span></button><button type="button" onClick={() => setSection("Controle DLs")}><PackageSearch size={18}/><span><strong>Consultar saldos</strong><small>Materiais contratados por DL</small></span><span aria-hidden="true">→</span></button><button type="button" onClick={() => setSection("Tarefas")}><ClipboardList size={18}/><span><strong>Visualizar tarefas</strong><small>Demonstração das filas por perfil</small></span><span aria-hidden="true">→</span></button></section>
+                <details className="panel dashboard-guidance"><summary>Orientações operacionais</summary><div>
                   <div className="panel-heading"><div><h2>Atenção operacional</h2><p>Regras que o sistema deverá validar</p></div><AlertTriangle size={20} className="warning-icon" /></div>
                   <div className="attention-item"><div className="attention-icon"><CheckCircle2 size={18} /></div><div><strong>Origem do PDF identificada</strong><p>Selecionar o pedido ERP específico que identifica o PDL de origem.</p></div></div>
                   <div className="attention-item"><div className="attention-icon"><WalletCards size={18} /></div><div><strong>Saldo livre separado do recebido</strong><p>Pedidos emitidos comprometem saldo; recebimento é acompanhado separadamente.</p></div></div>
                   <div className="attention-item"><div className="attention-icon"><FileText size={18} /></div><div><strong>ERP permanece oficial</strong><p>O aplicativo acompanha pedidos, mas não substitui o estoque físico nem gera pedidos corporativos.</p></div></div>
                   <div className="note-box"><strong>Próxima etapa sugerida</strong><p>Validar cadastro e ciclos antes de implementar pedidos e saldos das DLs.</p></div>
-                </section>
+                </div></details></div>
               </div>
             </>
           )}
@@ -477,10 +479,10 @@ function App() {
           {section === "Cadastro de itens" && (
             <>
               <div className="page-heading">
-                <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Catálogo geral de materiais MXM. Importe, filtre, ordene e selecione vários itens.</p></div>
+                <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Cadastro mestre de materiais MXM.</p></div>
                 <div className="form-actions">
                   <input ref={importInputRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={(e) => void handleImportFile(e.target.files?.[0])} />
-                  <button className="secondary-button" onClick={downloadTemplate}><Download size={17} /> Modelo CSV</button>
+                  <details className="page-more-actions"><summary className="secondary-button">Mais ações <ChevronDown size={14}/></summary><div><button type="button" className="text-button" onClick={downloadTemplate}><Download size={15}/> Modelo CSV</button></div></details>
                   <button className="secondary-button" onClick={() => importInputRef.current?.click()}><FileUp size={17} /> Importar planilha</button>
                   <button className="primary-button" onClick={() => setShowAddItem((v) => !v)}><Boxes size={17} /> {showAddItem ? "Cancelar" : "Novo item"}</button>
                 </div>
@@ -501,8 +503,8 @@ function App() {
                 <p className="form-note">Dados salvos apenas neste navegador. A conexão ao banco será feita em etapa posterior.</p>
               </section>}
               <section className="panel catalog-panel">
-                <div className="toolbar catalog-toolbar"><div><h2>Catálogo de itens</h2><p aria-live="polite">{filteredItems.length} de {items.length} itens exibidos</p></div><div className="catalog-toolbar-actions"><label className="search-box catalog-search"><Search size={16} aria-hidden="true" /><input aria-label="Buscar itens" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar código, descrição, grupo ou unidade" /></label><CatalogTypeFilter types={allTypes} selected={selectedTypes} onChange={changeTypeView} /></div></div>
-                <div className="catalog-filters">
+                <div className="toolbar catalog-toolbar"><div><h2>Materiais</h2><p aria-live="polite">{filteredItems.length} de {items.length} itens exibidos</p></div><div className="catalog-toolbar-actions"><CatalogTypeFilter types={allTypes} selected={selectedTypes} onChange={changeTypeView} /></div></div>
+                <div className="catalog-filters catalog-unified-filters"><label className="search-box catalog-search"><Search size={16} aria-hidden="true" /><input aria-label="Buscar itens" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar código, descrição, grupo ou unidade" /></label>
                   <label>Tipo<select value={filterType} onChange={(e) => { setFilterType(e.target.value); setFilterGroup("Todos"); setFilterCriterion("Todos"); setSelectedItemIds([]); }}><option>Todos</option>{types.map((type) => <option key={type}>{type}</option>)}</select></label>
                   <label>Grupo<select value={filterGroup} onChange={(e) => { setFilterGroup(e.target.value); setFilterCriterion("Todos"); }}><option>Todos</option>{groups.map((group) => <option key={group}>{group}</option>)}</select></label>
                   <label>Critério<select value={filterCriterion} onChange={(e) => setFilterCriterion(e.target.value)}><option>Todos</option>{criteria.map(criterion => <option key={criterion}>{criterion}</option>)}</select></label>

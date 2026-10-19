@@ -1,6 +1,7 @@
 import { dlOrderDocuments } from "../../services/dlOrderDocuments";
 import DLProcessStages, { DLJustificationStep } from "./DLProcessStages";
 import DLContractSummary from "./DLContractSummary";
+import DLPlanningOverview from "./DLPlanningOverview";
 import { canRegisterDLOrder } from "../../services/dlProcess";
 import { CalendarDays, CircleCheck, Clock3 } from "lucide-react";
 import DLHistory from "./DLHistory";
@@ -297,7 +298,7 @@ export default function DLPlanningEditor({
   }
   return (
     <section
-      className={`panel dl-editor${tab === "request" ? "" : " dl-compact"}`}
+      className={`panel dl-editor${tab === "request" ? "" : " dl-compact"}${tab === "items" && !editable ? " dl-planning-readonly" : ""}`}
       data-view={tab}
     >
       <div className="panel-heading">
@@ -497,87 +498,93 @@ export default function DLPlanningEditor({
       )}
       {tab === "items" && (
         <>
-          <div className="form-grid dl-planning-fields">
-            {(
-              [
-                ["title", "Objeto / título"],
-                ["category", "Categoria"],
-                ["openedOn", "Data de abertura"],
-                ["deliveryDate", "Data de entrega"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key}>
-                {label}
+          {editable ? (
+            <div className="form-grid dl-planning-fields">
+              {(
+                [
+                  ["title", "Objeto / título"],
+                  ["category", "Categoria"],
+                  ["openedOn", "Data de abertura"],
+                  ["deliveryDate", "Data de entrega"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    aria-label={label}
+                    disabled={!editable || justificationDirty}
+                    type={
+                      key === "openedOn" || key === "deliveryDate"
+                        ? "date"
+                        : "text"
+                    }
+                    value={draft[key] ?? ""}
+                    onChange={(e) =>
+                      setDraft({ ...draft, [key]: e.target.value })
+                    }
+                  />
+                </label>
+              ))}
+              <label>
+                Vigência (meses)
                 <input
-                  aria-label={label}
+                  aria-label="Vigência prevista (meses)"
+                  type="number"
+                  min="1"
+                  max="1200"
+                  step="1"
+                  placeholder="A definir"
                   disabled={!editable || justificationDirty}
-                  type={
-                    key === "openedOn" || key === "deliveryDate"
-                      ? "date"
-                      : "text"
-                  }
-                  value={draft[key] ?? ""}
+                  value={draft.plannedValidityMonths ?? ""}
                   onChange={(e) =>
-                    setDraft({ ...draft, [key]: e.target.value })
+                    setDraft({
+                      ...draft,
+                      plannedValidityMonths:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                  title="Período previsto no planejamento. A vigência contratual é definida após a emissão do pedido."
+                />
+              </label>
+              <label className="dl-observation-field dl-planning-observation">
+                Observação / Justificativa
+                <textarea
+                  aria-label="Observação / Justificativa"
+                  rows={2}
+                  disabled={!editable || justificationDirty}
+                  value={dlObservation(draft)}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      justification: e.target.value,
+                      notes: "",
+                    })
                   }
                 />
               </label>
-            ))}
-            <label>
-              Vigência (meses)
-              <input
-                aria-label="Vigência prevista (meses)"
-                type="number"
-                min="1"
-                max="1200"
-                step="1"
-                placeholder="A definir"
-                disabled={!editable || justificationDirty}
-                value={draft.plannedValidityMonths ?? ""}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    plannedValidityMonths:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                title="Período previsto no planejamento. A vigência contratual é definida após a emissão do pedido."
-              />
-            </label>
-            <label className="dl-observation-field dl-planning-observation">
-              Observação / Justificativa
-              <textarea
-                aria-label="Observação / Justificativa"
-                rows={2}
-                disabled={!editable || justificationDirty}
-                value={dlObservation(draft)}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    justification: e.target.value,
-                    notes: "",
-                  })
-                }
-              />
-            </label>
-            <label className="dl-planning-requester">
-              Solicitante
-              <input
-                aria-label="Solicitante"
-                disabled={!editable || justificationDirty}
-                value={draft.responsible}
-                onChange={(e) =>
-                  setDraft({ ...draft, responsible: e.target.value })
-                }
-              />
-            </label>
-          </div>
+              <label className="dl-planning-requester">
+                Solicitante
+                <input
+                  aria-label="Solicitante"
+                  disabled={!editable || justificationDirty}
+                  value={draft.responsible}
+                  onChange={(e) =>
+                    setDraft({ ...draft, responsible: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+          ) : (
+            <DLPlanningOverview plan={plan} />
+          )}
           <div className="panel-heading dl-budget-heading">
             <div>
               <h3>Orçamento previsto: {budgetText}</h3>
               <p className="muted">
-                Quantidade: até 3 casas decimais. Preço em R$: até 2 casas, sem
-                separador de milhar ao editar.
+                {draft.lines.length} materiais ·{" "}
+                {editable
+                  ? "Informe quantidades e preços para compor o orçamento."
+                  : "Planejamento concluído · valores previstos preservados."}
               </p>
             </div>
             <button
@@ -715,10 +722,14 @@ export default function DLPlanningEditor({
               </tbody>
             </table>
           </div>
-          <p className="muted">
-            Rascunhos podem ter quantidades ou preços em branco. O orçamento não
-            representa saldo contratado.
-          </p>
+          <details className="dl-planning-help">
+            <summary>Sobre quantidades e valores</summary>
+            <p>
+              Quantidade: até 3 casas decimais. Preço em R$: até 2 casas, sem
+              separador de milhar ao editar. Rascunhos podem ter quantidades ou
+              preços em branco. O orçamento não representa saldo contratado.
+            </p>
+          </details>
         </>
       )}
       {tab === "request" && (
