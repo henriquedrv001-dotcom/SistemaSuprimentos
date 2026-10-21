@@ -2,6 +2,10 @@
 
 Catálogo persistente para reutilizar elementos quando solicitado pelo usuário. É parte do repositório e deve ser consultado em futuras alterações visuais; não depende da memória de uma conversa. Registrar um modelo não autoriza alterar as outras funções automaticamente.
 
+## Regra permanente: temas claro e noturno
+
+Por orientação do usuário, toda alteração de interface a partir desta etapa deve funcionar nos dois temas. Reutilizar cores semânticas, preservar contraste de textos, estados ativos, campos, tabelas, menus e diálogos, e conferir as duas apresentações antes de concluir. Evitar introduzir superfícies brancas ou cores de texto fixas que prejudiquem o modo noturno. A alternância e a preferência de tema devem permanecer disponíveis, sem alterar dados de negócio.
+
 ## Catálogo
 
 | ID | Modelo | Implementação | Situação e uso |
