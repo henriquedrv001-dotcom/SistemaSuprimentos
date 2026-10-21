@@ -1,0 +1,306 @@
+/* Optional visual theme. Only the theme preference is persisted. */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.theme-toggle:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #83b9ff;
+  --primary-hover: #acd0ff;
+  --primary-light: #203752;
+  --text: #e4edf7;
+  --text-secondary: #b1c1d4;
+  --text-muted: #a3b2c5;
+  --background-soft: #192638;
+  --gray-soft: #233145;
+  --gray-hover: #2b3d54;
+  --border: #34445b;
+  --border-strong: #475c77;
+  --success: #8fe0b5;
+  --success-light: #163e30;
+  --warning: #f0cf82;
+  --warning-light: #3c321d;
+  --focus-ring: 0 0 0 3px #83b9ff35;
+  --shadow-menu: 0 16px 44px #0008;
+  --night-canvas: #0e1623;
+  --night-surface: #162131;
+  --night-field: #101b2b;
+  --night-action: #205fae;
+  --night-action-hover: #2c70c3;
+  --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b1c1d4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background: var(--night-canvas);
+}
+:root[data-theme="dark"] :is(body, .modern-shell, .main-area, .page-content) {
+  background: var(--night-canvas);
+  color: var(--text);
+}
+
+/* Paint overrides are deliberately confined to the dark theme, preserving legacy sizes and layout. */
+:root[data-theme="dark"]
+  :is(
+    .sidebar,
+    .topbar,
+    .panel,
+    .metric-card,
+    .orders-group,
+    .order-status-bar,
+    .order-facts,
+    .dl-orders-metrics > div,
+    .dl-control-indicator,
+    .tasks-counts > div,
+    .task-card,
+    .tasks-card,
+    .tasks-column,
+    .kanban-column,
+    .cycle-summary,
+    .cycle-dates-summary,
+    .cycle-group-card,
+    .item-edit-dialog,
+    .item-detail-footer,
+    .ui-data-dialog-footer,
+    .dl-control-item-footer,
+    .dl-workflow-step,
+    .dl-workflow-body,
+    .dl-stage-block,
+    .dl-final-summary,
+    .dl-contract-summary > div,
+    .dl-order-document,
+    .dl-order-document-card,
+    .dl-history-detail
+  ) {
+  background: var(--night-surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text);
+}
+:root[data-theme="dark"]
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea,
+    .ui-search-control,
+    .ui-select-trigger,
+    .catalog-search,
+    .ui-select-popup
+  ) {
+  background-color: var(--night-field) !important;
+  color: var(--text) !important;
+  border-color: var(--border-strong) !important;
+}
+:root[data-theme="dark"] :is(input, textarea)::placeholder {
+  color: #9aacbf;
+  opacity: 1;
+}
+:root[data-theme="dark"]
+  :is(input, textarea, select):is(:disabled, [readonly]) {
+  background-color: #1b293b !important;
+  color: var(--text-secondary) !important;
+}
+:root[data-theme="dark"] input[type="checkbox"] {
+  accent-color: #6fabff;
+  border-color: var(--border-strong);
+}
+:root[data-theme="dark"] input[type="checkbox"]:checked {
+  background-color: var(--night-action);
+  border-color: #6fabff;
+}
+:root[data-theme="dark"] :is(input, select, textarea, button):focus-visible {
+  outline-color: var(--primary);
+}
+
+:root[data-theme="dark"] :is(.table-wrap, table, tbody tr) {
+  background-color: var(--night-surface) !important;
+  border-color: var(--border) !important;
+}
+:root[data-theme="dark"] table :is(th, td) {
+  border-color: var(--border) !important;
+}
+:root[data-theme="dark"] table th {
+  background: #1d2c40 !important;
+  color: #c6d4e5 !important;
+}
+:root[data-theme="dark"] table td {
+  background: inherit !important;
+}
+:root[data-theme="dark"] tbody tr:hover {
+  background: #1c3048 !important;
+}
+:root[data-theme="dark"]
+  tbody
+  tr:is(.selected, .is-selected, [aria-selected="true"]),
+:root[data-theme="dark"] tbody tr:has(input[type="checkbox"]:checked) {
+  background: #213d5c !important;
+}
+:root[data-theme="dark"] tfoot tr {
+  background: var(--primary-light) !important;
+}
+
+:root[data-theme="dark"]
+  :is(
+    .primary-button,
+    .ui-segmented > button[aria-pressed="true"],
+    .brand-mark
+  ) {
+  background: var(--night-action) !important;
+  border-color: var(--night-action) !important;
+  color: #fff !important;
+}
+:root[data-theme="dark"] .primary-button:hover:not(:disabled) {
+  background: var(--night-action-hover) !important;
+  border-color: var(--night-action-hover) !important;
+}
+:root[data-theme="dark"] .primary-button.is-saved:disabled {
+  background: var(--gray-soft) !important;
+  border-color: var(--border) !important;
+  color: var(--text-muted) !important;
+}
+:root[data-theme="dark"]
+  :is(
+    .secondary-button,
+    .icon-button,
+    .catalog-action-menu,
+    .type-filter-options
+  ) {
+  background: var(--night-surface) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--primary) !important;
+}
+:root[data-theme="dark"]
+  :is(.secondary-button, .icon-button):hover:not(:disabled) {
+  background: var(--primary-light) !important;
+}
+:root[data-theme="dark"] :is(a, .text-button) {
+  color: var(--primary);
+}
+:root[data-theme="dark"] .ui-select-option {
+  background: transparent;
+  color: var(--text);
+}
+:root[data-theme="dark"]
+  .ui-select-option:is([aria-selected="true"], [data-active="true"]) {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+:root[data-theme="dark"] :is(.ui-segmented, .order-type, .mode-pill) {
+  background: var(--background-soft);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+:root[data-theme="dark"] .ui-segmented > button {
+  color: var(--text-secondary);
+}
+:root[data-theme="dark"]
+  .ui-segmented
+  > button:hover:not([aria-pressed="true"]) {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+:root[data-theme="dark"] :is(.nav-item.active, .order-type.active) {
+  background: var(--primary-light) !important;
+  border-color: #456993;
+  color: var(--primary);
+}
+:root[data-theme="dark"]
+  :is(.nav-item:hover:not(:disabled), .order-type:hover) {
+  background: #1b3048;
+  color: var(--primary);
+}
+
+:root[data-theme="dark"]
+  :is(
+    .dl-budget-summary,
+    .dl-orders-total,
+    .dl-control-balance-value,
+    .dl-control-item-balance-value,
+    .dl-schedule-validity,
+    .dl-schedule-note,
+    .dl-planning-summary,
+    .dl-material-summary,
+    .dl-request-summary
+  ) {
+  background: var(--primary-light) !important;
+  color: var(--primary);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] :is(.tag-green, [data-state="complete"]) {
+  background: var(--success-light) !important;
+  color: var(--success) !important;
+}
+:root[data-theme="dark"]
+  :is(.tag-amber, [data-state="warning"], .dl-budget-summary-pending) {
+  background: var(--warning-light) !important;
+  color: var(--warning) !important;
+}
+:root[data-theme="dark"]
+  :is(.tag-neutral, [data-state="draft"], [data-state="inactive"]) {
+  background: var(--gray-soft) !important;
+  color: var(--text-secondary) !important;
+}
+:root[data-theme="dark"] [data-state="active"] {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+:root[data-theme="dark"] :is(.catalog-error, .order-overdue, .form-error) {
+  color: #ffadb2 !important;
+}
+:root[data-theme="dark"] .item-edit-dialog::backdrop {
+  background: #030812b8;
+}
+:root[data-theme="dark"]
+  :is(
+    .tasks-preview-note,
+    .tasks-search > span,
+    .type-filter-trigger,
+    .type-filter-trigger small,
+    .type-filter-popover,
+    .page-more-actions > div,
+    .page-more-actions [role="menu"],
+    .modal,
+    .destination-option,
+    .edit-item-panel
+  ) {
+  background: var(--night-surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .topbar-actions {
+    gap: 8px;
+  }
+  .modern-shell .breadcrumbs {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+}
+@media print {
+  .theme-toggle {
+    display: none;
+  }
+}

@@ -30,6 +30,7 @@ import { buildImportPreview, planImportUpdates } from "./services/catalogImport"
 import type { ImportPreview, ImportSelection } from "./services/catalogImport";
 import CatalogActionMenu from "./components/CatalogActionMenu";
 import CatalogTypeFilter, { readCatalogTypeView } from "./components/CatalogTypeFilter";
+import ThemeToggle from "./components/ThemeToggle";
 
 function readLocalCollection<T>(key: string, fallback: T[]): T[] {
   try {
@@ -458,7 +459,7 @@ function App() {
       <main className="main-area" id="workspace-content" tabIndex={-1}>
         <header className="topbar">
           <div className="breadcrumbs" aria-label="Localização">Suprimentos <span>/</span> {navigationLocation(section).label}</div>
-          <div className="user-chip"><div className="avatar">US</div><span>Usuário de teste</span><ChevronDown size={15} /></div>
+          <div className="topbar-actions"><ThemeToggle /><div className="user-chip"><div className="avatar">US</div><span>Usuário de teste</span><ChevronDown size={15} /></div></div>
         </header>
 
         <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
