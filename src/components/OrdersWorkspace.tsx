@@ -1,3 +1,9 @@
+import DLMovementWorkspace from "./DLMovementWorkspace";
+import {
+  newMovementOrder,
+  saveMovementDraft,
+  confirmMovementDistribution,
+} from "../services/dlMovement";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import type {
@@ -99,6 +105,7 @@ export default function OrdersWorkspace({
   const [activeId, setActiveId] = useState<string | null>(
     initialOrderId || null,
   );
+  const [movementInputDirty, setMovementInputDirty] = useState(false);
   const [choosingType, setChoosingType] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [baseline, setBaseline] = useState("");
@@ -123,13 +130,15 @@ export default function OrdersWorkspace({
   const [action, setAction] = useState<OrderAction | null>(null);
   const active = workspace.orders.find((order) => order.id === activeId);
   const dirty =
-    !!editing &&
-    (JSON.stringify(editing) !== baseline ||
-      editing.lines.some(
-        (line) =>
-          quantities[line.id] !== decimalInput(line.quantityMilli, 3) ||
-          prices[line.id] !== decimalInput(line.unitPriceCents, 2),
-      ));
+    movementInputDirty ||
+    (!!editing &&
+      (JSON.stringify(editing) !== baseline ||
+        (!editing.movementFlow &&
+          editing.lines.some(
+            (line) =>
+              quantities[line.id] !== decimalInput(line.quantityMilli, 3) ||
+              prices[line.id] !== decimalInput(line.unitPriceCents, 2),
+          ))));
   useEffect(() => {
     onDirtyChange(dirty);
     const prevent = (event: BeforeUnloadEvent) => {
@@ -144,8 +153,12 @@ export default function OrdersWorkspace({
   }, [dirty, onDirtyChange]);
   function begin(order?: Order, creationKind?: OrderKind) {
     const next = structuredClone(
-      order || newOrder(creationKind || kind || "PCD", DEFAULT_DL_REQUESTER),
+      order ||
+        ((creationKind || kind) === "MOV"
+          ? newMovementOrder(DEFAULT_DL_REQUESTER)
+          : newOrder(creationKind || kind || "PCD", DEFAULT_DL_REQUESTER)),
     );
+    setMovementInputDirty(false);
     setEditing(next);
     setBaseline(JSON.stringify(next));
     setActiveId(next.id);
@@ -180,6 +193,7 @@ export default function OrdersWorkspace({
       !window.confirm("Descartar as alterações não salvas deste pedido?")
     )
       return;
+    setMovementInputDirty(false);
     setEditing(null);
     setActiveId(null);
     setPicker(false);
@@ -414,6 +428,49 @@ export default function OrdersWorkspace({
       : total
         ? formatMoney(total.cents)
         : "—";
+  if (shown?.movementFlow)
+    return (
+      <DLMovementWorkspace
+        key={`${shown.id}:${editing ? "edit" : "view"}`}
+        order={shown}
+        editable={!!editing}
+        workspace={workspace}
+        context={context}
+        error={storageError || error}
+        blocked={!!storageError}
+        message={message}
+        onChange={setEditing}
+        onLocalDirtyChange={setMovementInputDirty}
+        onBack={back}
+        onEdit={() => begin(active)}
+        onCommit={commit}
+        onSave={(confirm) => {
+          if (!editing) return;
+          if (
+            commit(
+              (current, ctx) => {
+                const next = saveMovementDraft(current, editing, ctx);
+                return confirm
+                  ? confirmMovementDistribution(
+                      next,
+                      editing.id,
+                      editing.requester,
+                      ctx,
+                    )
+                  : next;
+              },
+              confirm
+                ? "Distribuição confirmada. Aguardando entrada da NF."
+                : "Distribuição salva. Quantidades reservadas na DL.",
+            )
+          ) {
+            setMovementInputDirty(false);
+            setEditing(null);
+            setActiveId(editing.id);
+          }
+        }}
+      />
+    );
   const Heading = allowCreate && !shown ? "h1" : "h2";
   return (
     <section
@@ -454,7 +511,8 @@ export default function OrdersWorkspace({
                   <Save size={16} /> Salvar rascunho
                 </button>
               ) : (
-                active?.status === "Rascunho" && (
+                active?.status === "Rascunho" &&
+                active.kind !== "MOV" && (
                   <button
                     className="primary-button"
                     disabled={!!storageError}
@@ -498,6 +556,13 @@ export default function OrdersWorkspace({
         <p className="order-local-note">
           Salvar o PDL reserva seus materiais. Receber baixa apenas o que
           chegou; o restante fica reservado até receber ou encerrar a entrega.
+        </p>
+      )}
+      {active?.kind === "MOV" && !active.movementFlow && (
+        <p className="notice">
+          Registro anterior ao fluxo por áreas, preservado com seus dados
+          originais. Para uma nova distribuição com saldo de DL, use Novo pedido
+          → DL PARA ENTRADA E SAÍDA.
         </p>
       )}
       {active?.kind === "PDL" && !active.reservationActivated && (
@@ -729,7 +794,7 @@ export default function OrdersWorkspace({
                         <span
                           className={`tag ${order.status === "Concluído" ? "tag-green" : order.status === "Recebimento parcial" ? "tag-amber" : "tag-neutral"}`}
                         >
-                          {order.status}
+                          {order.movementFlow?.phase || order.status}
                         </span>
                       </td>
                       <td>
@@ -767,7 +832,7 @@ export default function OrdersWorkspace({
               <div className="order-status-bar">
                 <span className="tag tag-neutral">{active.status}</span>
                 <div className="dl-orders-actions">
-                  {active.status === "Rascunho" && (
+                  {active.status === "Rascunho" && active.kind !== "MOV" && (
                     <button
                       className="primary-button"
                       disabled={!!storageError}
@@ -1736,7 +1801,7 @@ function NewOrderDialog({
     PFR: "Selecione materiais do catálogo e informe a justificativa para uso do fundo rotativo.",
     PDL: "Selecione materiais de uma DL vigente. Ao salvar o rascunho, as quantidades ficam reservadas.",
     ATA: "Informe a ata ou contrato, o fornecedor e os materiais solicitados.",
-    MOV: "Informe se é entrada ou saída e selecione os materiais.",
+    MOV: "Distribua os itens de uma DL com saldo entre as áreas, confira a conta e acompanhe a entrada da NF e as solicitações.",
   };
   const chosen = orderKinds.find((kind) => kind === selected);
   return (

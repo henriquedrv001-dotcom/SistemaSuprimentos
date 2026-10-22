@@ -1,0 +1,328 @@
+.dl-movement {
+  min-width: 0;
+  color: var(--text);
+}
+.dl-movement h1 {
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+.dl-movement h2 {
+  font-size: 16px;
+  margin: 0 0 14px;
+}
+.dl-movement h3 {
+  font-size: 14px;
+  margin: 0;
+}
+.movement-heading,
+.movement-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.movement-actions {
+  justify-content: flex-end;
+}
+.movement-heading p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 4px 0;
+}
+.movement-steps {
+  display: flex;
+  list-style: none;
+  margin: 22px 0;
+  padding: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.movement-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--background-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.movement-steps li[aria-current] {
+  color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 700;
+}
+.movement-steps li > span {
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  padding: 1px 5px;
+}
+.movement-panel {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 20px 0;
+  min-width: 0;
+  background: var(--movement-surface, #fff);
+}
+:root[data-theme="dark"] .movement-panel {
+  --movement-surface: #162131;
+}
+.movement-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.dl-movement label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 0;
+}
+.dl-movement input:not([type="checkbox"]),
+.dl-movement textarea {
+  min-width: 0;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--movement-field, #fff);
+  color: var(--text);
+  font: inherit;
+  box-sizing: border-box;
+}
+:root[data-theme="dark"] .dl-movement {
+  --movement-field: #101b2b;
+}
+.dl-movement input:focus-visible,
+.dl-movement textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.dl-movement input[aria-invalid="true"] {
+  border-color: #c34848;
+}
+.movement-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.movement-summary > div {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  background: var(--background-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+.movement-summary span,
+.movement-summary small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.movement-summary strong {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.movement-note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.movement-area-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.movement-area-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.movement-add-area {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  max-width: 650px;
+}
+.movement-add-area label {
+  flex: 1;
+}
+.movement-areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.movement-areas > article {
+  border: 1px solid var(--border);
+  background: var(--background-soft);
+  border-radius: 8px;
+  padding: 14px;
+}
+.movement-areas header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.movement-areas p,
+.movement-areas small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.movement-areas .movement-matched {
+  color: var(--primary);
+  font-weight: 600;
+}
+.movement-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  font-size: 12px;
+}
+.movement-facts dt {
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.movement-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.movement-source-list {
+  max-height: 290px;
+  overflow-y: auto;
+  margin: 14px 0 20px;
+}
+.movement-source-list > div {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+.dl-movement small {
+  display: block;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.dl-movement .table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-top: 16px;
+}
+.dl-movement table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+.dl-movement th {
+  background: var(--background-soft);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-align: left;
+}
+.dl-movement th,
+.dl-movement td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.movement-table td:first-child {
+  min-width: 220px;
+}
+.movement-table td {
+  min-width: 100px;
+}
+.movement-table td label {
+  font-size: 10px;
+}
+.movement-request {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.movement-entry {
+  border-color: var(--primary);
+}
+.movement-entry > .movement-actions {
+  margin-top: 20px;
+}
+.movement-history {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .movement-fields,
+  .movement-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .dl-movement h1 {
+    font-size: 19px;
+  }
+  .movement-fields,
+  .movement-facts,
+  .movement-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .movement-panel {
+    padding: 14px;
+  }
+  .movement-add-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .movement-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .movement-source-list > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .movement-heading > div,
+  .movement-heading .movement-actions {
+    width: 100%;
+  }
+  .movement-steps {
+    gap: 6px;
+  }
+}
+
+.movement-quantity-field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dl-movement .ui-search-control input {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.movement-table th:last-child,
+.movement-table td:last-child {
+  min-width: 50px;
+}
+.movement-quantity-field {
+  position: relative;
+}

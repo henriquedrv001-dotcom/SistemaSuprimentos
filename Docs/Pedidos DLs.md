@@ -10,11 +10,13 @@ Pedidos mantém a divisão Estoque (CDs, FRs e DLs) e Compras (ATA/Contrato e Ma
 - FR: seleciona materiais ativos do catálogo; exige justificativa ao encaminhar. O ciclo é opcional.
 - DL: seleciona origens liberadas e vigentes. A identidade é o par ID da DL + ID da contratação, com unidade, fornecedor, preço e MXM protegidos. Rascunhos podem reunir fornecedores; para encaminhar, precisam conter um único fornecedor. Não há separação automática.
 - ATA/Contrato: informa referência da ata/contrato e fornecedor; materiais vêm do catálogo. Ainda não há um cadastro mestre de atas nem leitura de seu saldo oficial.
-- DL PARA ENTRADA E SAÍDA (MOV): identifica Entrada ou Saída; a saída usa a ação Registrar atendimento. Não altera o estoque físico ou contábil do MXM.
+- DL PARA ENTRADA E SAÍDA (MOV): conta do fornecedor e distribuição por área, usando somente origens de uma DL vigente com saldo. Reserva ao salvar; baixa na confirmação da entrada da NF; depois acompanha solicitações e atendimentos por área sem nova baixa. O fluxo e as regras estão em [DL entrada e saida.md](./DL%20entrada%20e%20saida.md).
 
 Solicitante recebe sugestão editável do nome padrão. DL PARA ENTRADA E SAÍDA não apresenta vínculo de ciclo. Nenhum formulário de pedido apresenta Observações, inclusive nas confirmações de etapa; motivos obrigatórios de devolução e cancelamento são mantidos. Requisição MXM pertence apenas à Transferência e só pode ser incluída depois de salvar seus itens, ao editar o rascunho ou registrar o envio. Campos históricos retirados da interface permanecem nos dados existentes. Preços não informados deixam o valor explicitamente parcial; não são apresentados como orçamento completo. Quantidades têm até três casas decimais, preços até duas; totais arredondam centavos por linha.
 
 ## Etapas
+
+As etapas abaixo descrevem Transferência, Fundo rotativo, DL estocável e o formato anterior de pedidos. Novas DLs para entrada e saída usam Distribuição → Entrada da NF → Solicitações das áreas → Concluído, conforme documento específico.
 
 Rascunho → Em análise → Aprovado → Enviado → Recebimento parcial → Concluído. Devolução da análise ou aprovação retorna para rascunho, com motivo obrigatório e preservação de número/histórico. Envio e recebimento são registros manuais: o aplicativo não envia mensagens ao fornecedor nem integra com MXM. Aprovação registra o nome informado, sem autenticação nem autorização por perfil.
 

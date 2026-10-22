@@ -77,7 +77,7 @@ export default function DLControl({
     orders.orders
       .filter(
         (order) =>
-          order.kind === "PDL" &&
+          (order.kind === "PDL" || !!order.movementFlow) &&
           order.code &&
           order.lines.some(
             (line) => line.planId === planId && line.originId === originId,
@@ -173,8 +173,9 @@ export default function DLControl({
               </p>
               <p className="dl-control-note">
                 Saldo disponível: contratado menos recebimentos, reservas dos
-                pedidos DLs e baixas manuais locais. Movimentações externas e
-                consumos anteriores não estão integrados ao MXM.
+                pedidos de DL estocável e entrada e saída, e baixas manuais
+                locais. Movimentações externas e consumos anteriores não estão
+                integrados ao MXM.
               </p>
             </div>
           </div>
@@ -344,7 +345,7 @@ export default function DLControl({
                   {orders.orders
                     .filter(
                       (order) =>
-                        order.kind === "PDL" &&
+                        (order.kind === "PDL" || !!order.movementFlow) &&
                         order.lines.some((line) => line.planId === selected.id),
                     )
                     .map((order) => (
@@ -361,7 +362,7 @@ export default function DLControl({
                           }
                         </td>
                         <td>{date(order.expectedDelivery)}</td>
-                        <td>{order.status}</td>
+                        <td>{order.movementFlow?.phase || order.status}</td>
                         {onOpenOrder && (
                           <td>
                             <button
@@ -376,7 +377,7 @@ export default function DLControl({
                     ))}
                   {!orders.orders.some(
                     (order) =>
-                      order.kind === "PDL" &&
+                      (order.kind === "PDL" || !!order.movementFlow) &&
                       order.lines.some((line) => line.planId === selected.id),
                   ) && (
                     <tr>
@@ -584,7 +585,7 @@ export default function DLControl({
                     <td
                       title={
                         lastOrder(plan.id, origin.id)?.status ||
-                        "Nenhum pedido PDL registrado"
+                        "Nenhum pedido de DL registrado"
                       }
                     >
                       {lastOrder(plan.id, origin.id)?.code || "—"}

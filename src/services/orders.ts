@@ -1,3 +1,4 @@
+import { validateMovementShape } from "./dlMovementMath.ts";
 import { orderKinds, orderStatuses } from "../types/orders.ts";
 import type {
   Order,
@@ -175,12 +176,13 @@ export function readOrderWorkspace(raw: string | null): OrderWorkspace {
         fail();
       lineIds.add(line.id);
       const key =
-        order.kind === "PDL"
+        order.kind === "PDL" || !!order.movementFlow
           ? originKey(line.planId, line.originId)
           : line.itemId;
       if (
         sources.has(key) ||
-        (order.kind === "PDL" && (!line.planId || !line.originId))
+        ((order.kind === "PDL" || !!order.movementFlow) &&
+          (!line.planId || !line.originId))
       )
         fail();
       sources.add(key);
@@ -201,6 +203,7 @@ export function readOrderWorkspace(raw: string | null): OrderWorkspace {
       )
         fail();
     }
+    if (order.movementFlow) validateMovementShape(order);
     const events = new Set<string>();
     for (const record of order.events) {
       if (
@@ -403,7 +406,11 @@ export function orderBalanceUsage(
     usage.set(key, value);
   };
   for (const order of workspace.orders) {
-    if (order.kind !== "PDL" || order.id === excludeOrderId) continue;
+    if (
+      (order.kind !== "PDL" && !order.movementFlow) ||
+      order.id === excludeOrderId
+    )
+      continue;
     const held =
       order.reservationActivated &&
       !["Cancelado", "Concluído"].includes(order.status);
@@ -569,6 +576,10 @@ export function saveOrderDraft(
   const previous = workspace.orders.find(
     (candidate) => candidate.id === order.id,
   );
+  if (order.movementFlow || previous?.movementFlow)
+    throw new Error(
+      "Use o fluxo de distribuição, NF e solicitações das áreas.",
+    );
   if (
     order.status !== "Rascunho" ||
     (previous && previous.status !== "Rascunho")
@@ -630,6 +641,8 @@ export function transitionOrder(
 ): OrderWorkspace {
   const previous = workspace.orders.find((order) => order.id === id);
   if (!previous) throw new Error("Pedido não encontrado.");
+  if (previous.movementFlow)
+    throw new Error("Use as etapas de entrada da NF e solicitações das áreas.");
   if (!payload.actor.trim())
     throw new Error("Informe o responsável pelo registro.");
   const order = structuredClone(previous);
@@ -779,7 +792,7 @@ export function addManualDLAdjustment(
   if (!row) throw new Error("A origem desta baixa não está disponível.");
   if (input.quantityMilli > row.origin.availableMilli)
     throw new Error(
-      "A baixa supera o saldo livre. Quantidades reservadas em PDLs não podem ser baixadas manualmente.",
+      "A baixa supera o saldo livre. Quantidades reservadas nos pedidos de DL não podem ser baixadas manualmente.",
     );
   const next = {
     ...workspace,

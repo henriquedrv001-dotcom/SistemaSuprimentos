@@ -1,3 +1,4 @@
+import type { DLMovementFlow } from "./dlMovement";
 export const orderKinds = ["PCD", "PFR", "PDL", "ATA", "MOV"] as const;
 export type OrderKind = (typeof orderKinds)[number];
 export const orderStatuses = [
@@ -50,6 +51,7 @@ export type Order = {
   movement: "" | "Entrada" | "Saída";
   reason: string;
   notes: string;
+  movementFlow?: DLMovementFlow;
   lines: OrderLine[];
   events: OrderEvent[];
   createdAt: string;
