@@ -2,6 +2,8 @@
 
 ## Áreas e comportamento
 
+A escolha fica no seletor “Selecione o tipo de pedido”, no cabeçalho. As opções de Estoque são Transferência (PCD), Fundo rotativo (PFR) e Dispensa de licitação vigente (PDL); Compras conserva ATA/Contrato e Material Entrada e Saída. Nomes resumidos são apenas apresentação: códigos, numeração e dados salvos permanecem os mesmos.
+
 Pedidos mantém a divisão Estoque (CDs, FRs e DLs) e Compras (ATA/Contrato e Material Entrada e Saída). Cada tipo tem listagem, busca por referências e materiais, filtros por situação/fornecedor/ciclo, ordenação, indicadores e edição na área principal. Acompanhamento usa os mesmos registros, com visões Todos, Em aberto, Parciais, Atrasados e Concluídos. Não são inseridos pedidos de demonstração.
 
 - CD: seleciona materiais presentes no planejamento do ciclo escolhido. O planejamento é uma estimativa e não representa estoque físico.

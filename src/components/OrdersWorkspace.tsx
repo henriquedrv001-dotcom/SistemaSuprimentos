@@ -420,7 +420,7 @@ export default function OrdersWorkspace({
         <div>
           <h2 id="orders-workspace-title">
             {editing
-              ? `Preparar ${orderKindNames[editing.kind].replace("Pedidos ", "pedido ")}`
+              ? `Preparar solicitação · ${orderKindNames[editing.kind]}`
               : active
                 ? label(active)
                 : kind

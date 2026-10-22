@@ -14,6 +14,7 @@ Por orientação do usuário, toda alteração de interface a partir desta etapa
 | UI-FLT-02 | Busca com ícone e rótulo | `src/components/ui/FilterSearch.tsx` | Aplicado às buscas de Planejamento e Controle. |
 | UI-BAR-01 | Grade de filtros alinhados | `.ui-filterbar` em `InterfaceModels.css` | Rótulos acima, caixas na mesma linha e quebra responsiva pela largura disponível. |
 | UI-NAV-01 | Seletor segmentado | `src/components/ui/SegmentedControl.tsx` | Planejamento/Controle no cabeçalho, ao lado de Nova DL. Referência: imagem 5 do usuário. |
+| UI-NAV-02 | Seletor de tipo de pedido | `OrdersNavigation.tsx` com `FilterSelect` | Menu único no cabeçalho, com grupos Estoque e Compras e nomes resumidos; responsivo e compatível com os dois temas. |
 | UI-BTN-01 | Ação principal azul | `.primary-button` existente | Base atual, reutilizada em Nova DL; nenhum novo comportamento ou redesenho de todos os botões nesta rodada. |
 | UI-TBL-01 | Tabela compacta de processos | `src/components/dl/Acquisitions.css` | Base atual com cabeçalhos alinhados e rolagem local; colunas dependem da função. |
 | UI-CHK-01 | Checkbox quadrado | `.ui-checkbox` em `InterfaceModels.css` | 18 × 18 px, azul ao marcar, foco visível e estado parcial; aplicado ao seletor de materiais da DL. |
@@ -87,3 +88,7 @@ UI-DLG-01: `dialog.item-edit-dialog.ui-data-dialog`, com filhos `.ui-data-dialog
 ## Acesso ao registro sem repetir documentos
 
 Na consulta de Contratação, apresentar apenas **Consultar documentos do pedido** quando houver documentos. O atalho deve navegar para Processo, expandir Registro do pedido e posicionar/focar seu cabeçalho. A visualização e o download ficam no registro original. Planos antigos sem documentos recebem uma indicação textual, sem atalho sem destino. Navegar/consultar não pode regravar o plano, mudar etapa, conceder permissões nem duplicar ou excluir arquivos. `DLWorkflowStep.revealKey` permite a abertura pontual da etapa sem impedir seu recolhimento manual.
+
+## UI-NAV-02 — tipo de pedido
+
+Substitui as caixas de tipos por um seletor com rótulo “Selecione o tipo de pedido”. Estoque contém Transferência, Fundo rotativo e Dispensa de licitação vigente. Compras contém ATA/Contrato e Material Entrada e Saída. Os títulos dos grupos não são opções selecionáveis. Preservar a confirmação ao sair de uma edição não salva, os códigos internos e os registros existentes. Em telas estreitas, o seletor ocupa a linha inteira. Validado nos temas claro e noturno.

@@ -1,4 +1,6 @@
 /* Reusable models. See Docs/Modelos de interface.md. No global select overrides. */
+.ui-select-group-heading { padding: 10px 10px 5px; font-size: 10px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--text-secondary); }
+.ui-select-option + .ui-select-group-heading { margin-top: 5px; border-top: 1px solid var(--border); }
 /* UI-DLG-01: collections and detailed reviews use the viewport, never a drawer. */
 .modern-shell .item-edit-dialog.ui-data-dialog[open] {
   position: fixed;

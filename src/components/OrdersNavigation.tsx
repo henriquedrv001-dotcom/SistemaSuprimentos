@@ -1,26 +1,18 @@
 import type { AppSection } from "./AppSidebar";
-const groups: {
-  label: string;
-  items: { label: string; section: AppSection }[];
+import FilterSelect from "./ui/FilterSelect";
+import { orderKindNames } from "../services/orders";
+import "./OrdersNavigation.css";
+
+const types: {
+  kind: keyof typeof orderKindNames;
+  value: AppSection;
+  group: string;
 }[] = [
-  {
-    label: "Estoque",
-    items: [
-      { label: "Pedidos CDs", section: "Pedidos diretos" },
-      { label: "Pedidos FRs", section: "Pedidos FRs" },
-      { label: "Pedidos DLs", section: "Pedidos DLs" },
-    ],
-  },
-  {
-    label: "Compras",
-    items: [
-      { label: "Pedidos ATA/Contrato", section: "ATA / Contratos" },
-      {
-        label: "Pedidos Material Entrada e Saída",
-        section: "Pedidos Material Entrada e Saída",
-      },
-    ],
-  },
+  { kind: "PCD", value: "Pedidos diretos", group: "Estoque" },
+  { kind: "PFR", value: "Pedidos FRs", group: "Estoque" },
+  { kind: "PDL", value: "Pedidos DLs", group: "Estoque" },
+  { kind: "ATA", value: "ATA / Contratos", group: "Compras" },
+  { kind: "MOV", value: "Pedidos Material Entrada e Saída", group: "Compras" },
 ];
 export default function OrdersNavigation({
   section,
@@ -30,36 +22,28 @@ export default function OrdersNavigation({
   onNavigate: (section: AppSection) => void;
 }) {
   return (
-    <>
-      <div className="page-heading">
-        <div>
-          <h1>Pedidos</h1>
-          <p className="muted">
-            Consulte cada tipo de pedido na sua área de execução.
-          </p>
-        </div>
+    <div className="page-heading orders-page-heading">
+      <div>
+        <h1>Pedidos</h1>
+        <p className="muted">
+          Consulte cada tipo de pedido na sua área de execução.
+        </p>
       </div>
-      <div className="orders-navigation">
-        {groups.map((group) => (
-          <section className="orders-group" key={group.label}>
-            <h2>{group.label}</h2>
-            <nav aria-label={`Pedidos de ${group.label}`}>
-              {group.items.map((item) => (
-                <button
-                  type="button"
-                  key={item.section}
-                  className={`order-type ${section === item.section ? "active" : ""}`}
-                  aria-label={item.label}
-                  aria-current={section === item.section ? "page" : undefined}
-                  onClick={() => onNavigate(item.section)}
-                >
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
-          </section>
-        ))}
+      <div className="order-type-picker">
+        <FilterSelect
+          label="Selecione o tipo de pedido"
+          value={section}
+          options={types.map((type) => ({
+            value: type.value,
+            label: orderKindNames[type.kind],
+            group: type.group,
+          }))}
+          onChange={(value) => {
+            const type = types.find((type) => type.value === value);
+            if (type && type.value !== section) onNavigate(type.value);
+          }}
+        />
       </div>
-    </>
+    </div>
   );
 }

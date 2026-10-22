@@ -14,11 +14,11 @@ import { contractStatus } from "./dlContract.ts";
 
 export const orderWorkspaceKey = "suprimentos:orders:v1";
 export const orderKindNames: Record<OrderKind, string> = {
-  PCD: "Pedidos CDs",
-  PFR: "Pedidos FRs",
-  PDL: "Pedidos DLs",
-  ATA: "Pedidos ATA/Contrato",
-  MOV: "Pedidos Material Entrada e Saída",
+  PCD: "Transferência",
+  PFR: "Fundo rotativo",
+  PDL: "Dispensa de licitação vigente",
+  ATA: "ATA/Contrato",
+  MOV: "Material Entrada e Saída",
 };
 export const emptyOrderWorkspace = (): OrderWorkspace => ({
   version: 1,

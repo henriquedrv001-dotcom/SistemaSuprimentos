@@ -1,10 +1,22 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 import "./InterfaceModels.css";
 
-export type FilterOption = { value: string; label: string; disabled?: boolean };
+export type FilterOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  group?: string;
+};
 
 /** UI-FLT-01: select-only combobox. Filters values without persisting data. */
 export default function FilterSelect({
@@ -216,24 +228,30 @@ export default function FilterSelect({
             onMouseDown={(event) => event.preventDefault()}
           >
             {options.map((option, i) => (
-              <div
-                key={option.value}
-                id={`${id}-option-${i}`}
-                role="option"
-                aria-selected={option.value === value}
-                aria-disabled={option.disabled || undefined}
-                data-active={i === active}
-                className="ui-select-option"
-                onPointerMove={() => {
-                  if (!option.disabled) setActive(i);
-                }}
-                onClick={() => choose(i)}
-              >
-                <span>{option.label}</span>
-                {option.value === value && (
-                  <Check size={15} aria-hidden="true" />
+              <Fragment key={option.value}>
+                {option.group && option.group !== options[i - 1]?.group && (
+                  <div className="ui-select-group-heading" aria-hidden="true">
+                    {option.group}
+                  </div>
                 )}
-              </div>
+                <div
+                  id={`${id}-option-${i}`}
+                  role="option"
+                  aria-selected={option.value === value}
+                  aria-disabled={option.disabled || undefined}
+                  data-active={i === active}
+                  className="ui-select-option"
+                  onPointerMove={() => {
+                    if (!option.disabled) setActive(i);
+                  }}
+                  onClick={() => choose(i)}
+                >
+                  <span>{option.label}</span>
+                  {option.value === value && (
+                    <Check size={15} aria-hidden="true" />
+                  )}
+                </div>
+              </Fragment>
             ))}
             {!options.length && (
               <div className="ui-select-empty">Nenhuma opção disponível</div>
