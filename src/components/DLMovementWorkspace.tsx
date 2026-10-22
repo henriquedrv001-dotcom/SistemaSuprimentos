@@ -16,6 +16,7 @@ import {
 import {
   emptyMovementFlow,
   movementTotals,
+  movementPlanIds,
   movementAreaSuggestions,
   allocatedMilli,
   areaRequestedMilli,
@@ -27,6 +28,7 @@ import {
   parseScaledInput,
 } from "../services/dlPlanning";
 import FilterSelect from "./ui/FilterSelect";
+import DLMoneyInput from "./dl/DLMoneyInput";
 import FilterSearch from "./ui/FilterSearch";
 import "./DLMovementWorkspace.css";
 
@@ -114,6 +116,47 @@ export default function DLMovementWorkspace({
         : "Revise os valores da distribuição.";
     totals = movementTotals(emptyMovementFlow(), []);
   }
+  const selectedPlanIds = movementPlanIds(flow);
+  const supplierOptions = (ids: string[]) =>
+    ids.length
+      ? [
+          ...new Set(
+            sources
+              .filter((row) => ids.includes(row.plan.id))
+              .map((row) => row.origin.supplier),
+          ),
+        ].filter((supplier) =>
+          ids.every((id) =>
+            sources.some(
+              (row) => row.plan.id === id && row.origin.supplier === supplier,
+            ),
+          ),
+        )
+      : [];
+  const commonSuppliers = supplierOptions(selectedPlanIds);
+  const plansWithBalance = [
+    ...new Map(sources.map((row) => [row.plan.id, row.plan])).values(),
+  ];
+  const fold = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("pt-BR");
+  const selectedSources = sources.filter(
+    (row) =>
+      selectedPlanIds.includes(row.plan.id) &&
+      (!order.supplier || row.origin.supplier === order.supplier),
+  );
+  const visibleSources = selectedSources.filter((row) =>
+    fold(
+      `${row.item?.description} ${row.item?.code} ${row.plan.code} ${row.origin.supplier}`,
+    ).includes(fold(query.trim())),
+  );
+  const lineTitle = (line: OrderLine) =>
+    order.lines.filter((other) => other.description === line.description)
+      .length > 1
+      ? `${line.description} · ${line.dlCode} · Pedido ${line.mxmOrder}`
+      : line.description;
   const patch = (changes: Partial<Order>, nextFlow?: DLMovementFlow) =>
     onChange({ ...order, ...changes, movementFlow: nextFlow || flow });
   const patchFlow = (changes: Partial<DLMovementFlow>) =>
@@ -129,28 +172,51 @@ export default function DLMovementWorkspace({
     return (
       <label className={compact ? "movement-quantity-field" : undefined}>
         <span>{name}</span>
-        <input
-          aria-label={name}
-          inputMode="decimal"
-          value={raw[key] ?? decimalInput(value, scale)}
-          aria-invalid={invalid[key] || undefined}
-          onChange={(event) => {
-            const text = event.target.value;
-            setRaw((current) => ({ ...current, [key]: text }));
-            onLocalDirtyChange(true);
-            try {
-              const n = parseScaledInput(text, scale, name) || 0;
-              apply(n);
-              setInvalid((current) => ({ ...current, [key]: false }));
-              setLocalError("");
-            } catch (cause) {
-              setInvalid((current) => ({ ...current, [key]: true }));
-              setLocalError(
-                cause instanceof Error ? cause.message : "Revise o valor.",
-              );
-            }
-          }}
-        />
+        {scale === 2 ? (
+          <DLMoneyInput
+            label={name}
+            disabled={false}
+            value={raw[key] ?? decimalInput(value, scale)}
+            onChange={(text) => {
+              setRaw((current) => ({ ...current, [key]: text }));
+              onLocalDirtyChange(true);
+              try {
+                const n = parseScaledInput(text, scale, name) || 0;
+                apply(n);
+                setInvalid((current) => ({ ...current, [key]: false }));
+                setLocalError("");
+              } catch (cause) {
+                setInvalid((current) => ({ ...current, [key]: true }));
+                setLocalError(
+                  cause instanceof Error ? cause.message : "Revise o valor.",
+                );
+              }
+            }}
+          />
+        ) : (
+          <input
+            aria-label={name}
+            inputMode="decimal"
+            value={raw[key] ?? decimalInput(value, scale)}
+            aria-invalid={invalid[key] || undefined}
+            onChange={(event) => {
+              const text = event.target.value;
+              setRaw((current) => ({ ...current, [key]: text }));
+              onLocalDirtyChange(true);
+              try {
+                const n = parseScaledInput(text, scale, name) || 0;
+                apply(n);
+                setInvalid((current) => ({ ...current, [key]: false }));
+                setLocalError("");
+              } catch (cause) {
+                setInvalid((current) => ({ ...current, [key]: true }));
+                setLocalError(
+                  cause instanceof Error ? cause.message : "Revise o valor.",
+                );
+              }
+            }}
+          />
+        )}
       </label>
     );
   }
@@ -441,7 +507,7 @@ export default function DLMovementWorkspace({
         atendimento são informados por você.
       </p>
       <section className="movement-panel">
-        <h2>Conta do fornecedor</h2>
+        <h2>Dados da solicitação</h2>
         {editable ? (
           <div className="movement-fields">
             <label>
@@ -452,60 +518,123 @@ export default function DLMovementWorkspace({
                 onChange={(event) => patch({ requester: event.target.value })}
               />
             </label>
-            <FilterSelect
-              label="DL com saldo"
-              value={flow.planId}
-              options={[
-                { value: "", label: "Selecionar DL" },
-                ...Array.from(
-                  new Map(
-                    sources.map((row) => [
-                      row.plan.id,
-                      {
-                        value: row.plan.id,
-                        label: `${row.plan.code} · ${row.plan.title}`,
-                      },
-                    ]),
-                  ).values(),
-                ),
-              ]}
-              onChange={(planId) => {
-                if (
-                  order.lines.length &&
-                  !window.confirm(
-                    "Trocar de DL remove os itens desta edição. A reserva atual só mudará ao salvar.",
-                  )
-                )
-                  return;
-                patch(
-                  { lines: [], supplier: "" },
+            <div className="movement-dl-picker">
+              <FilterSelect
+                label="DLs com saldo"
+                value=""
+                options={[
                   {
-                    ...flow,
-                    planId,
-                    areas: flow.areas.map((area) => ({
-                      ...area,
-                      allocations: [],
-                    })),
+                    value: "",
+                    label: selectedPlanIds.length
+                      ? "Adicionar outra DL"
+                      : "Selecionar DLs",
                   },
-                );
-                setRaw({});
-                setInvalid({});
-              }}
-            />
+                  ...plansWithBalance
+                    .filter((plan) => !selectedPlanIds.includes(plan.id))
+                    .map((plan) => {
+                      const compatible = supplierOptions([
+                        ...selectedPlanIds,
+                        plan.id,
+                      ]);
+                      return {
+                        value: plan.id,
+                        label: `${plan.code} · ${plan.title}`,
+                        disabled: order.supplier
+                          ? !compatible.includes(order.supplier)
+                          : !compatible.length,
+                      };
+                    }),
+                ]}
+                onChange={(id) => {
+                  if (!id || selectedPlanIds.includes(id)) return;
+                  const planIds = [...selectedPlanIds, id];
+                  const options = supplierOptions(planIds);
+                  patch(
+                    {
+                      supplier:
+                        order.supplier ||
+                        (options.length === 1 ? options[0] : ""),
+                    },
+                    { ...flow, planId: planIds[0], planIds },
+                  );
+                  setQuery("");
+                }}
+              />
+              <div className="movement-selected-dls">
+                {selectedPlanIds.map((id) => {
+                  const plan = context.plans.find((plan) => plan.id === id);
+                  return (
+                    <span key={id}>
+                      {plan?.code || id}
+                      <button
+                        type="button"
+                        className="icon-button"
+                        aria-label={`Retirar DL ${plan?.code || id}`}
+                        onClick={() => {
+                          const removed = order.lines.filter(
+                            (line) => line.planId === id,
+                          );
+                          if (
+                            removed.some((line) => line.quantityMilli > 0) &&
+                            !window.confirm(
+                              "Retirar esta DL e suas quantidades de todas as áreas desta edição? A reserva só muda ao salvar.",
+                            )
+                          )
+                            return;
+                          const planIds = selectedPlanIds.filter(
+                            (planId) => planId !== id,
+                          );
+                          const lines = order.lines.filter(
+                            (line) => line.planId !== id,
+                          );
+                          const options = supplierOptions(planIds);
+                          patch(
+                            {
+                              lines,
+                              supplier: planIds.length
+                                ? order.supplier ||
+                                  (options.length === 1 ? options[0] : "")
+                                : "",
+                            },
+                            {
+                              ...flow,
+                              planId: planIds[0] || "",
+                              planIds,
+                              areas: flow.areas.map((area) => ({
+                                ...area,
+                                allocations: area.allocations.filter(
+                                  (a) =>
+                                    !removed.some(
+                                      (line) => line.id === a.lineId,
+                                    ),
+                                ),
+                              })),
+                            },
+                          );
+                          setQuery("");
+                          setRaw({});
+                          setInvalid({});
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
             <FilterSelect
-              label="Fornecedor da conta"
+              label="Fornecedor"
               value={order.supplier}
               options={[
                 { value: "", label: "Selecionar fornecedor" },
-                ...Array.from(
-                  new Set(
-                    sources
-                      .filter((row) => row.plan.id === flow.planId)
-                      .map((row) => row.origin.supplier),
-                  ),
-                ).map((supplier) => ({ value: supplier, label: supplier })),
+                ...commonSuppliers.map((supplier) => ({
+                  value: supplier,
+                  label: supplier,
+                })),
               ]}
               onChange={(supplier) => {
+                if (supplier === order.supplier) return;
                 if (
                   order.lines.length &&
                   !window.confirm(
@@ -525,12 +654,13 @@ export default function DLMovementWorkspace({
                 );
                 setRaw({});
                 setInvalid({});
+                setQuery("");
               }}
             />
             <label>
-              Referência da conta
+              Justificativa
               <input
-                aria-label="Referência da conta"
+                aria-label="Justificativa"
                 value={flow.billReference}
                 onChange={(event) =>
                   patchFlow({ billReference: event.target.value })
@@ -538,9 +668,9 @@ export default function DLMovementWorkspace({
               />
             </label>
             <label>
-              Data da conta
+              Data da solicitação
               <input
-                aria-label="Data da conta"
+                aria-label="Data da solicitação"
                 type="date"
                 value={flow.billDate}
                 max={context.today}
@@ -553,14 +683,14 @@ export default function DLMovementWorkspace({
               "bill-total",
               flow.billTotalCents,
               2,
-              "Total da conta (R$)",
+              "Valor total (R$)",
               (billTotalCents) => patchFlow({ billTotalCents }),
             )}
           </div>
         ) : (
           <dl className="movement-facts">
             <div>
-              <dt>Conta</dt>
+              <dt>Justificativa</dt>
               <dd>{flow.billReference || "Não informada"}</dd>
             </div>
             <div>
@@ -568,11 +698,18 @@ export default function DLMovementWorkspace({
               <dd>{order.supplier}</dd>
             </div>
             <div>
-              <dt>DL</dt>
-              <dd>{order.lines[0]?.dlCode}</dd>
+              <dt>DLs</dt>
+              <dd>
+                {selectedPlanIds
+                  .map(
+                    (id) =>
+                      context.plans.find((plan) => plan.id === id)?.code || id,
+                  )
+                  .join(", ")}
+              </dd>
             </div>
             <div>
-              <dt>Data da conta</dt>
+              <dt>Data da solicitação</dt>
               <dd>
                 {flow.billDate.split("-").reverse().join("/") ||
                   "Não informada"}
@@ -587,7 +724,7 @@ export default function DLMovementWorkspace({
       </section>
       <div className="movement-summary">
         <div>
-          <span>Total da conta</span>
+          <span>Valor total</span>
           <strong>{formatMoney(flow.billTotalCents)}</strong>
         </div>
         <div>
@@ -726,7 +863,7 @@ export default function DLMovementWorkspace({
         )}
       </section>
       <section className="movement-panel">
-        <h2>Materiais da DL e distribuição</h2>
+        <h2>Materiais das DLs e distribuição</h2>
         <p className="movement-note">
           Informe as quantidades de cada área. Unidade, fornecedor e preço vêm
           da origem contratada. Quantidades: até 3 casas decimais. Centavos
@@ -736,56 +873,69 @@ export default function DLMovementWorkspace({
         {editable && (
           <>
             <FilterSearch
-              label="Buscar material da DL"
+              label="Buscar material nas DLs"
               value={query}
               onChange={setQuery}
               placeholder="Código ou descrição"
             />
             <div className="movement-source-list">
-              {sources
-                .filter(
-                  (row) =>
-                    row.plan.id === flow.planId &&
-                    row.origin.supplier === order.supplier &&
-                    `${row.item?.description} ${row.item?.code}`
-                      .toLocaleLowerCase("pt-BR")
-                      .includes(query.toLocaleLowerCase("pt-BR")),
-                )
-                .map((row) => {
-                  const selected = order.lines.some(
-                    (line) =>
-                      line.originId === row.origin.id &&
-                      line.planId === row.plan.id,
-                  );
-                  return (
-                    <div key={row.origin.id}>
-                      <div>
-                        <strong>{row.item?.description}</strong>
-                        <small>
-                          {row.item?.code} · Pedido MXM {row.origin.mxmOrder} ·{" "}
-                          {formatMoney(row.origin.unitPriceCents)}/
-                          {row.origin.unit} · Saldo livre para esta edição:{" "}
-                          {decimalInput(row.origin.availableMilli, 3)}{" "}
-                          {row.origin.unit}
-                        </small>
-                      </div>
-                      <button
-                        className="secondary-button"
-                        disabled={selected}
-                        onClick={() =>
-                          patch({
-                            lines: [...order.lines, originOrderLine(row)],
-                          })
-                        }
-                      >
-                        {selected ? "Incluído" : "Adicionar material"}
-                      </button>
+              {visibleSources.map((row) => {
+                const selected = order.lines.some(
+                  (line) =>
+                    line.originId === row.origin.id &&
+                    line.planId === row.plan.id,
+                );
+                return (
+                  <div key={`${row.plan.id}:${row.origin.id}`}>
+                    <div>
+                      <strong>{row.item?.description}</strong>
+                      <small>
+                        {row.plan.code} · {row.origin.supplier} ·{" "}
+                        {row.item?.code} · Pedido MXM {row.origin.mxmOrder} ·{" "}
+                        {formatMoney(row.origin.unitPriceCents)}/
+                        {row.origin.unit} · Saldo livre para esta edição:{" "}
+                        {decimalInput(row.origin.availableMilli, 3)}{" "}
+                        {row.origin.unit}
+                      </small>
                     </div>
-                  );
-                })}
-              {!flow.planId || !order.supplier ? (
+                    <button
+                      className="secondary-button"
+                      disabled={selected || !order.supplier}
+                      onClick={() =>
+                        patch({
+                          lines: [...order.lines, originOrderLine(row)],
+                        })
+                      }
+                    >
+                      {selected ? "Incluído" : "Adicionar material"}
+                    </button>
+                  </div>
+                );
+              })}
+              {!selectedPlanIds.length ? (
                 <p className="muted">
-                  Selecione uma DL com saldo e o fornecedor da conta.
+                  Selecione uma ou mais DLs com saldo acima.
+                </p>
+              ) : !order.supplier ? (
+                <p className="muted">
+                  Selecione um fornecedor para incluir os materiais. A
+                  distribuição usa um único fornecedor.
+                </p>
+              ) : selectedSources.length === 0 ? (
+                <p className="muted">
+                  Não há materiais ativos com saldo disponível para o fornecedor
+                  nas DLs selecionadas.
+                </p>
+              ) : visibleSources.length === 0 ? (
+                <p className="muted">
+                  Nenhum material corresponde à busca.{" "}
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => setQuery("")}
+                  >
+                    Limpar busca
+                  </button>
                 </p>
               ) : null}
             </div>
@@ -824,7 +974,7 @@ export default function DLMovementWorkspace({
                           `qty:${area.id}:${line.id}`,
                           allocatedMilli(area, line.id),
                           3,
-                          `Quantidade de ${line.description} para ${area.name}`,
+                          `Quantidade de ${lineTitle(line)} para ${area.name}`,
                           (q) => allocate(area.id, line, q),
                           true,
                         )
@@ -862,7 +1012,7 @@ export default function DLMovementWorkspace({
                     <td>
                       <button
                         className="icon-button"
-                        aria-label={`Retirar material ${line.description}`}
+                        aria-label={`Retirar material ${lineTitle(line)}`}
                         onClick={() => {
                           if (
                             !window.confirm(
@@ -897,8 +1047,8 @@ export default function DLMovementWorkspace({
               {!order.lines.length && (
                 <tr>
                   <td colSpan={5 + flow.areas.length} className="empty-state">
-                    Adicione os materiais da DL para distribuir suas quantidades
-                    por área.
+                    Adicione os materiais das DLs para distribuir suas
+                    quantidades por área.
                   </td>
                 </tr>
               )}
@@ -1167,12 +1317,12 @@ export default function DLMovementWorkspace({
                 </label>
                 <label>
                   Valor da NF (R$)
-                  <input
-                    aria-label="Valor da NF (R$)"
-                    inputMode="decimal"
+                  <DLMoneyInput
+                    label="Valor da NF (R$)"
+                    disabled={false}
                     value={invoiceAmount}
-                    onChange={(event) => {
-                      setInvoiceAmount(event.target.value);
+                    onChange={(value) => {
+                      setInvoiceAmount(value);
                       onLocalDirtyChange(true);
                     }}
                   />
@@ -1259,7 +1409,7 @@ export default function DLMovementWorkspace({
                         </td>
                         <td>
                           <input
-                            aria-label={`Quantidade de ${line.description} nesta operação`}
+                            aria-label={`Quantidade de ${lineTitle(line)} nesta operação`}
                             inputMode="decimal"
                             value={entryQuantities[line.id] || ""}
                             onChange={(event) => {
@@ -1318,7 +1468,7 @@ export default function DLMovementWorkspace({
               onClick={() => {
                 if (
                   !window.confirm(
-                    "Finalizar o fluxo? A conta, a entrada da NF e o atendimento de todas as áreas serão encerrados.",
+                    "Finalizar o fluxo? A distribuição, a entrada da NF e o atendimento de todas as áreas serão encerrados.",
                   )
                 )
                   return;

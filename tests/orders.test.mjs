@@ -902,3 +902,119 @@ test("MOV não mistura DLs e revalida a vigência antes de confirmar", () => {
     /saldo disponível/,
   );
 });
+
+test("MOV múltiplas DLs mantêm reservas e baixas separadas mesmo com item e origem de mesmo ID", () => {
+  const { ctx, order } = movementFixture();
+  const other = structuredClone(ctx.plans[0]);
+  other.id = "outra-dl";
+  other.code = "DL-0030";
+  other.sequenceNumber = 30;
+  ctx.plans.push(other);
+  const source = movementSources(ctx, emptyOrderWorkspace()).find(
+    (row) =>
+      row.plan.id === other.id && row.origin.itemId === order.lines[0].itemId,
+  );
+  const line = originOrderLine(source);
+  line.quantityMilli = 50000;
+  order.lines.push(line);
+  order.movementFlow.planIds = [ctx.plans[0].id, other.id];
+  order.movementFlow.areas[0].allocations.push({
+    lineId: line.id,
+    quantityMilli: 50000,
+  });
+  order.movementFlow.areas[0].targetCents += 5000;
+  order.movementFlow.billTotalCents += 5000;
+  let ws = saveMovementDraft(emptyOrderWorkspace(), order, ctx);
+  const balance = () => orderControlRows(ctx, ws);
+  assert.equal(
+    balance().find(
+      (row) =>
+        row.plan.id === ctx.plans[0].id && row.origin.id === line.originId,
+    ).origin.reservedMilli,
+    800000,
+  );
+  assert.equal(
+    balance().find(
+      (row) => row.plan.id === other.id && row.origin.id === line.originId,
+    ).origin.reservedMilli,
+    50000,
+  );
+  assert.doesNotThrow(() => readOrderWorkspace(JSON.stringify(ws)));
+  ws = confirmMovementDistribution(ws, order.id, "Henrique", ctx);
+  ws = recordMovementInvoice(
+    ws,
+    order.id,
+    {
+      actor: "Henrique",
+      number: "NF-MULTI",
+      issuedOn: ctx.today,
+      enteredOn: ctx.today,
+      totalCents: 85000,
+      quantities: { [order.lines[0].id]: 800000, [line.id]: 50000 },
+    },
+    ctx,
+  );
+  assert.equal(
+    balance().find(
+      (row) =>
+        row.plan.id === ctx.plans[0].id && row.origin.id === line.originId,
+    ).origin.receivedMilli,
+    800000,
+  );
+  assert.equal(
+    balance().find(
+      (row) => row.plan.id === other.id && row.origin.id === line.originId,
+    ).origin.receivedMilli,
+    50000,
+  );
+  assert.equal(ws.orders[0].movementFlow.phase, "Solicitações das áreas");
+  assert.doesNotThrow(() => readOrderWorkspace(JSON.stringify(ws)));
+});
+
+test("MOV múltiplas DLs rejeitam fornecedores diferentes e seleção de IDs inválida", () => {
+  const { ctx, order } = movementFixture();
+  const other = structuredClone(ctx.plans[0]);
+  other.id = "outra-dl";
+  other.code = "DL-0030";
+  other.sequenceNumber = 30;
+  other.contract.awards.forEach((award) => (award.supplier = "Fornecedor B"));
+  ctx.plans.push(other);
+  const line = originOrderLine(
+    movementSources(ctx, emptyOrderWorkspace()).find(
+      (row) => row.plan.id === other.id,
+    ),
+  );
+  order.lines.push(line);
+  order.movementFlow.planIds = [ctx.plans[0].id, other.id];
+  order.movementFlow.areas[0].allocations.push({
+    lineId: line.id,
+    quantityMilli: 1000,
+  });
+  assert.throws(
+    () => saveMovementDraft(emptyOrderWorkspace(), order, ctx),
+    /único fornecedor/,
+  );
+  const clean = movementFixture();
+  clean.order.movementFlow.planIds = [
+    clean.order.movementFlow.planId,
+    clean.order.movementFlow.planId,
+  ];
+  assert.throws(
+    () => saveMovementDraft(emptyOrderWorkspace(), clean.order, clean.ctx),
+    /Seleção de DLs inconsistente/,
+  );
+});
+
+test("MOV seleção antiga de uma DL permanece legível sem regravar os dados", () => {
+  const { ctx, order } = movementFixture();
+  let ws = saveMovementDraft(emptyOrderWorkspace(), order, ctx);
+  delete ws.orders[0].movementFlow.planIds;
+  const raw = JSON.stringify(ws);
+  const read = readOrderWorkspace(raw);
+  assert.equal(JSON.stringify(read), raw);
+  assert.equal(read.orders[0].movementFlow.planIds, undefined);
+  ws = saveMovementDraft(read, read.orders[0], ctx);
+  assert.deepEqual(ws.orders[0].movementFlow.planIds, [
+    order.movementFlow.planId,
+  ]);
+});

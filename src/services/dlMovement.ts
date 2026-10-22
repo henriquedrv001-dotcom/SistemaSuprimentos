@@ -6,6 +6,7 @@ import { contractStatus } from "./dlContract.ts";
 import {
   emptyMovementFlow,
   movementTotals,
+  movementPlanIds,
   movementLineCents,
   validateMovementShape,
   allocatedMilli,
@@ -98,19 +99,22 @@ export function saveMovementDraft(
   )
     throw new Error("Somente distribuições em preparação podem ser alteradas.");
   const flow = structuredClone(candidate.movementFlow);
+  const planIds = movementPlanIds(flow);
+  flow.planIds = [...planIds];
+  flow.planId = planIds[0] || "";
   if (
     !candidate.requester.trim() ||
-    !flow.planId ||
+    !planIds.length ||
     !safe(flow.billTotalCents) ||
     flow.billTotalCents <= 0 ||
     !flow.areas.length ||
     !candidate.lines.length
   )
     throw new Error(
-      "Informe responsável, DL, total da conta, áreas e materiais distribuídos.",
+      "Informe responsável, DLs, valor total da solicitação, áreas e materiais distribuídos.",
     );
   if (flow.billDate && !validDate(flow.billDate, context.today))
-    throw new Error("Informe uma data da conta válida, sem data futura.");
+    throw new Error("Informe uma data da solicitação válida, sem data futura.");
   if (flow.invoices.length || flow.requests.length)
     throw new Error(
       "A distribuição ainda não pode ter entrada de NF ou solicitações.",
@@ -119,12 +123,12 @@ export function saveMovementDraft(
   const rows = movementSources(context, workspace, candidate.id);
   const lines = candidate.lines.map((line) => {
     const source = rows.find(
-      (row) => row.plan.id === flow.planId && row.origin.id === line.originId,
+      (row) => row.plan.id === line.planId && row.origin.id === line.originId,
     );
     const quantity = totals.quantities.get(line.id) || 0;
     if (
       !source ||
-      line.planId !== flow.planId ||
+      !planIds.includes(line.planId) ||
       !quantity ||
       quantity > source.origin.availableMilli
     )
@@ -154,7 +158,19 @@ export function saveMovementDraft(
     return { ...snapshot, id: line.id, quantityMilli: quantity };
   });
   if (new Set(lines.map((line) => line.supplier)).size !== 1)
-    throw new Error("Use materiais de um único fornecedor por conta.");
+    throw new Error("Use materiais de um único fornecedor por solicitação.");
+  if (
+    planIds.some(
+      (planId) =>
+        !rows.some(
+          (row) =>
+            row.plan.id === planId && row.origin.supplier === lines[0].supplier,
+        ),
+    )
+  )
+    throw new Error(
+      "Cada DL selecionada deve ter saldo disponível para o mesmo fornecedor.",
+    );
   const next: Order = {
     ...(previous
       ? structuredClone(previous)
@@ -174,7 +190,7 @@ export function saveMovementDraft(
     next,
     "Distribuição salva",
     next.requester,
-    `Conta ${flow.billReference || "sem referência"}. Quantidades reservadas por origem da DL; valores ainda podem ter diferenças.`,
+    `Justificativa: ${flow.billReference || "não informada"}. Quantidades reservadas por origem da DL; valores ainda podem ter diferenças.`,
   );
   const result = replace(workspace, next);
   orderControlRows(context, result);
@@ -209,7 +225,7 @@ export function confirmMovementDistribution(
     )
   )
     throw new Error(
-      "Confira a referência e data da conta: os valores de cada área, dos itens e do total precisam coincidir antes de confirmar.",
+      "Confira a justificativa e data da solicitação: os valores de cada área, dos itens e do total precisam coincidir antes de confirmar.",
     );
   const counters = { ...workspace.counters };
   if (!order.code) {
@@ -266,7 +282,7 @@ export function recordMovementInvoice(
         input.number.trim().toUpperCase(),
     )
   )
-    throw new Error("Informe uma NF ainda não registrada nesta conta.");
+    throw new Error("Informe uma NF ainda não registrada nesta solicitação.");
   if (
     !validDate(input.issuedOn, context.today) ||
     !validDate(input.enteredOn, context.today) ||
@@ -347,7 +363,7 @@ export function recordMovementRequest(
     )
   )
     throw new Error(
-      "Informe uma solicitação ainda não registrada nesta conta.",
+      "Informe uma referência de solicitação ainda não registrada nesta distribuição.",
     );
   if (
     !validDate(input.requestedOn, context.today) ||
@@ -460,7 +476,7 @@ export function finishMovement(
     order,
     "Fluxo de entrada e saída concluído",
     actor,
-    "Conta conciliada, entrada da NF e solicitações das áreas concluídas.",
+    "Distribuição conciliada, entrada da NF e solicitações das áreas concluídas.",
   );
   return replace(workspace, order);
 }

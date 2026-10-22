@@ -1801,7 +1801,7 @@ function NewOrderDialog({
     PFR: "Selecione materiais do catálogo e informe a justificativa para uso do fundo rotativo.",
     PDL: "Selecione materiais de uma DL vigente. Ao salvar o rascunho, as quantidades ficam reservadas.",
     ATA: "Informe a ata ou contrato, o fornecedor e os materiais solicitados.",
-    MOV: "Distribua os itens de uma DL com saldo entre as áreas, confira a conta e acompanhe a entrada da NF e as solicitações.",
+    MOV: "Distribua os itens de uma ou mais DLs com saldo entre as áreas, confira os valores e acompanhe a entrada da NF e as solicitações.",
   };
   const chosen = orderKinds.find((kind) => kind === selected);
   return (

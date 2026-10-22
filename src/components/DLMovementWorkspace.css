@@ -326,3 +326,28 @@
 .movement-quantity-field {
   position: relative;
 }
+.movement-dl-picker {
+  min-width: 0;
+}
+.movement-selected-dls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.movement-selected-dls > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--primary);
+  background: var(--background-soft);
+}
+.movement-selected-dls .icon-button {
+  min-width: 26px;
+  min-height: 26px;
+  padding: 3px;
+}

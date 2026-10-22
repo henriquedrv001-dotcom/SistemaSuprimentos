@@ -25,6 +25,18 @@ export function emptyMovementFlow(): DLMovementFlow {
     requests: [],
   };
 }
+/** Registros anteriores usam somente planId; ler não regrava nem converte dados. */
+export function movementPlanIds(flow: DLMovementFlow): string[] {
+  if (flow.planIds === undefined) return flow.planId ? [flow.planId] : [];
+  if (
+    !Array.isArray(flow.planIds) ||
+    flow.planIds.some((id) => typeof id !== "string" || !id.trim()) ||
+    new Set(flow.planIds).size !== flow.planIds.length ||
+    flow.planId !== (flow.planIds[0] || "")
+  )
+    throw new Error("Seleção de DLs inconsistente.");
+  return flow.planIds;
+}
 export const movementAreaSuggestions = [
   "Assistência Social",
   "Educação",
@@ -160,8 +172,9 @@ export function validateMovementShape(order: import("../types/orders").Order) {
   )
     fail();
   if (!flow) return;
+  const planIds = movementPlanIds(flow);
   if (
-    !flow.planId ||
+    !planIds.length ||
     !flow.billTotalCents ||
     !flow.areas.length ||
     !order.lines.length ||
@@ -211,7 +224,7 @@ export function validateMovementShape(order: import("../types/orders").Order) {
   if (
     order.lines.some(
       (line) =>
-        line.planId !== flow.planId ||
+        !planIds.includes(line.planId) ||
         !line.originId ||
         line.supplier !== order.supplier ||
         line.unitPriceCents === null ||

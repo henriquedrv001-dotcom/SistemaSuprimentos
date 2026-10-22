@@ -1,4 +1,4 @@
-/** Conta e distribuição por área do fluxo DL para entrada e saída. */
+/** Solicitação e distribuição por área do fluxo DL para entrada e saída. */
 export type MovementAllocation = { lineId: string; quantityMilli: number };
 export type MovementArea = {
   id: string;
@@ -29,7 +29,9 @@ export type DLMovementFlow = {
     | "Solicitações das áreas"
     | "Concluído"
     | "Cancelado";
+  /** Primeira DL, mantida para leitura de registros anteriores. */
   planId: string;
+  planIds?: string[];
   billReference: string;
   billDate: string;
   billTotalCents: number;
