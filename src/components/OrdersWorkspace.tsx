@@ -697,7 +697,9 @@ export default function OrdersWorkspace({
                             ),
                           ].join(", ") ||
                             order.contractReference ||
-                            order.externalReference ||
+                            (order.kind === "PCD"
+                              ? order.externalReference
+                              : "") ||
                             "—"}
                         </small>
                       </td>
@@ -849,13 +851,16 @@ export default function OrdersWorkspace({
                   <dt>Solicitante</dt>
                   <dd>{active.requester}</dd>
                 </div>
-                <div>
-                  <dt>Ciclo</dt>
-                  <dd>
-                    {context.cycles.find((cycle) => cycle.id === active.cycleId)
-                      ?.name || "Sem vínculo"}
-                  </dd>
-                </div>
+                {active.kind !== "MOV" && (
+                  <div>
+                    <dt>Ciclo</dt>
+                    <dd>
+                      {context.cycles.find(
+                        (cycle) => cycle.id === active.cycleId,
+                      )?.name || "Sem vínculo"}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt>Entrega prevista</dt>
                   <dd>{date(active.expectedDelivery)}</dd>
@@ -874,10 +879,12 @@ export default function OrdersWorkspace({
                       "A definir"}
                   </dd>
                 </div>
-                <div>
-                  <dt>Referência MXM / protocolo</dt>
-                  <dd>{active.externalReference || "Não informada"}</dd>
-                </div>
+                {active.kind === "PCD" && (
+                  <div>
+                    <dt>Requisição MXM</dt>
+                    <dd>{active.externalReference || "Não informada"}</dd>
+                  </div>
+                )}
                 {active.kind === "ATA" && (
                   <div>
                     <dt>Ata / contrato</dt>
@@ -896,12 +903,6 @@ export default function OrdersWorkspace({
                     <dd>{active.reason}</dd>
                   </div>
                 )}
-                {active.notes && (
-                  <div>
-                    <dt>Observações</dt>
-                    <dd>{active.notes}</dd>
-                  </div>
-                )}
               </dl>
             </>
           )}
@@ -917,36 +918,38 @@ export default function OrdersWorkspace({
                   }
                 />
               </label>
-              <FilterSelect
-                label={
-                  editing.kind === "PCD"
-                    ? "Ciclo de suprimentos"
-                    : "Ciclo (opcional)"
-                }
-                value={editing.cycleId}
-                onChange={(cycleId) => {
-                  if (
-                    editing.kind === "PCD" &&
-                    editing.lines.length &&
-                    !window.confirm(
-                      "Mudar de ciclo remove os materiais selecionados deste rascunho. Continuar?",
+              {editing.kind !== "MOV" && (
+                <FilterSelect
+                  label={
+                    editing.kind === "PCD"
+                      ? "Ciclo de suprimentos"
+                      : "Ciclo (opcional)"
+                  }
+                  value={editing.cycleId}
+                  onChange={(cycleId) => {
+                    if (
+                      editing.kind === "PCD" &&
+                      editing.lines.length &&
+                      !window.confirm(
+                        "Mudar de ciclo remove os materiais selecionados deste rascunho. Continuar?",
+                      )
                     )
-                  )
-                    return;
-                  setEditing({
-                    ...editing,
-                    cycleId,
-                    lines: editing.kind === "PCD" ? [] : editing.lines,
-                  });
-                }}
-                options={[
-                  { value: "", label: "Selecionar ciclo" },
-                  ...context.cycles.map((cycle) => ({
-                    value: cycle.id,
-                    label: cycle.name,
-                  })),
-                ]}
-              />
+                      return;
+                    setEditing({
+                      ...editing,
+                      cycleId,
+                      lines: editing.kind === "PCD" ? [] : editing.lines,
+                    });
+                  }}
+                  options={[
+                    { value: "", label: "Selecionar ciclo" },
+                    ...context.cycles.map((cycle) => ({
+                      value: cycle.id,
+                      label: cycle.name,
+                    })),
+                  ]}
+                />
+              )}
               <label>
                 Entrega prevista
                 <input
@@ -973,19 +976,24 @@ export default function OrdersWorkspace({
                   />
                 </label>
               )}
-              <label>
-                Referência MXM / protocolo
-                <input
-                  aria-label="Referência MXM / protocolo"
-                  value={editing.externalReference}
-                  onChange={(event) =>
-                    setEditing({
-                      ...editing,
-                      externalReference: event.target.value,
-                    })
-                  }
-                />
-              </label>
+              {editing.kind === "PCD" &&
+                workspace.orders.some(
+                  (order) => order.id === editing.id && order.lines.length > 0,
+                ) && (
+                  <label>
+                    Requisição MXM
+                    <input
+                      aria-label="Requisição MXM"
+                      value={editing.externalReference}
+                      onChange={(event) =>
+                        setEditing({
+                          ...editing,
+                          externalReference: event.target.value,
+                        })
+                      }
+                    />
+                  </label>
+                )}
               {editing.kind === "ATA" && (
                 <label>
                   Ata / contrato
@@ -1028,17 +1036,6 @@ export default function OrdersWorkspace({
                   value={editing.reason}
                   onChange={(event) =>
                     setEditing({ ...editing, reason: event.target.value })
-                  }
-                />
-              </label>
-              <label className="dl-orders-notes">
-                Observações
-                <textarea
-                  aria-label="Observações"
-                  rows={2}
-                  value={editing.notes}
-                  onChange={(event) =>
-                    setEditing({ ...editing, notes: event.target.value })
                   }
                 />
               </label>
@@ -1528,7 +1525,7 @@ function OrderActionDialog({
       onSave({
         actor,
         reason,
-        externalReference: reference,
+        externalReference: order.kind === "PCD" ? reference : undefined,
         quantities,
         closePending,
       });
@@ -1560,27 +1557,27 @@ function OrderActionDialog({
             onChange={(event) => setActor(event.target.value)}
           />
         </label>
-        {action === "send" && (
+        {action === "send" && order.kind === "PCD" && (
           <label className="order-action-field">
-            Referência MXM / protocolo
+            Requisição MXM
             <input
-              aria-label="Referência do envio"
+              aria-label="Requisição MXM"
               value={reference}
               onChange={(event) => setReference(event.target.value)}
             />
           </label>
         )}
-        <label className="order-action-field">
-          {["return", "cancel"].includes(action)
-            ? "Motivo (obrigatório)"
-            : "Observação (opcional)"}
-          <textarea
-            aria-label="Motivo do registro"
-            rows={2}
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-          />
-        </label>
+        {["return", "cancel"].includes(action) && (
+          <label className="order-action-field">
+            Motivo (obrigatório)
+            <textarea
+              aria-label="Motivo do registro"
+              rows={2}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+            />
+          </label>
+        )}
         {receiving && (
           <>
             <p>
@@ -1760,13 +1757,15 @@ function NewOrderDialog({
           onChange={setSelected}
           options={[
             { value: "", label: "Selecionar tipo", disabled: true },
-            ...orderKinds.map((kind) => ({
-              value: kind,
-              label: orderKindNames[kind],
-              group: ["PCD", "PFR", "PDL"].includes(kind)
-                ? "Estoque"
-                : "Compras",
-            })),
+            ...orderKinds
+              .filter((kind) => kind !== "ATA")
+              .map((kind) => ({
+                value: kind,
+                label: orderKindNames[kind],
+                group: ["PCD", "PFR", "PDL"].includes(kind)
+                  ? "Estoque"
+                  : "Compras",
+              })),
           ]}
         />
         {chosen && (

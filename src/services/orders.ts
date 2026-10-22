@@ -16,9 +16,9 @@ export const orderWorkspaceKey = "suprimentos:orders:v1";
 export const orderKindNames: Record<OrderKind, string> = {
   PCD: "Transferência",
   PFR: "Fundo rotativo",
-  PDL: "Dispensa de licitação vigente",
+  PDL: "DL ESTOCÁVEL",
   ATA: "ATA/Contrato",
-  MOV: "Material Entrada e Saída",
+  MOV: "DL PARA ENTRADA E SAÍDA",
 };
 export const emptyOrderWorkspace = (): OrderWorkspace => ({
   version: 1,
@@ -482,6 +482,7 @@ function validateOrder(
   if (order.expectedDelivery && !validDate(order.expectedDelivery))
     throw new Error("Informe uma data de entrega válida.");
   if (
+    order.kind !== "MOV" &&
     order.cycleId &&
     !context.cycles.some((cycle) => cycle.id === order.cycleId)
   )
@@ -578,6 +579,14 @@ export function saveOrderDraft(
     (previous.kind !== order.kind || previous.code !== order.code)
   )
     throw new Error("O tipo e o número do pedido são protegidos.");
+  if (order.externalReference !== (previous?.externalReference || "")) {
+    if (order.kind !== "PCD")
+      throw new Error("A requisição MXM é informada somente em Transferência.");
+    if (!previous?.lines.length)
+      throw new Error(
+        "Salve os itens da transferência antes de informar a requisição MXM.",
+      );
+  }
   validateOrder(order, context, workspace, false);
   const next = {
     ...order,
@@ -657,8 +666,15 @@ export function transitionOrder(
     if (order.status !== "Aprovado")
       throw new Error("Aprove o pedido antes de registrar o envio.");
     validateOrder(order, context, workspace, true);
-    order.externalReference =
-      payload.externalReference?.trim() || order.externalReference;
+    if (
+      order.kind !== "PCD" &&
+      payload.externalReference?.trim() &&
+      payload.externalReference.trim() !== order.externalReference
+    )
+      throw new Error("A requisição MXM é informada somente em Transferência.");
+    if (order.kind === "PCD")
+      order.externalReference =
+        payload.externalReference?.trim() || order.externalReference;
     order.status = "Enviado";
     actionLabel = "Envio registrado";
     details = `Registro manual. ${order.externalReference ? `Referência: ${order.externalReference}. ` : ""}${details}`;

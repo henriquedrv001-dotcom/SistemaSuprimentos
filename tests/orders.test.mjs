@@ -420,3 +420,53 @@ test("same item and award ids in different DLs and units never share a reserve o
   assert.equal(other.lines[0].unit, "KG");
   assert.equal(first.lines[0].unit, "UN");
 });
+
+test("requisição MXM pertence apenas à transferência e exige itens já salvos", () => {
+  const ctx = context();
+  let ws = emptyOrderWorkspace();
+  const order = draft("PCD", ctx);
+  order.externalReference = "REQ-123";
+  assert.throws(() => saveOrderDraft(ws, order, ctx), /Salve os itens/);
+  order.externalReference = "";
+  ws = saveOrderDraft(ws, order, ctx);
+  ws = saveOrderDraft(
+    ws,
+    { ...ws.orders[0], externalReference: "REQ-123" },
+    ctx,
+  );
+  assert.equal(ws.orders[0].externalReference, "REQ-123");
+  for (const kind of ["PFR", "PDL", "ATA", "MOV"]) {
+    const other = draft(kind, ctx);
+    other.externalReference = "REQ-456";
+    assert.throws(
+      () => saveOrderDraft(ws, other, ctx),
+      /somente em Transferência/,
+    );
+    other.externalReference = "";
+    let next = saveOrderDraft(emptyOrderWorkspace(), other, ctx);
+    next = act(next, other, "submit", ctx);
+    next = act(next, other, "approve", ctx);
+    assert.throws(
+      () => act(next, other, "send", ctx, { externalReference: "REQ-456" }),
+      /somente em Transferência/,
+    );
+  }
+});
+
+test("edição preserva informações legadas e movimento não depende de ciclo", () => {
+  const ctx = context();
+  const order = draft("MOV", ctx);
+  let ws = saveOrderDraft(emptyOrderWorkspace(), order, ctx);
+  ws.orders[0].cycleId = "ciclo-antigo";
+  ws.orders[0].externalReference = "protocolo-antigo";
+  ws.orders[0].notes = "Observações históricas";
+  ws = saveOrderDraft(
+    ws,
+    { ...ws.orders[0], requester: "Solicitante atualizado" },
+    ctx,
+  );
+  assert.equal(ws.orders[0].notes, "Observações históricas");
+  assert.equal(ws.orders[0].externalReference, "protocolo-antigo");
+  ws = act(ws, ws.orders[0], "submit", ctx);
+  assert.equal(ws.orders[0].status, "Em análise");
+});

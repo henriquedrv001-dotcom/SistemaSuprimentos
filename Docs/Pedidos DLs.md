@@ -2,7 +2,7 @@
 
 ## Áreas e comportamento
 
-A listagem reúne todos os tipos. Novo pedido abre uma janela compacta para escolher o tipo; Continuar abre o formulário específico na área principal. As opções de Estoque são Transferência (PCD), Fundo rotativo (PFR) e Dispensa de licitação vigente (PDL); Compras conserva ATA/Contrato e Material Entrada e Saída. Cancelar a escolha não grava registros. Códigos, numeração e dados salvos permanecem os mesmos. Acompanhamento conserva sua função de consulta.
+A listagem reúne todos os tipos. Novo pedido abre uma janela compacta para escolher o tipo; Continuar abre o formulário específico na área principal. As opções de Estoque são Transferência (PCD), Fundo rotativo (PFR) e DL ESTOCÁVEL (PDL); Compras oferece DL PARA ENTRADA E SAÍDA (MOV). ATA/Contrato fica temporariamente fora de Novo pedido, com seus registros e fluxo existentes preservados. Cancelar a escolha não grava registros. Códigos, numeração e dados salvos permanecem os mesmos. Acompanhamento conserva sua função de consulta.
 
 Pedidos mantém a divisão Estoque (CDs, FRs e DLs) e Compras (ATA/Contrato e Material Entrada e Saída). Cada tipo tem listagem, busca por referências e materiais, filtros por situação/fornecedor/ciclo, ordenação, indicadores e edição na área principal. Acompanhamento usa os mesmos registros, com visões Todos, Em aberto, Parciais, Atrasados e Concluídos. Não são inseridos pedidos de demonstração.
 
@@ -10,9 +10,9 @@ Pedidos mantém a divisão Estoque (CDs, FRs e DLs) e Compras (ATA/Contrato e Ma
 - FR: seleciona materiais ativos do catálogo; exige justificativa ao encaminhar. O ciclo é opcional.
 - DL: seleciona origens liberadas e vigentes. A identidade é o par ID da DL + ID da contratação, com unidade, fornecedor, preço e MXM protegidos. Rascunhos podem reunir fornecedores; para encaminhar, precisam conter um único fornecedor. Não há separação automática.
 - ATA/Contrato: informa referência da ata/contrato e fornecedor; materiais vêm do catálogo. Ainda não há um cadastro mestre de atas nem leitura de seu saldo oficial.
-- Material Entrada e Saída: identifica Entrada ou Saída; a saída usa a ação Registrar atendimento. Não altera o estoque físico ou contábil do MXM.
+- DL PARA ENTRADA E SAÍDA (MOV): identifica Entrada ou Saída; a saída usa a ação Registrar atendimento. Não altera o estoque físico ou contábil do MXM.
 
-Solicitante recebe sugestão editável do nome padrão. Preços não informados deixam o valor explicitamente parcial; não são apresentados como orçamento completo. Quantidades têm até três casas decimais, preços até duas; totais arredondam centavos por linha.
+Solicitante recebe sugestão editável do nome padrão. DL PARA ENTRADA E SAÍDA não apresenta vínculo de ciclo. Nenhum formulário de pedido apresenta Observações, inclusive nas confirmações de etapa; motivos obrigatórios de devolução e cancelamento são mantidos. Requisição MXM pertence apenas à Transferência e só pode ser incluída depois de salvar seus itens, ao editar o rascunho ou registrar o envio. Campos históricos retirados da interface permanecem nos dados existentes. Preços não informados deixam o valor explicitamente parcial; não são apresentados como orçamento completo. Quantidades têm até três casas decimais, preços até duas; totais arredondam centavos por linha.
 
 ## Etapas
 
