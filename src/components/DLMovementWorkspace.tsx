@@ -1,5 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Plus, Printer, Save, Trash2 } from "lucide-react";
+import DLMovementPlanPicker from "./DLMovementPlanPicker";
+import { useEffect, useId, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  Check,
+  ListChecks,
+  Plus,
+  Printer,
+  Save,
+  Trash2,
+} from "lucide-react";
 import type { Order, OrderLine, OrderWorkspace } from "../types/orders";
 import type { DLMovementFlow, MovementArea } from "../types/dlMovement";
 import type { OrderContext } from "../services/orders";
@@ -69,6 +78,32 @@ export default function DLMovementWorkspace({
   onCommit,
 }: Props) {
   const flow = order.movementFlow!;
+  const dlFieldId = useId();
+  const [dlPicker, setDLPicker] = useState(false);
+  const [focusedAreaId, setFocusedAreaId] = useState("");
+  const balanceCardsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = balanceCardsRef.current;
+    if (!container) return;
+    const align = () => {
+      const card = [
+        ...container.querySelectorAll<HTMLElement>("[data-area-id]"),
+      ].find((card) => card.dataset.areaId === focusedAreaId);
+      if (!card) return;
+      const left =
+        card.getBoundingClientRect().left -
+        container.getBoundingClientRect().left;
+      const right =
+        card.getBoundingClientRect().right -
+        container.getBoundingClientRect().right;
+      if (left < 0) container.scrollLeft += left;
+      else if (right > 0) container.scrollLeft += right;
+    };
+    align();
+    const observer = new ResizeObserver(align);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [focusedAreaId]);
   const formRef = useRef<HTMLElement>(null);
   const alertRef = useRef<HTMLParagraphElement>(null);
   const [raw, setRaw] = useState<Record<string, string>>({});
@@ -518,110 +553,33 @@ export default function DLMovementWorkspace({
                 onChange={(event) => patch({ requester: event.target.value })}
               />
             </label>
-            <div className="movement-dl-picker">
-              <FilterSelect
-                label="DLs com saldo"
-                value=""
-                options={[
-                  {
-                    value: "",
-                    label: selectedPlanIds.length
-                      ? "Adicionar outra DL"
-                      : "Selecionar DLs",
-                  },
-                  ...plansWithBalance
-                    .filter((plan) => !selectedPlanIds.includes(plan.id))
-                    .map((plan) => {
-                      const compatible = supplierOptions([
-                        ...selectedPlanIds,
-                        plan.id,
-                      ]);
-                      return {
-                        value: plan.id,
-                        label: `${plan.code} · ${plan.title}`,
-                        disabled: order.supplier
-                          ? !compatible.includes(order.supplier)
-                          : !compatible.length,
-                      };
-                    }),
-                ]}
-                onChange={(id) => {
-                  if (!id || selectedPlanIds.includes(id)) return;
-                  const planIds = [...selectedPlanIds, id];
-                  const options = supplierOptions(planIds);
-                  patch(
-                    {
-                      supplier:
-                        order.supplier ||
-                        (options.length === 1 ? options[0] : ""),
-                    },
-                    { ...flow, planId: planIds[0], planIds },
-                  );
-                  setQuery("");
-                }}
-              />
-              <div className="movement-selected-dls">
-                {selectedPlanIds.map((id) => {
-                  const plan = context.plans.find((plan) => plan.id === id);
-                  return (
-                    <span key={id}>
-                      {plan?.code || id}
-                      <button
-                        type="button"
-                        className="icon-button"
-                        aria-label={`Retirar DL ${plan?.code || id}`}
-                        onClick={() => {
-                          const removed = order.lines.filter(
-                            (line) => line.planId === id,
-                          );
-                          if (
-                            removed.some((line) => line.quantityMilli > 0) &&
-                            !window.confirm(
-                              "Retirar esta DL e suas quantidades de todas as áreas desta edição? A reserva só muda ao salvar.",
-                            )
-                          )
-                            return;
-                          const planIds = selectedPlanIds.filter(
-                            (planId) => planId !== id,
-                          );
-                          const lines = order.lines.filter(
-                            (line) => line.planId !== id,
-                          );
-                          const options = supplierOptions(planIds);
-                          patch(
-                            {
-                              lines,
-                              supplier: planIds.length
-                                ? order.supplier ||
-                                  (options.length === 1 ? options[0] : "")
-                                : "",
-                            },
-                            {
-                              ...flow,
-                              planId: planIds[0] || "",
-                              planIds,
-                              areas: flow.areas.map((area) => ({
-                                ...area,
-                                allocations: area.allocations.filter(
-                                  (a) =>
-                                    !removed.some(
-                                      (line) => line.id === a.lineId,
-                                    ),
-                                ),
-                              })),
-                            },
-                          );
-                          setQuery("");
-                          setRaw({});
-                          setInvalid({});
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
+            <div className="ui-filter-field movement-dl-picker">
+              <label htmlFor={dlFieldId}>DLs com saldo</label>
+              <button
+                type="button"
+                id={dlFieldId}
+                className="movement-dl-trigger"
+                aria-label="Selecionar DLs com saldo"
+                aria-haspopup="dialog"
+                title={selectedPlanIds
+                  .map(
+                    (id) =>
+                      context.plans.find((plan) => plan.id === id)?.code || id,
+                  )
+                  .join(", ")}
+                onClick={() => setDLPicker(true)}
+              >
+                <span>
+                  {selectedPlanIds.length === 0
+                    ? "Selecionar DLs"
+                    : selectedPlanIds.length === 1
+                      ? context.plans.find(
+                          (plan) => plan.id === selectedPlanIds[0],
+                        )?.code || "1 DL selecionada"
+                      : `${selectedPlanIds.length} DLs selecionadas`}
+                </span>
+                <ListChecks size={18} aria-hidden="true" />
+              </button>
             </div>
             <FilterSelect
               label="Fornecedor"
@@ -864,6 +822,58 @@ export default function DLMovementWorkspace({
       </section>
       <section className="movement-panel">
         <h2>Materiais das DLs e distribuição</h2>
+        {editable && flow.areas.length > 0 && (
+          <section
+            className="movement-live-balances"
+            aria-label="Conferência da distribuição em tempo real"
+          >
+            <div className="movement-live-total">
+              <strong>Conferência da distribuição</strong>
+              <span>
+                Valor total: <b>{formatMoney(flow.billTotalCents)}</b> ·
+                Distribuído: <b>{formatMoney(totals.totalCents)}</b> ·{" "}
+                {delta(totals.billDifferenceCents)}
+              </span>
+            </div>
+            <div
+              className="movement-live-areas"
+              ref={balanceCardsRef}
+              tabIndex={0}
+              aria-label="Valores por área, role horizontalmente para ver todas"
+            >
+              {flow.areas.map((area) => {
+                const value = totals.areaCents.get(area.id) || 0;
+                const difference = area.targetCents - value;
+                return (
+                  <div
+                    key={area.id}
+                    data-area-id={area.id}
+                    data-state={
+                      difference === 0
+                        ? "matched"
+                        : difference < 0
+                          ? "excess"
+                          : "pending"
+                    }
+                    className={focusedAreaId === area.id ? "is-active" : ""}
+                  >
+                    <span>{area.name}</span>
+                    <strong
+                      aria-live={focusedAreaId === area.id ? "polite" : "off"}
+                    >
+                      {delta(difference)}
+                    </strong>
+                    <small>
+                      Previsto: {formatMoney(area.targetCents)} · Distribuído:{" "}
+                      {formatMoney(value)}
+                    </small>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <p className="movement-note">
           Informe as quantidades de cada área. Unidade, fornecedor e preço vêm
           da origem contratada. Quantidades: até 3 casas decimais. Centavos
@@ -968,7 +978,7 @@ export default function DLMovementWorkspace({
                     {formatMoney(line.unitPriceCents || 0)} / {line.unit}
                   </td>
                   {flow.areas.map((area) => (
-                    <td key={area.id}>
+                    <td key={area.id} onFocus={() => setFocusedAreaId(area.id)}>
                       {editable ? (
                         numeric(
                           `qty:${area.id}:${line.id}`,
@@ -1517,6 +1527,60 @@ export default function DLMovementWorkspace({
             </article>
           ))}
         </section>
+      )}
+      {dlPicker && (
+        <DLMovementPlanPicker
+          plans={[
+            ...new Map(
+              [
+                ...plansWithBalance,
+                ...context.plans.filter((plan) =>
+                  selectedPlanIds.includes(plan.id),
+                ),
+              ].map((plan) => [plan.id, plan]),
+            ).values(),
+          ]}
+          sources={sources}
+          selectedIds={selectedPlanIds}
+          supplier={order.supplier}
+          onClose={() => setDLPicker(false)}
+          onApply={(planIds, supplier) => {
+            const lines = order.lines.filter(
+              (line) =>
+                planIds.includes(line.planId) && line.supplier === supplier,
+            );
+            const removed = order.lines.filter(
+              (line) => !lines.some((kept) => kept.id === line.id),
+            );
+            if (
+              removed.some((line) => line.quantityMilli > 0) &&
+              !window.confirm(
+                "Esta seleção retira materiais de DLs ou de um fornecedor anterior. Remover essas quantidades das áreas? A reserva só será alterada ao salvar.",
+              )
+            )
+              return false;
+            patch(
+              { lines, supplier },
+              {
+                ...flow,
+                planId: planIds[0] || "",
+                planIds,
+                areas: flow.areas.map((area) => ({
+                  ...area,
+                  allocations: area.allocations.filter((a) =>
+                    lines.some((line) => line.id === a.lineId),
+                  ),
+                })),
+              },
+            );
+            setQuery("");
+            if (removed.length) {
+              setRaw({});
+              setInvalid({});
+            }
+            return true;
+          }}
+        />
       )}
     </section>
   );

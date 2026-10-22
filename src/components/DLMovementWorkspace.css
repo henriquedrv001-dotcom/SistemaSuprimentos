@@ -329,25 +329,234 @@
 .movement-dl-picker {
   min-width: 0;
 }
-.movement-selected-dls {
+/* A seleção não muda a altura da linha de campos. */
+.movement-dl-trigger {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.movement-selected-dls > span {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 4px 3px 10px;
+  justify-content: space-between;
+  gap: 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 7px;
+  padding: 0 12px;
+  background: var(--movement-field, #fff);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
   font-size: 12px;
-  color: var(--primary);
+  cursor: pointer;
+}
+.movement-dl-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.movement-dl-trigger:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.modern-shell .item-edit-dialog.movement-dl-dialog[open] {
+  inset: 0;
+  margin: auto;
+  width: min(900px, calc(100% - 32px));
+  height: fit-content;
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--movement-dialog-surface, #fff);
+}
+:root[data-theme="dark"] .movement-dl-dialog {
+  --movement-dialog-surface: #162131;
+}
+.movement-dl-dialog > header {
+  position: relative;
+  padding: 24px 120px 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.movement-dl-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.movement-dl-dialog p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.movement-dl-dialog > header > button {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+}
+.movement-dl-dialog-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 18px 24px;
+}
+.movement-dl-options {
+  overflow-y: auto;
+  min-height: 120px;
+  padding: 0 24px 18px;
+}
+.movement-dl-dialog label.movement-dl-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 12px;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--movement-dialog-surface, #fff);
+  font-size: 12px;
+}
+.movement-dl-option > span {
+  min-width: 0;
+}
+.movement-dl-option .ui-checkbox {
+  flex: 0 0 18px;
+  margin-top: 2px;
+}
+.movement-dl-option.is-selected {
+  border-color: var(--primary);
   background: var(--background-soft);
 }
-.movement-selected-dls .icon-button {
-  min-width: 26px;
-  min-height: 26px;
-  padding: 3px;
+.movement-dl-option strong {
+  color: var(--text);
+}
+.movement-dl-option small {
+  display: block;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.movement-dl-option .movement-dl-reason {
+  font-style: italic;
+}
+.movement-dl-dialog > footer {
+  padding: 18px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.movement-dl-dialog > footer > div {
+  display: flex;
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  .modern-shell .item-edit-dialog.movement-dl-dialog[open] {
+    width: calc(100% - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .movement-dl-dialog-filters {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+  .movement-dl-dialog > header {
+    padding: 18px 100px 16px 14px;
+  }
+  .movement-dl-dialog > header > button {
+    top: 18px;
+    right: 14px;
+  }
+  .movement-dl-options {
+    padding: 0 14px 14px;
+  }
+  .movement-dl-dialog > footer {
+    padding: 14px;
+  }
+}
+
+.movement-live-balances {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--movement-field, #fff);
+  box-shadow: 0 4px 14px #172b3a18;
+}
+.movement-live-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.movement-live-total > strong {
+  color: var(--text);
+  font-size: 12px;
+}
+.movement-live-areas {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding: 2px 2px 6px;
+  scrollbar-width: thin;
+}
+.movement-live-areas > div {
+  flex: 1 0 190px;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px;
+  background: var(--background-soft);
+}
+.movement-live-areas > div > span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.movement-live-areas > div > strong {
+  color: var(--primary);
+  font-size: 13px;
+}
+.movement-live-areas > div[data-state="excess"] > strong {
+  color: var(--warning);
+}
+.movement-live-areas > div[data-state="matched"] > strong {
+  color: var(--success);
+}
+.movement-live-areas > div.is-active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.movement-live-areas small {
+  font-size: 10px;
+}
+.movement-table input {
+  scroll-margin-block-start: 180px;
+  scroll-margin-block-end: 20px;
+}
+@media (max-width: 600px) {
+  .movement-live-balances {
+    top: 6px;
+    padding: 8px;
+  }
+  .movement-live-areas > div {
+    flex-basis: 220px;
+  }
+  .movement-live-total > span {
+    line-height: 1.5;
+  }
 }
