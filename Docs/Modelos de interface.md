@@ -14,7 +14,7 @@ Por orientação do usuário, toda alteração de interface a partir desta etapa
 | UI-FLT-02 | Busca com ícone e rótulo | `src/components/ui/FilterSearch.tsx` | Aplicado às buscas de Planejamento e Controle. |
 | UI-BAR-01 | Grade de filtros alinhados | `.ui-filterbar` em `InterfaceModels.css` | Rótulos acima, caixas na mesma linha e quebra responsiva pela largura disponível. |
 | UI-NAV-01 | Seletor segmentado | `src/components/ui/SegmentedControl.tsx` | Planejamento/Controle no cabeçalho, ao lado de Nova DL. Referência: imagem 5 do usuário. |
-| UI-NAV-02 | Seletor de tipo de pedido | `OrdersNavigation.tsx` com `FilterSelect` | Menu único no cabeçalho, com grupos Estoque e Compras e nomes resumidos; responsivo e compatível com os dois temas. |
+| UI-NAV-02 | Seletor de tipo de pedido | `NewOrderDialog` em `OrdersWorkspace.tsx` com `FilterSelect` | Dentro de Novo pedido: janela compacta com grupos Estoque e Compras, nomes resumidos e ação Continuar; compatível com os dois temas. |
 | UI-BTN-01 | Ação principal azul | `.primary-button` existente | Base atual, reutilizada em Nova DL; nenhum novo comportamento ou redesenho de todos os botões nesta rodada. |
 | UI-TBL-01 | Tabela compacta de processos | `src/components/dl/Acquisitions.css` | Base atual com cabeçalhos alinhados e rolagem local; colunas dependem da função. |
 | UI-CHK-01 | Checkbox quadrado | `.ui-checkbox` em `InterfaceModels.css` | 18 × 18 px, azul ao marcar, foco visível e estado parcial; aplicado ao seletor de materiais da DL. |
@@ -91,4 +91,4 @@ Na consulta de Contratação, apresentar apenas **Consultar documentos do pedido
 
 ## UI-NAV-02 — tipo de pedido
 
-Substitui as caixas de tipos por um seletor com rótulo “Selecione o tipo de pedido”. Estoque contém Transferência, Fundo rotativo e Dispensa de licitação vigente. Compras contém ATA/Contrato e Material Entrada e Saída. Os títulos dos grupos não são opções selecionáveis. Preservar a confirmação ao sair de uma edição não salva, os códigos internos e os registros existentes. Em telas estreitas, o seletor ocupa a linha inteira. Validado nos temas claro e noturno.
+A listagem Pedidos reúne todos os tipos. Novo pedido abre uma janela compacta central com rótulo “Selecione o tipo de pedido” e escolha inicial vazia. Estoque contém Transferência, Fundo rotativo e Dispensa de licitação vigente; Compras contém ATA/Contrato e Material Entrada e Saída. Continuar só habilita após escolher um tipo e abre o formulário correspondente na área principal. Cancelar ou Escape não cria registro nem reserva saldo. A troca de tipo não aparece no cabeçalho da página; a listagem conserva o filtro Tipo. Preservar códigos internos, registros existentes e confirmação ao sair de uma edição não salva. Validar nos temas claro e noturno.

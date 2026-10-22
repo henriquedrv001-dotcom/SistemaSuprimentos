@@ -10,11 +10,10 @@ import {
 } from "lucide-react";
 import { demoCycles, demoItems } from "./data";
 import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
-import OrdersNavigation from "./components/OrdersNavigation";
 import OrdersWorkspace from "./components/OrdersWorkspace";
 import { addManualDLAdjustment, emptyOrderWorkspace, importLegacyDLOrders, orderControlRows, orderWorkspaceKey, readOrderWorkspace } from "./services/orders";
 import type { OrderContext } from "./services/orders";
-import type { OrderKind, OrderWorkspace } from "./types/orders";
+import type { OrderWorkspace } from "./types/orders";
 import { dlOrderDraftsKey } from "./services/dlOrderDrafts";
 import { todayInBrazil } from "./services/dlPlanning";
 import AppSidebar, { navigationLocation, orderSections } from "./components/AppSidebar";
@@ -303,7 +302,6 @@ function App() {
   const activeCycle = cycles[0] ?? demoCycles[0];
   const cycleRows = cycleWorkspace.lines.filter((line) => line.cycleId === activeCycle.id);
   const pendingOrders = orderState.workspace.orders.filter((order) => !["Concluído", "Cancelado", "Rascunho"].includes(order.status)).length;
-  const sectionOrderKinds: Partial<Record<AppSection, OrderKind>> = { "Pedidos diretos": "PCD", "Pedidos FRs": "PFR", "Pedidos DLs": "PDL", "ATA / Contratos": "ATA", "Pedidos Material Entrada e Saída": "MOV" };
 
   function addItem() {
     if (!newItem.code.trim() || !newItem.description.trim()) return;
@@ -463,8 +461,7 @@ function App() {
         </header>
 
         <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
-          {orderSections.includes(section) && <OrdersNavigation section={section} onNavigate={next => { if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) {setOpenOrderId(null);setSection(next);} }} />}
-          {orderSections.includes(section) && <OrdersWorkspace key={section} kind={sectionOrderKinds[section]} initialOrderId={section === "Pedidos DLs" ? openOrderId || undefined : undefined} workspace={orderState.workspace} context={orderContext} error={orderState.error || dlState.error || cycleState.error} onCommit={commitOrders} onDirtyChange={setDLDirty} />}
+          {orderSections.includes(section) && <OrdersWorkspace key={section} allowCreate initialOrderId={section === "Pedidos DLs" ? openOrderId || undefined : undefined} workspace={orderState.workspace} context={orderContext} error={orderState.error || dlState.error || cycleState.error} onCommit={commitOrders} onDirtyChange={setDLDirty} />}
           {bulkMessage && section !== "Cadastro de itens" && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
           {section === "Painel" && (
             <>

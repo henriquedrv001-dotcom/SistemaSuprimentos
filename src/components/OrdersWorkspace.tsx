@@ -34,6 +34,7 @@ import "./OrdersWorkspace.css";
 type Props = {
   initialOrderId?: string;
   kind?: OrderKind;
+  allowCreate?: boolean;
   workspace: OrderWorkspace;
   context: OrderContext;
   error: string;
@@ -87,6 +88,7 @@ const actionFeedback: Record<OrderAction, string> = {
 
 export default function OrdersWorkspace({
   initialOrderId,
+  allowCreate = false,
   kind,
   workspace,
   context,
@@ -97,6 +99,7 @@ export default function OrdersWorkspace({
   const [activeId, setActiveId] = useState<string | null>(
     initialOrderId || null,
   );
+  const [choosingType, setChoosingType] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [baseline, setBaseline] = useState("");
   const [quantities, setQuantities] = useState<Record<string, string>>({});
@@ -139,9 +142,9 @@ export default function OrdersWorkspace({
       window.removeEventListener("beforeunload", prevent);
     };
   }, [dirty, onDirtyChange]);
-  function begin(order?: Order) {
+  function begin(order?: Order, creationKind?: OrderKind) {
     const next = structuredClone(
-      order || newOrder(kind || "PCD", DEFAULT_DL_REQUESTER),
+      order || newOrder(creationKind || kind || "PCD", DEFAULT_DL_REQUESTER),
     );
     setEditing(next);
     setBaseline(JSON.stringify(next));
@@ -411,6 +414,7 @@ export default function OrdersWorkspace({
       : total
         ? formatMoney(total.cents)
         : "—";
+  const Heading = allowCreate && !shown ? "h1" : "h2";
   return (
     <section
       className="dl-orders order-workspace"
@@ -418,15 +422,17 @@ export default function OrdersWorkspace({
     >
       <header className="dl-orders-heading">
         <div>
-          <h2 id="orders-workspace-title">
+          <Heading id="orders-workspace-title">
             {editing
               ? `Preparar solicitação · ${orderKindNames[editing.kind]}`
               : active
                 ? label(active)
                 : kind
                   ? orderKindNames[kind]
-                  : "Acompanhamento de pedidos"}
-          </h2>
+                  : allowCreate
+                    ? "Pedidos"
+                    : "Acompanhamento de pedidos"}
+          </Heading>
           <p className="muted">
             {shown
               ? orderKindNames[shown.kind]
@@ -461,13 +467,13 @@ export default function OrdersWorkspace({
             </>
           ) : (
             <>
-              {kind && (
+              {(kind || allowCreate) && (
                 <button
                   className="primary-button"
                   disabled={!!storageError}
-                  onClick={() => begin()}
+                  onClick={() => setChoosingType(true)}
                 >
-                  <Plus size={16} /> Preparar pedido
+                  <Plus size={16} /> Novo pedido
                 </button>
               )}
             </>
@@ -488,7 +494,7 @@ export default function OrdersWorkspace({
         Registro local. Aprovações, envios e recebimentos são informados pelo
         usuário; o sistema não transmite pedidos ao MXM nem ao fornecedor.
       </p>
-      {kind === "PDL" && (
+      {(shown?.kind === "PDL" || kind === "PDL") && (
         <p className="order-local-note">
           Salvar o PDL reserva seus materiais. Receber baixa apenas o que
           chegou; o restante fica reservado até receber ou encerrar a entrega.
@@ -583,7 +589,7 @@ export default function OrdersWorkspace({
                 })),
               ]}
             />
-            {kind === "PDL" && (
+            {(kind === "PDL" || type === "PDL") && (
               <FilterSelect
                 label="DL"
                 value={planFilter}
@@ -1435,6 +1441,15 @@ export default function OrdersWorkspace({
           )}
         </>
       )}
+      {choosingType && (
+        <NewOrderDialog
+          onClose={() => setChoosingType(false)}
+          onContinue={(selected) => {
+            setChoosingType(false);
+            begin(undefined, selected);
+          }}
+        />
+      )}
       {action && active && (
         <OrderActionDialog
           key={`${active.id}:${action}`}
@@ -1701,6 +1716,78 @@ function OrderActionDialog({
         </button>
         <button className="primary-button" onClick={save}>
           Confirmar registro
+        </button>
+      </footer>
+    </dialog>
+  );
+}
+
+function NewOrderDialog({
+  onClose,
+  onContinue,
+}: {
+  onClose: () => void;
+  onContinue: (kind: OrderKind) => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selected, setSelected] = useState("");
+  useEffect(() => {
+    ref.current?.showModal();
+  }, []);
+  const explanations: Record<OrderKind, string> = {
+    PCD: "Selecione um ciclo e os materiais para solicitar a transferência.",
+    PFR: "Selecione materiais do catálogo e informe a justificativa para uso do fundo rotativo.",
+    PDL: "Selecione materiais de uma DL vigente. Ao salvar o rascunho, as quantidades ficam reservadas.",
+    ATA: "Informe a ata ou contrato, o fornecedor e os materiais solicitados.",
+    MOV: "Informe se é entrada ou saída e selecione os materiais.",
+  };
+  const chosen = orderKinds.find((kind) => kind === selected);
+  return (
+    <dialog
+      ref={ref}
+      className="item-edit-dialog order-small-dialog"
+      aria-labelledby="new-order-title"
+      onClose={onClose}
+    >
+      <header className="ui-data-dialog-heading">
+        <h2 id="new-order-title">Novo pedido</h2>
+        <p>Escolha o tipo para iniciar a solicitação.</p>
+      </header>
+      <div className="ui-data-dialog-body">
+        <FilterSelect
+          label="Selecione o tipo de pedido"
+          value={selected}
+          onChange={setSelected}
+          options={[
+            { value: "", label: "Selecionar tipo", disabled: true },
+            ...orderKinds.map((kind) => ({
+              value: kind,
+              label: orderKindNames[kind],
+              group: ["PCD", "PFR", "PDL"].includes(kind)
+                ? "Estoque"
+                : "Compras",
+            })),
+          ]}
+        />
+        {chosen && (
+          <p className="muted" role="status">
+            {explanations[chosen]}
+          </p>
+        )}
+      </div>
+      <footer className="ui-data-dialog-footer">
+        <button
+          className="secondary-button"
+          onClick={() => ref.current?.close()}
+        >
+          Cancelar
+        </button>
+        <button
+          className="primary-button"
+          disabled={!chosen}
+          onClick={() => chosen && onContinue(chosen)}
+        >
+          Continuar
         </button>
       </footer>
     </dialog>
