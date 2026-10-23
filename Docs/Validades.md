@@ -1,31 +1,68 @@
-# Validades — primeira implementação
+# Validades — operação e decisões
 
-Validades é acessado pela barra lateral e usa o mesmo `item.id` do Cadastro central. Não cria outro cadastro de produtos. Cada material pode ter vários lotes, com quantidade, unidade e data de validade próprias. Os demais módulos continuam disponíveis no ambiente de desenvolvimento.
+Validades usa os materiais do Cadastro central, pelo mesmo `item.id`. O módulo controla lotes e movimentos locais; não duplica produtos nem altera saldos de DLs, pedidos ou MXM.
 
-## Operação
+## Cadastro e novas chegadas
 
-1. Em Validades, clique em **Registrar validade**, busque e selecione um material ativo em um único campo. Informe quantidade, lote e validade na mesma linha.
-2. **Adicionar lote** inclui outra linha para o mesmo material. **Salvar** valida e grava todas as linhas de uma vez; um lote inválido impede a gravação do conjunto e preserva o formulário. Também é possível selecionar um material no Cadastro e usar **Preparar seleção → Registrar validade**.
-3. O painel mostra lotes com saldo: vencidos, até 7 dias, de 8 a 30 dias e acima de 30 dias. Vencimento de hoje permanece no prazo. A lista ordena os mais próximos primeiro e permite pesquisar código, descrição ou lote.
-4. **Dar baixa** registra consumo, descarte ou ajuste redutor, com quantidade e motivo. Não aceita quantidade acima do saldo. Lotes zerados continuam disponíveis pelo filtro **Encerrado**, com seu histórico.
-5. **Exportar backup** baixa o Cadastro e os registros de validade em JSON. Não há restauração pela interface nesta etapa.
+- **Registrar validade** abre uma janela compacta. O foco começa no título; os resultados do material só abrem ao clicar no campo, digitar ou usar as setas. Busca e seleção usam um único campo.
+- Quantidade, lote e validade ficam na mesma linha em desktop. **Adicionar lote** permite registrar vários lotes do material; **Salvar** valida e grava o conjunto de uma vez.
+- Uma nova chegada com **mesmo material, lote e validade** soma ao lote existente, com aviso no formulário e nova entrada no histórico. A quantidade inicial e os movimentos anteriores permanecem preservados.
+- Também é possível expandir o material e usar **Ações → Nova entrada** no lote. Basta informar a quantidade recebida. Um lote zerado pode voltar a ter saldo.
+- Outro lote permanece separado. Um número de lote já existente com outra validade exige conferência dos dados, evitando criar outra data por engano. Linhas repetidas no mesmo formulário são bloqueadas.
+- A mesma operação não pode ser reaplicada com o mesmo identificador. Falha em uma das linhas não grava nenhuma delas.
 
-O saldo dos lotes é independente dos saldos de DLs, pedidos e do MXM. Não há movimentação automática nesses módulos. O formulário não solicita responsável. Enquanto não houver autenticação, os novos eventos são identificados como “Operador local”; não representam identidade autenticada. Responsáveis históricos permanecem preservados.
+## Lista agrupada
 
-## Unidades e integridade
+A capa de cada material mostra código/descrição, saldo total e quantidade da validade mais próxima. Expandir mostra todos os lotes desse material, incluindo os zerados, com suas ações. Se vários lotes vencerem na mesma data mais próxima, a quantidade da capa soma esses lotes. Lotes sem saldo não definem a próxima validade.
 
-A exibição e os próximos salvamentos padronizam grafia e abreviações explícitas, como `kg → KG` e `UNID → UN`. Não convertem quantidades nem deduzem KG, UN, CX ou PCT pela descrição. Cadastro → **Mais ações → Conferir unidades** mostra grafias existentes, campos vazios e exemplos para conferência com o MXM. Dados antigos não são regravados apenas por abrir a tela.
+Agrupamento utiliza a identidade do Cadastro e a unidade registrada. Descrições iguais de códigos distintos não são fundidas, nem unidades diferentes somadas. Totais usam inteiros de precisão arbitrária para não acumular erro decimal.
 
-Lotes guardam a unidade do momento do registro. Mudanças de unidade e exclusão de materiais com lotes vinculados são bloqueadas, inclusive após encerramento; inativar o material preserva os vínculos. Quantidades usam inteiros com três casas decimais. A mesma combinação material/lote/validade não pode ser registrada novamente. Histórico e saldo são validados juntos antes de salvar.
+Busca e situação localizam materiais que contenham pelo menos um lote correspondente. A capa continua mostrando o total real do material, e a expansão mostra todos os seus lotes. O painel mantém contagem de **lotes**, claramente identificada, com as faixas vencido, até 7 dias, de 8 a 30 dias e acima de 30 dias.
 
-## Persistência e publicação
+## Baixas e prioridade
 
-Nesta etapa os dados continuam no navegador, na chave `suprimentos:expiry:v1`. `LocalExpiryRepository` implementa a interface `ExpiryRepository`; componentes não acessam SDK de banco de dados. A integração com Firebase, autenticação, regras de acesso e publicação fica para a etapa de infraestrutura, antes do uso compartilhado em produção.
+**Ações → Dar baixa** solicita quantidade e tipo: Consumo ou Descarte. Consumo registra o motivo automaticamente. Descarte usa Vencimento, Avaria ou Outro; somente Outro pede texto adicional. Não permite saldo negativo.
 
-Falhas de armazenamento mantêm a edição aberta. Mudanças em outra aba bloqueiam sobrescrita por uma revisão antiga. Dados de validade inconsistentes são preservados e bloqueiam novas gravações. Essa verificação local não substitui transações de banco de dados.
+Quando houver outro lote válido do mesmo material vencendo antes, a janela indica qual usar primeiro, seguindo a prioridade de vencimento (FEFO). A operação continua vinculada ao lote escolhido pelo operador. Um lote vencido não pode ser baixado como consumo; pode ser descartado ou conferido. A validade de hoje ainda está no prazo, considerando a data de São Paulo.
 
-Nenhuma migração dos dados demonstrativos para produção foi executada. Os dados e o histórico reais começarão quando os materiais forem carregados no ambiente publicado.
+## Conferência física / auditoria
 
-## Verificação
+- **Conferir estoque**, no cabeçalho, abre os lotes dos materiais localizados na listagem. **Ações → Conferir estoque** abre somente aquele lote.
+- Informe a quantidade realmente encontrada, inclusive **zero**. **Confere** preenche a quantidade atual para registrar a confirmação explícita do operador.
+- Campo em branco significa **não contado** e não altera esse lote.
+- O sistema mostra a diferença antes de salvar. Se houver divergência, exige um motivo para a conferência. A confirmação registra saldo anterior, quantidade encontrada, diferença e data/hora.
+- Conferência sem diferença também entra no histórico. A contagem pode corrigir para mais ou para menos sem inventar uma entrada ou consumo.
+- Todos os lotes preenchidos são validados antes da gravação. Mudança do saldo durante a contagem impede a aplicação sobre uma base antiga.
 
-Testes de domínio cobrem unidades, vínculo com o Cadastro, múltiplos lotes, duplicidade, validade, quantidades, baixas parciais e totais, histórico, conflito entre abas e falha de armazenamento. O fluxo foi conferido no Chromium nos temas claro e noturno, com persistência após recarregar, exportação e telas estreitas.
+Conferir não apaga nem reescreve entradas e baixas. Não há exclusão de movimentos pela interface. A conferência é operacional; aprovação por outro usuário e identidade autenticada dependem da infraestrutura futura.
+
+## Histórico e exportação
+
+**Ações → Histórico** apresenta entradas, consumo, descarte, ajustes históricos e conferências. Movimentos novos mostram saldo anterior e posterior. Registros anteriores continuam legíveis sem exigir campos novos retroativamente.
+
+**Exportar** reúne:
+
+- **Todos os lotes (CSV)**: código, material, lote, validade, unidade, saldo, situação e última conferência.
+- **Histórico (CSV)**: eventos, quantidades, saldos antes/depois quando disponíveis, motivos e responsável registrado. Datas dos arquivos usam ISO; horários incluem o fuso UTC no timestamp.
+- **Backup (JSON)**: Cadastro e todos os registros de validade. A restauração ainda não está disponível pela interface.
+
+Os CSVs exportam o conjunto completo, independentemente dos filtros visuais. O formulário não solicita responsável; enquanto não houver autenticação, novos eventos usam “Operador local”. Responsáveis antigos são preservados.
+
+## Unidades e persistência
+
+Grafias explícitas são padronizadas, como `kg → KG` e `UNID → UN`, sem converter quantidades ou deduzir unidades pela descrição. **Cadastro → Mais ações → Conferir unidades** ajuda a comparar a base com o MXM. Lotes mantêm a unidade registrada; exclusão do material e troca de unidade são bloqueadas quando há vínculos, inclusive encerrados. Inativação preserva o histórico.
+
+Persistência atual: navegador, chave `suprimentos:expiry:v1`, por `LocalExpiryRepository`, separado da interface React. A leitura valida o saldo pelo histórico e preserva registros antigos. Falhas de armazenamento mantêm a edição; conflito entre abas bloqueia sobrescrita. Dados inconsistentes são preservados e impedem gravações. Essa proteção local não substitui transações e autenticação de servidor.
+
+Firebase, regras de acesso e publicação são etapas posteriores. Não houve migração de dados demonstrativos para produção; o histórico real começa com os registros feitos no ambiente publicado.
+
+## Pesquisa utilizada
+
+Foram consultados os arquivos oficiais das documentações, mantidos nos repositórios dos fabricantes:
+
+1. [Odoo — lotes e rastreabilidade](https://github.com/odoo/documentation/blob/19.0/content/applications/inventory_and_mrp/inventory/product_management/product_tracking/lots.rst): material central, vários lotes e uso de lotes existentes em novos recebimentos.
+2. [Odoo — validades](https://github.com/odoo/documentation/blob/19.0/content/applications/inventory_and_mrp/inventory/product_management/product_tracking/expiration_dates.rst) e [FEFO](https://github.com/odoo/documentation/blob/19.0/content/applications/inventory_and_mrp/inventory/shipping_receiving/removal_strategies/fefo.rst): alertas e prioridade dos vencimentos mais próximos.
+3. [Odoo — contagem e ajustes](https://github.com/odoo/documentation/blob/19.0/content/applications/inventory_and_mrp/inventory/warehouses_storage/inventory_management/count_products.rst): diferença entre saldo e contagem física, confirmação antes de aplicar e histórico inclusive com diferença zero.
+4. [Microsoft Dynamics — contagem cíclica](https://github.com/MicrosoftDocs/dynamics-365-unified-operations-public/blob/main/articles/supply-chain/warehousing/cycle-counting.md): conferência pontual e tratamento de divergências.
+
+A adaptação mantém apenas as operações necessárias para este módulo. Configurações de armazéns, ordens de compra, aprovações e notificações externas descritas pelos fornecedores não foram adicionadas.

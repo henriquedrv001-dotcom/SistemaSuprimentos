@@ -377,3 +377,236 @@
     grid-row: 1;
   }
 }
+
+.expiry-existing-lot {
+  grid-column: 1/-1;
+  margin: 0;
+  color: var(--primary);
+  font-size: 11px;
+}
+.expiry-lot-row .expiry-remove-lot {
+  grid-column: 4;
+  grid-row: 1;
+}
+.expiry-page td:last-child .ui-filter-field {
+  width: 120px;
+}
+.modern-shell .item-edit-dialog.expiry-count-dialog[open] {
+  width: min(960px, calc(100% - 32px));
+}
+.expiry-count-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.expiry-count-table th,
+.expiry-count-table td {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 10px;
+}
+.expiry-count-table th {
+  color: var(--text-secondary);
+  background: var(--background-soft);
+  font-weight: 600;
+}
+.expiry-count-table td:first-child {
+  min-width: 200px;
+}
+.expiry-count-table small {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+.expiry-count-input {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.expiry-count-input input {
+  width: 95px;
+}
+.expiry-count-table .expiry-difference {
+  color: var(--warning);
+  font-weight: 600;
+}
+@media (max-width: 480px) {
+  .expiry-lot-row .expiry-remove-lot {
+    grid-column: 3;
+  }
+}
+
+/* Formulário compacto; foco inicial no título, busca somente por intenção. */
+.modern-shell .item-edit-dialog.expiry-dialog:not(.expiry-count-dialog)[open] {
+  width: min(640px, calc(100% - 32px));
+}
+.expiry-dialog header {
+  padding: 15px 18px 12px;
+}
+.expiry-dialog h2 {
+  font-size: 18px;
+  margin-bottom: 0;
+  outline: none;
+}
+.expiry-dialog header p {
+  margin-top: 7px;
+}
+.expiry-dialog-body {
+  padding: 16px 18px;
+  gap: 12px;
+}
+.expiry-dialog footer {
+  padding: 12px 18px;
+}
+.expiry-dialog input,
+.expiry-dialog .expiry-lot-row input {
+  height: 34px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  font-size: 12px;
+}
+.expiry-material-input {
+  margin-top: 5px;
+}
+.expiry-dialog footer button {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.expiry-dialog .expiry-add-lot {
+  padding: 5px;
+  min-height: 28px;
+  font-size: 12px;
+}
+.expiry-groups {
+  display: grid;
+  gap: 10px;
+}
+.expiry-material-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.expiry-group-heading {
+  display: grid;
+  grid-template-columns:
+    minmax(160px, 2fr) minmax(100px, 0.7fr) minmax(160px, 1fr)
+    18px;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--expiry-surface, #fff);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.expiry-group-heading:hover {
+  background: var(--background-soft);
+}
+.expiry-group-heading strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.expiry-group-heading small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.expiry-group-name small {
+  margin-top: 4px;
+}
+.expiry-group-heading svg {
+  color: var(--primary);
+}
+.expiry-group-heading .is-open {
+  transform: rotate(180deg);
+}
+.expiry-group-nearest {
+  color: var(--primary);
+}
+.expiry-material-group .table-wrap {
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+}
+.expiry-page .expiry-material-group td:first-child {
+  min-width: 80px;
+}
+.expiry-page .expiry-material-group td:nth-child(4) {
+  min-width: 100px;
+}
+@media (max-width: 700px) {
+  .expiry-group-heading {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 18px;
+    gap: 10px;
+    padding: 12px;
+  }
+  .expiry-group-name {
+    grid-column: 1/3;
+  }
+  .expiry-group-heading > svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+.expiry-group-nearest[data-status="Vencido"],
+.expiry-group-nearest[data-status="Até 7 dias"] {
+  color: var(--warning);
+}
+@media (max-width: 600px) {
+  .expiry-count-table,
+  .expiry-count-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .expiry-count-table thead {
+    display: none;
+  }
+  .expiry-count-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .expiry-count-table td {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .expiry-count-table td:first-child {
+    grid-column: 1/-1;
+    min-width: 0;
+  }
+  .expiry-count-table td:nth-child(3) {
+    grid-column: 1/-1;
+    grid-row: 3;
+  }
+  .expiry-count-table td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .expiry-count-table td:not(:first-child)::before {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .expiry-count-table td:nth-child(2)::before {
+    content: "No sistema";
+  }
+  .expiry-count-table td:nth-child(3)::before {
+    content: "Contado";
+  }
+  .expiry-count-table td:nth-child(4)::before {
+    content: "Diferença";
+  }
+  .expiry-count-input input {
+    width: 100%;
+  }
+}

@@ -158,3 +158,6 @@ No Controle, a descrição do material abre os dados daquela origem de saldo; c�
 O Cadastro utiliza filtros visuais compartilhados, unidades padronizadas na exibição e a ação **Mais ações → Conferir unidades**. A importação e o salvamento normalizam abreviações sem converter quantidades ou inferir unidades pela descrição.
 
 **Validades**, na barra lateral, usa os mesmos materiais do Cadastro para registrar múltiplos lotes, acompanhar vencimentos, efetuar baixas e consultar o histórico. A inclusão usa busca e seleção em um campo e permite salvar vários lotes do mesmo material juntos. Há pesquisa, filtros e exportação JSON. A implementação atual mantém persistência local, com um repositório separado para a futura integração com Firebase. Fluxo e limites em [Docs/Validades.md](Docs/Validades.md).
+
+
+A gestão de Validades apresenta materiais agrupados, com total e quantidade do vencimento mais próximo. A janela de registro é compacta e abre a busca apenas por ação do usuário. Novas chegadas somam ao lote existente com histórico; conferência física individual ou de vários lotes registra diferenças, inclusive zero e saldo correto. As ações do lote reúnem entrada, baixa, conferência e histórico; Exportar reúne lotes/histórico em CSV e backup JSON. Fontes da pesquisa, operação e limites em [Docs/Validades.md](Docs/Validades.md).

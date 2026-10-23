@@ -12,11 +12,14 @@ export type ExpiryLot = {
 export type ExpiryMovement = {
   id: string;
   lotId: string;
-  kind: "Entrada" | "Consumo" | "Descarte" | "Ajuste";
+  kind: "Entrada" | "Consumo" | "Descarte" | "Ajuste" | "Conferência";
   quantityMilli: number;
   reason: string;
   actor: string;
   timestamp: string;
+  referenceId?: string;
+  beforeMilli?: number;
+  afterMilli?: number;
 };
 export type ExpiryWorkspace = {
   version: 1;

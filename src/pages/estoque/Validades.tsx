@@ -1,8 +1,14 @@
+import { expiryCsv } from "../../services/expiryReports";
 import { useEffect, useId, useRef, useState } from "react";
-import { CalendarClock, Download, Plus, Search, Trash2 } from "lucide-react";
+import { CalendarClock, ChevronDown, Plus, Search, Trash2 } from "lucide-react";
 import type { Item } from "../../types";
 import type { ExpiryLot, ExpiryWorkspace } from "../../types/expiry";
 import {
+  groupExpiryLots,
+  expiryQuantity,
+  addExpiryEntry,
+  countExpiry,
+  expiryFirstToUse,
   debitExpiry,
   expiryDays,
   expiryStatus,
@@ -31,7 +37,9 @@ type Props = {
 };
 type Mode =
   | { kind: "new"; itemId?: string }
-  | { kind: "debit" | "detail"; lotId: string };
+  | { kind: "debit" | "detail" | "entry"; lotId: string }
+  | { kind: "audit"; lotIds: string[] };
+type DialogMode = Exclude<Mode, { kind: "audit" }>;
 const fold = (s: string) =>
   s
     .normalize("NFD")
@@ -53,6 +61,7 @@ export default function Validades({
   const [mode, setMode] = useState<Mode | null>(null);
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     onDirtyChange(dirty);
     const prevent = (event: BeforeUnloadEvent) => {
@@ -72,23 +81,33 @@ export default function Validades({
     }
   }, [initialItemId, onInitialConsumed]);
   const byId = new Map(items.map((item) => [item.id, item]));
-  const visible = workspace.lots
-    .filter((lot) => {
+  const groups = groupExpiryLots(workspace).filter((group) =>
+    group.lots.some((lot) => {
       const item = byId.get(lot.itemId);
+      const matchesStatus = !status
+        ? lot.remainingMilli > 0
+        : expiryStatus(lot, today) === status;
       return (
-        (!status
-          ? lot.remainingMilli > 0
-          : expiryStatus(lot, today) === status) &&
+        matchesStatus &&
         fold(`${item?.description} ${item?.code} ${lot.batch}`).includes(
           fold(query.trim()),
         )
       );
-    })
-    .sort(
-      (a, b) =>
-        a.expiresOn.localeCompare(b.expiresOn) ||
-        a.batch.localeCompare(b.batch),
+    }),
+  );
+  const visible = groups.flatMap((group) => group.lots);
+  function exportCsv(report: "lots" | "history") {
+    const url = URL.createObjectURL(
+      new Blob([expiryCsv(workspace, items, report, today)], {
+        type: "text/csv;charset=utf-8",
+      }),
     );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `validades-${report === "lots" ? "lotes" : "historico"}-${today}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   function backup() {
     const raw = JSON.stringify(
       {
@@ -124,18 +143,33 @@ export default function Validades({
       <div className="page-heading">
         <div>
           <h1 id="expiry-title">Validades</h1>
-          <p className="muted">
-            Acompanhe os lotes dos materiais do Cadastro, do registro à baixa.
-          </p>
         </div>
         <div className="expiry-actions">
           <button
             className="secondary-button"
-            onClick={backup}
-            disabled={!!error}
+            disabled={!!error || !visible.length}
+            onClick={() =>
+              setMode({ kind: "audit", lotIds: visible.map((lot) => lot.id) })
+            }
           >
-            <Download size={16} /> Exportar backup
+            Conferir estoque
           </button>
+          <FilterSelect
+            aria-label="Exportar validades"
+            value=""
+            disabled={!!error}
+            options={[
+              { value: "", label: "Exportar", disabled: true },
+              { value: "lots", label: "Todos os lotes (CSV)" },
+              { value: "history", label: "Histórico (CSV)" },
+              { value: "backup", label: "Backup (JSON)" },
+            ]}
+            onChange={(value) => {
+              if (value === "backup") backup();
+              else if (value === "lots" || value === "history")
+                exportCsv(value);
+            }}
+          />
           <button
             className="primary-button"
             onClick={() => {
@@ -188,14 +222,10 @@ export default function Validades({
           <div>
             <h2>Próximos vencimentos</h2>
             <p className="muted">
-              {visible.length}{" "}
-              {visible.length === 1 ? "lote exibido" : "lotes exibidos"} · Mais
-              próximos primeiro
+              {groups.length} {groups.length === 1 ? "material" : "materiais"} ·
+              Mais próximos primeiro
             </p>
           </div>
-          <span className="expiry-note">
-            <CalendarClock size={15} /> Vencimento de hoje ainda está no prazo
-          </span>
         </div>
         <div className="ui-filterbar expiry-filters">
           <FilterSearch
@@ -246,97 +276,166 @@ export default function Validades({
             </button>
           </div>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Material</th>
-                  <th>Lote</th>
-                  <th>Validade</th>
-                  <th>Saldo do lote</th>
-                  <th>Situação</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((lot) => {
-                  const item = byId.get(lot.itemId);
-                  const situation = expiryStatus(lot, today);
-                  const days = expiryDays(lot.expiresOn, today);
-                  return (
-                    <tr key={lot.id}>
-                      <td>
-                        <strong>
-                          {item?.description ||
-                            "Material indisponível no Cadastro"}
-                        </strong>
-                        <small>{item?.code || lot.itemId}</small>
-                      </td>
-                      <td>{lot.batch}</td>
-                      <td>
-                        {date(lot.expiresOn)}
-                        <small>
-                          {days < 0
-                            ? `Vencido há ${Math.abs(days)} dia(s)`
-                            : days === 0
-                              ? "Vence hoje"
-                              : `Em ${days} dia(s)`}
-                        </small>
-                      </td>
-                      <td>
-                        {decimalInput(lot.remainingMilli, 3)}{" "}
-                        <span className="expiry-unit">{lot.unit}</span>
-                        <small>
-                          Inicial: {decimalInput(lot.initialMilli, 3)}{" "}
-                          {lot.unit}
-                        </small>
-                      </td>
-                      <td>
-                        <span className="expiry-status" data-status={situation}>
-                          {situation}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="expiry-actions">
-                          <button
-                            className="text-button"
-                            onClick={() =>
-                              setMode({ kind: "detail", lotId: lot.id })
-                            }
-                          >
-                            Histórico
-                          </button>
-                          <button
-                            className="secondary-button"
-                            disabled={!!error || lot.remainingMilli === 0}
-                            onClick={() =>
-                              setMode({ kind: "debit", lotId: lot.id })
-                            }
-                          >
-                            Dar baixa
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!visible.length && (
-                  <tr>
-                    <td colSpan={6} className="empty-state">
-                      Nenhum lote corresponde aos filtros.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="expiry-groups">
+            {groups.map((group) => {
+              const item = byId.get(group.itemId);
+              const isOpen = expanded.has(group.key);
+              const nearest = group.nearest;
+              return (
+                <article className="expiry-material-group" key={group.key}>
+                  <button
+                    className="expiry-group-heading"
+                    aria-expanded={isOpen}
+                    onClick={() =>
+                      setExpanded((current) => {
+                        const next = new Set(current);
+                        if (next.has(group.key)) next.delete(group.key);
+                        else next.add(group.key);
+                        return next;
+                      })
+                    }
+                  >
+                    <span className="expiry-group-name">
+                      <strong>
+                        {item?.description ||
+                          "Material indisponível no Cadastro"}
+                      </strong>
+                      <small>
+                        {item?.code || group.itemId} · {group.lots.length}{" "}
+                        {group.lots.length === 1 ? "lote" : "lotes"}
+                      </small>
+                    </span>
+                    <span className="expiry-group-total">
+                      <small>Total</small>
+                      <strong>
+                        {expiryQuantity(group.totalMilli)} {group.unit}
+                      </strong>
+                    </span>
+                    <span
+                      className="expiry-group-nearest"
+                      data-status={
+                        nearest ? expiryStatus(nearest, today) : "Encerrado"
+                      }
+                    >
+                      <small>
+                        {nearest && expiryDays(nearest.expiresOn, today) < 0
+                          ? "Vencido"
+                          : "Próxima validade"}
+                      </small>
+                      <strong>
+                        {nearest
+                          ? `${expiryQuantity(group.nearestMilli)} ${group.unit} · ${date(nearest.expiresOn)}`
+                          : "Sem saldo"}
+                      </strong>
+                    </span>
+                    <ChevronDown
+                      size={17}
+                      className={isOpen ? "is-open" : ""}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Lote</th>
+                            <th>Validade</th>
+                            <th>Saldo</th>
+                            <th>Situação</th>
+                            <th>Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.lots.map((lot) => (
+                            <tr key={lot.id}>
+                              <td>{lot.batch}</td>
+                              <td>{date(lot.expiresOn)}</td>
+                              <td>
+                                {decimalInput(lot.remainingMilli, 3)} {lot.unit}
+                              </td>
+                              <td>
+                                <span
+                                  className="expiry-status"
+                                  data-status={expiryStatus(lot, today)}
+                                >
+                                  {expiryStatus(lot, today)}
+                                </span>
+                              </td>
+                              <td>
+                                <FilterSelect
+                                  aria-label={`Ações do lote ${lot.batch}`}
+                                  value=""
+                                  options={[
+                                    {
+                                      value: "",
+                                      label: "Ações",
+                                      disabled: true,
+                                    },
+                                    ...(item && item.active !== false
+                                      ? [
+                                          {
+                                            value: "entry",
+                                            label: "Nova entrada",
+                                          },
+                                        ]
+                                      : []),
+                                    ...(lot.remainingMilli > 0
+                                      ? [{ value: "debit", label: "Dar baixa" }]
+                                      : []),
+                                    {
+                                      value: "audit",
+                                      label: "Conferir estoque",
+                                    },
+                                    { value: "detail", label: "Histórico" },
+                                  ]}
+                                  onChange={(action) => {
+                                    if (action === "audit")
+                                      setMode({
+                                        kind: "audit",
+                                        lotIds: [lot.id],
+                                      });
+                                    else if (
+                                      action === "entry" ||
+                                      action === "debit" ||
+                                      action === "detail"
+                                    )
+                                      setMode({ kind: action, lotId: lot.id });
+                                  }}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+            {!groups.length && (
+              <p className="empty-state">
+                Nenhum material corresponde aos filtros.
+              </p>
+            )}
           </div>
         )}
       </section>
-      <p className="expiry-note">
-        Registros salvos neste navegador. Esta etapa ainda não está conectada ao
-        Firebase nem ao estoque do MXM.
-      </p>
-      {mode && (
+      {mode?.kind === "audit" && (
+        <ExpiryCountDialog
+          lotIds={mode.lotIds}
+          workspace={workspace}
+          items={items}
+          onClose={close}
+          onDirty={setDirty}
+          onCommit={onCommit}
+          onSaved={(text) => {
+            setDirty(false);
+            setMessage(text);
+            setMode(null);
+          }}
+        />
+      )}
+      {mode && mode.kind !== "audit" && (
         <ExpiryDialog
           key={
             mode.kind === "new"
@@ -368,7 +467,7 @@ function ExpiryDialog({
   onCommit,
   onSaved,
 }: {
-  mode: Mode;
+  mode: DialogMode;
   items: Item[];
   workspace: ExpiryWorkspace;
   onClose: () => boolean;
@@ -381,21 +480,38 @@ function ExpiryDialog({
   const [itemId, setItemId] = useState(
     mode.kind === "new" ? mode.itemId || "" : "",
   );
+  const [requestId] = useState(() => crypto.randomUUID());
   const [quantity, setQuantity] = useState("");
   const actor = "Operador local";
   const [reason, setReason] = useState("");
-  const [kind, setKind] = useState<"Consumo" | "Descarte" | "Ajuste">(
-    "Consumo",
+  const today = todayInBrazil();
+  const selectedLot =
+    mode.kind === "new"
+      ? undefined
+      : workspace.lots.find((lot) => lot.id === mode.lotId);
+  const [kind, setKind] = useState<"Consumo" | "Descarte">(
+    selectedLot && expiryDays(selectedLot.expiresOn, today) < 0
+      ? "Descarte"
+      : "Consumo",
+  );
+  const [discardReason, setDiscardReason] = useState(
+    selectedLot && expiryDays(selectedLot.expiresOn, today) < 0
+      ? "Vencimento"
+      : "Avaria",
   );
   const [error, setError] = useState("");
   useEffect(() => {
     ref.current?.showModal();
+    ref.current?.querySelector<HTMLElement>("h2")?.focus();
   }, []);
   const lot: ExpiryLot | undefined =
     mode.kind !== "new"
       ? workspace.lots.find((lot) => lot.id === mode.lotId)
       : undefined;
   const item = items.find((item) => item.id === (lot?.itemId || itemId));
+  const firstToUse = lot
+    ? expiryFirstToUse(workspace, lot.itemId, today)
+    : undefined;
   const edit = (change: () => void) => {
     change();
     onDirty(true);
@@ -423,20 +539,39 @@ function ExpiryDialog({
         );
       } else if (lot) {
         const quantityMilli = parseScaledInput(quantity, 3, "Quantidade") || 0;
-        onCommit((ws) =>
-          debitExpiry(ws, {
-            lotId: lot.id,
-            quantityMilli,
-            actor,
-            reason,
-            kind,
-          }),
-        );
+        if (mode.kind === "entry")
+          onCommit((ws, currentItems) =>
+            addExpiryEntry(ws, currentItems, {
+              id: requestId,
+              lotId: lot.id,
+              quantityMilli,
+              actor,
+              expectedUnit: lot.unit,
+            }),
+          );
+        else
+          onCommit((ws) =>
+            debitExpiry(ws, {
+              lotId: lot.id,
+              quantityMilli,
+              actor,
+              reason:
+                kind === "Consumo"
+                  ? "Consumo"
+                  : discardReason === "Outro"
+                    ? reason
+                    : discardReason,
+              kind,
+              today,
+            }),
+          );
       } else throw new Error("Lote não encontrado.");
       onSaved(
         mode.kind === "new"
           ? `${drafts.length === 1 ? "Lote registrado" : `${drafts.length} lotes registrados`}.`
-          : "Baixa registrada no histórico do lote.",
+          : mode.kind === "entry"
+            ? "Entrada somada ao lote e registrada no histórico."
+            : "Baixa registrada no histórico do lote.",
       );
     } catch (cause) {
       setError(
@@ -449,7 +584,9 @@ function ExpiryDialog({
       ? "Registrar validade"
       : mode.kind === "debit"
         ? "Dar baixa no lote"
-        : "Histórico do lote";
+        : mode.kind === "entry"
+          ? "Nova entrada no lote"
+          : "Histórico do lote";
   return (
     <dialog
       ref={ref}
@@ -461,7 +598,9 @@ function ExpiryDialog({
       }}
     >
       <header>
-        <h2 id="expiry-dialog-title">{title}</h2>
+        <h2 id="expiry-dialog-title" tabIndex={-1}>
+          {title}
+        </h2>
         {mode.kind !== "new" && (
           <p>
             {item?.description || lot?.itemId} · Lote {lot?.batch}
@@ -474,7 +613,9 @@ function ExpiryDialog({
             <MaterialPicker
               items={items}
               value={itemId}
-              onChange={(value) => edit(() => setItemId(value))}
+              onChange={(value) => {
+                if (value !== itemId) edit(() => setItemId(value));
+              }}
             />
             <div className="expiry-lot-rows">
               {drafts.map((draft, index) => (
@@ -536,6 +677,22 @@ function ExpiryDialog({
                       }
                     />
                   </label>
+                  {(() => {
+                    const existing = workspace.lots.find(
+                      (l) =>
+                        l.itemId === itemId &&
+                        l.batch.trim().toUpperCase() ===
+                          draft.batch.trim().toUpperCase() &&
+                        l.expiresOn === draft.expiresOn,
+                    );
+                    return existing ? (
+                      <small className="expiry-existing-lot">
+                        Será somado ao lote existente · Saldo:{" "}
+                        {decimalInput(existing.remainingMilli, 3)}{" "}
+                        {existing.unit}
+                      </small>
+                    ) : null;
+                  })()}
                   {drafts.length > 1 && (
                     <button
                       className="text-button expiry-remove-lot"
@@ -564,8 +721,31 @@ function ExpiryDialog({
             </button>
           </>
         )}
+        {mode.kind === "entry" && lot && (
+          <>
+            <p className="expiry-note">
+              Validade {date(lot.expiresOn)} · Saldo atual:{" "}
+              {decimalInput(lot.remainingMilli, 3)} {lot.unit}
+            </p>
+            <label>
+              Quantidade recebida ({lot.unit})
+              <input
+                aria-label="Quantidade recebida"
+                inputMode="decimal"
+                value={quantity}
+                onChange={(e) => edit(() => setQuantity(e.target.value))}
+              />
+            </label>
+          </>
+        )}
         {mode.kind === "debit" && (
           <>
+            {kind === "Consumo" && firstToUse && firstToUse.id !== lot?.id && (
+              <p className="notice">
+                Use primeiro o lote {firstToUse.batch}, que vence em{" "}
+                {date(firstToUse.expiresOn)}.
+              </p>
+            )}
             <div className="expiry-balance">
               <span>Saldo disponível do lote</span>
               <strong>
@@ -586,21 +766,37 @@ function ExpiryDialog({
                 label="Tipo de baixa"
                 value={kind}
                 onChange={(value) => edit(() => setKind(value as typeof kind))}
-                options={["Consumo", "Descarte", "Ajuste"].map((value) => ({
+                options={[
+                  ...(lot && expiryDays(lot.expiresOn, today) < 0
+                    ? []
+                    : ["Consumo"]),
+                  "Descarte",
+                ].map((value) => ({
                   value,
                   label: value,
                 }))}
               />
             </div>
-            <label>
-              Motivo da baixa
-              <textarea
-                aria-label="Motivo da baixa"
-                rows={2}
-                value={reason}
-                onChange={(e) => edit(() => setReason(e.target.value))}
+            {kind === "Descarte" && (
+              <FilterSelect
+                label="Motivo"
+                value={discardReason}
+                onChange={(value) => edit(() => setDiscardReason(value))}
+                options={["Vencimento", "Avaria", "Outro"].map((value) => ({
+                  value,
+                  label: value,
+                }))}
               />
-            </label>
+            )}
+            {kind === "Descarte" && discardReason === "Outro" && (
+              <label>
+                Motivo do descarte
+                <input
+                  value={reason}
+                  onChange={(e) => edit(() => setReason(e.target.value))}
+                />
+              </label>
+            )}
           </>
         )}
         {mode.kind === "detail" && lot && (
@@ -618,7 +814,11 @@ function ExpiryDialog({
               .map((event) => (
                 <article key={event.id} className="expiry-history">
                   <strong>
-                    {event.kind} · {decimalInput(event.quantityMilli, 3)}{" "}
+                    {event.kind} ·{" "}
+                    {event.beforeMilli !== undefined &&
+                    event.afterMilli !== undefined
+                      ? `${decimalInput(event.beforeMilli, 3)} → ${decimalInput(event.afterMilli, 3)}`
+                      : decimalInput(event.quantityMilli, 3)}{" "}
                     {lot.unit}
                   </strong>
                   <small>
@@ -642,7 +842,11 @@ function ExpiryDialog({
         </button>
         {mode.kind !== "detail" && (
           <button className="primary-button" onClick={save}>
-            {mode.kind === "new" ? "Salvar" : "Confirmar baixa"}
+            {mode.kind === "new"
+              ? "Salvar"
+              : mode.kind === "entry"
+                ? "Confirmar entrada"
+                : "Confirmar baixa"}
           </button>
         )}
       </footer>
@@ -701,10 +905,6 @@ function MaterialPicker({
           autoComplete="off"
           placeholder="Buscar código ou descrição"
           value={query ?? (selected ? label(selected) : "")}
-          onFocus={() => {
-            setOpen(true);
-            setActive(0);
-          }}
           onChange={(event) => {
             setQuery(event.target.value);
             onChange("");
@@ -768,4 +968,188 @@ function MaterialPicker({
 
 function newLotDraft() {
   return { id: crypto.randomUUID(), batch: "", expiresOn: "", quantity: "" };
+}
+
+function ExpiryCountDialog({
+  lotIds,
+  workspace,
+  items,
+  onClose,
+  onDirty,
+  onCommit,
+  onSaved,
+}: {
+  lotIds: string[];
+  workspace: ExpiryWorkspace;
+  items: Item[];
+  onClose: () => boolean;
+  onDirty: (value: boolean) => void;
+  onCommit: Props["onCommit"];
+  onSaved: (message: string) => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [rows, setRows] = useState(() =>
+    workspace.lots
+      .filter((lot) => lotIds.includes(lot.id))
+      .map((lot) => ({ ...lot, counted: "" })),
+  );
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    ref.current?.showModal();
+    ref.current?.querySelector<HTMLElement>("h2")?.focus();
+  }, []);
+  function parsed(value: string) {
+    try {
+      return parseScaledInput(value, 3, "Quantidade contada");
+    } catch {
+      return null;
+    }
+  }
+  const changed = rows.some(
+    (row) =>
+      row.counted.trim() &&
+      parsed(row.counted) !== null &&
+      parsed(row.counted) !== row.remainingMilli,
+  );
+  function save() {
+    try {
+      const counts = rows
+        .filter((row) => row.counted.trim())
+        .map((row) => ({
+          lotId: row.id,
+          expectedMilli: row.remainingMilli,
+          countedMilli: parseScaledInput(
+            row.counted,
+            3,
+            `Contagem do lote ${row.batch}`,
+          )!,
+        }));
+      onCommit((ws) => countExpiry(ws, counts, "Operador local", reason));
+      onSaved(
+        `${counts.length === 1 ? "Lote conferido" : `${counts.length} lotes conferidos`}. Histórico atualizado.`,
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível salvar a conferência.",
+      );
+    }
+  }
+  function update(id: string, value: string) {
+    setRows((current) =>
+      current.map((row) => (row.id === id ? { ...row, counted: value } : row)),
+    );
+    onDirty(true);
+    setError("");
+  }
+  return (
+    <dialog
+      ref={ref}
+      className="item-edit-dialog expiry-dialog expiry-count-dialog"
+      aria-labelledby="expiry-count-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+    >
+      <header>
+        <h2 id="expiry-count-title" tabIndex={-1}>
+          Conferir estoque
+        </h2>
+        <p>Informe o que encontrou. Deixe em branco o que não foi contado.</p>
+      </header>
+      <div className="expiry-dialog-body">
+        <div className="table-wrap">
+          <table className="expiry-count-table">
+            <thead>
+              <tr>
+                <th>Material / lote</th>
+                <th>No sistema</th>
+                <th>Contado</th>
+                <th>Diferença</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const item = items.find((item) => item.id === row.itemId);
+                const counted = parsed(row.counted);
+                const difference =
+                  counted === null ? null : counted - row.remainingMilli;
+                return (
+                  <tr key={row.id}>
+                    <td>
+                      <strong>{item?.description || row.itemId}</strong>
+                      <small>
+                        {item?.code} · Lote {row.batch} · {date(row.expiresOn)}
+                      </small>
+                    </td>
+                    <td>
+                      {decimalInput(row.remainingMilli, 3)} {row.unit}
+                    </td>
+                    <td>
+                      <div className="expiry-count-input">
+                        <input
+                          aria-label={`Contagem do lote ${row.batch} ${item?.code || row.itemId}`}
+                          inputMode="decimal"
+                          value={row.counted}
+                          onChange={(event) =>
+                            update(row.id, event.target.value)
+                          }
+                        />
+                        <button
+                          className="text-button"
+                          onClick={() =>
+                            update(row.id, decimalInput(row.remainingMilli, 3))
+                          }
+                        >
+                          Confere
+                        </button>
+                      </div>
+                    </td>
+                    <td className={difference ? "expiry-difference" : ""}>
+                      {difference === null
+                        ? "—"
+                        : `${difference > 0 ? "+" : difference < 0 ? "-" : ""}${decimalInput(Math.abs(difference), 3)} ${row.unit}`}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {changed && (
+          <label>
+            Motivo da diferença
+            <input
+              value={reason}
+              onChange={(event) => {
+                setReason(event.target.value);
+                onDirty(true);
+                setError("");
+              }}
+            />
+          </label>
+        )}
+        {error && (
+          <p className="notice" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+      <footer>
+        <button className="secondary-button" onClick={onClose}>
+          Cancelar
+        </button>
+        <button
+          className="primary-button"
+          disabled={!rows.some((row) => row.counted.trim())}
+          onClick={save}
+        >
+          Salvar conferência
+        </button>
+      </footer>
+    </dialog>
+  );
 }
