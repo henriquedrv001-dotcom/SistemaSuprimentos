@@ -1,0 +1,54 @@
+.launch-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--night-canvas, var(--background-soft));
+  color: var(--text);
+  padding: 24px;
+}
+.launch-card {
+  width: min(380px, 100%);
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background-soft);
+}
+.launch-card h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+.launch-card p {
+  color: var(--text-secondary);
+}
+.launch-card form,
+.launch-card label {
+  display: grid;
+  gap: 8px;
+}
+.launch-card form {
+  gap: 18px;
+  margin-top: 24px;
+}
+.launch-card input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--night-field, #fff);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+.launch-card small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.launch-card [role="alert"] {
+  color: var(--warning);
+}
+.launch-theme {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}

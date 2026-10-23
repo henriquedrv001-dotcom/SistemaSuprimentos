@@ -1,3 +1,6 @@
+import type {RemoteContext} from "./repositories/remoteRepository";
+import type {RemoteSnapshot,CatalogCommand} from "./types/remote";
+import type {ExpiryCommand} from "./services/expiryCommands";
 import CatalogUnitAudit from "./components/CatalogUnitAudit";
 import Validades from "./pages/estoque/Validades";
 import { LocalExpiryRepository } from "./repositories/expiryRepository";
@@ -59,16 +62,18 @@ function writeLocalCollection<T>(key: string, value: T[]) {
   }
 }
 
-function App() {
-  const [section, setSection] = useState<AppSection>("Painel");
+function App({remote}: {remote?:RemoteContext}) {
+  const [section, setSection] = useState<AppSection>(remote ? "Cadastro de itens" : "Painel");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [query, setQuery] = useState("");
-  const [selectedTypes, setSelectedTypes] = useState<string[] | null>(readCatalogTypeView);
+  const [selectedTypes, setSelectedTypes] = useState<string[] | null>(() => remote ? null : readCatalogTypeView());
   const [filterType, setFilterType] = useState("Todos");
   const [filterGroup, setFilterGroup] = useState("Todos");
   const [filterCriterion, setFilterCriterion] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
-  const [editorMode, setEditorMode] = useState(false);
+  const [catalogPending,setCatalogPending] = useState(false);
+  const catalogSaving=useRef(false);
+  const [editorMode, setEditorMode] = useState(Boolean(remote && remote.user.role !== "reader"));
   const [shareItems, setShareItems] = useState<Item[] | null>(null);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [bulkMessage, setBulkMessage] = useState("");
@@ -77,16 +82,17 @@ function App() {
   const fixedScrollInnerRef = useRef<HTMLDivElement>(null);
   const syncingScroll = useRef(false);
   const [catalogWidth, setCatalogWidth] = useState(0);
-  const [history, setHistory] = useState<ItemHistoryEntry[]>(() => readLocalCollection("suprimentos:item-history:v1", []));
+  const [history, setHistory] = useState<ItemHistoryEntry[]>(() => remote ? remote.initial.history : readLocalCollection("suprimentos:item-history:v1", []));
   const [sortMode, setSortMode] = useState("description");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [importMessage, setImportMessage] = useState("");
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const importReadId = useRef(0);
-  const [items, setItems] = useState<Item[]>(() => readLocalCollection("suprimentos:items:v1", demoItems));
+  const [items, setItems] = useState<Item[]>(() => remote ? remote.initial.items : readLocalCollection("suprimentos:items:v1", demoItems));
   const expiryRepository = useMemo(() => new LocalExpiryRepository(window.localStorage), []);
   const [expiryState, setExpiryState] = useState(() => {
+    if(remote)return {workspace:remote.initial.expiry,revision:remote.initial.revision,error:""};
     try {
       return { ...expiryRepository.read(), error: "" };
     } catch (cause) {
@@ -97,7 +103,15 @@ function App() {
     }
   });
   const [expiryInitialItem, setExpiryInitialItem] = useState<string | null>(null);
-  function commitExpiry(change: (workspace: ExpiryWorkspace, items: Item[]) => ExpiryWorkspace) {
+  function applyRemote(snapshot:RemoteSnapshot) {setItems(snapshot.items);setHistory(snapshot.history);setExpiryState({workspace:snapshot.expiry,revision:snapshot.revision,error:""});}
+  function readExpirySnapshot(){return remote ? {workspace:expiryState.workspace,revision:expiryState.revision} : expiryRepository.read();}
+  async function saveRemoteCatalog(command:CatalogCommand){
+    if(!remote)throw new Error("Conexão não configurada.");if(!expiryState.revision)throw new Error("Recarregue os dados antes de salvar.");if(catalogSaving.current)throw new Error("Aguarde a gravação atual.");
+    catalogSaving.current=true;setCatalogPending(true);
+    try{applyRemote(await remote.repository.catalog(command,expiryState.revision));}finally{catalogSaving.current=false;setCatalogPending(false);}
+  }
+  async function commitExpiry(change: (workspace: ExpiryWorkspace, items: Item[]) => ExpiryWorkspace, command?:ExpiryCommand) {
+    if(remote){if(!command || !expiryState.revision)throw new Error("Operação indisponível. Reabra a tela.");applyRemote(await remote.repository.expiry(command,expiryState.revision));return;}
     if (expiryState.error) throw new Error(expiryState.error);
     const raw = localStorage.getItem("suprimentos:items:v1");
     const liveItems = raw === null ? items : JSON.parse(raw) as Item[];
@@ -108,14 +122,16 @@ function App() {
   }
   const importCatalogRef = useRef(items);
   importCatalogRef.current = items;
-  const [cycles, setCycles] = useState<SupplyCycle[]>(() => readLocalCollection("suprimentos:cycles:v1", demoCycles));
+  const [cycles, setCycles] = useState<SupplyCycle[]>(() => remote ? [] : readLocalCollection("suprimentos:cycles:v1", demoCycles));
   const [unitAuditOpen,setUnitAuditOpen] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [cycleState, setCycleState] = useState(() => {
+    if(remote)return {workspace:emptyCycleWorkspace(),error:""};
     try { return { workspace: readCycleWorkspace(localStorage.getItem(cycleWorkspaceKey)), error: "" }; }
     catch (cause) { return { workspace: emptyCycleWorkspace(), error: cause instanceof Error ? cause.message : "Não foi possível ler o planejamento salvo. Os dados originais foram preservados." }; }
   });
   const [dlState, setDLState] = useState(() => {
+    if(remote)return {workspace:emptyDLWorkspace(),error:""};
     try { return { workspace: readDLWorkspace(localStorage.getItem(dlWorkspaceKey)), error: "" }; }
     catch (cause) { return { workspace: emptyDLWorkspace(), error: cause instanceof Error ? cause.message : "Não foi possível ler as DLs salvas." }; }
   });
@@ -125,6 +141,7 @@ function App() {
   const cycleWorkspace = cycleState.workspace;
   const orderContext = useMemo<OrderContext>(() => ({ items, plans: dlWorkspace.plans, cycles, cycleWorkspace, today: todayInBrazil() }), [items, dlWorkspace, cycles, cycleWorkspace]);
   const [orderState, setOrderState] = useState(() => {
+    if(remote)return {raw:null,legacyRaw:null,workspace:emptyOrderWorkspace(),error:""};
     try {
       const raw = localStorage.getItem(orderWorkspaceKey);
       const legacyRaw = localStorage.getItem(dlOrderDraftsKey);
@@ -154,9 +171,9 @@ function App() {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ code: "", description: "", unit: "", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" as Item["criterion"] });
 
-  useEffect(() => writeLocalCollection("suprimentos:items:v1", items), [items]);
-  useEffect(() => writeLocalCollection("suprimentos:cycles:v1", cycles), [cycles]);
-  useEffect(() => writeLocalCollection("suprimentos:item-history:v1", history), [history]);
+  useEffect(() => {if(!remote) writeLocalCollection("suprimentos:items:v1", items);}, [items,remote]);
+  useEffect(() => {if(!remote) writeLocalCollection("suprimentos:cycles:v1", cycles);}, [cycles,remote]);
+  useEffect(() => {if(!remote) writeLocalCollection("suprimentos:item-history:v1", history);}, [history,remote]);
   function recordHistory(item: Item, action: string, details: string) {
     setHistory((current) => [{ id: `hist-${crypto.randomUUID()}`, itemId: item.id, code: item.code, action, details, timestamp: new Date().toISOString() }, ...current]);
   }
@@ -245,7 +262,8 @@ function App() {
     } finally { if (readId === importReadId.current && importInputRef.current) importInputRef.current.value = ""; }
   }
 
-  function persistImport(nextItems: Item[], events: ItemHistoryEntry[]) {
+  async function persistImport(nextItems: Item[], events: ItemHistoryEntry[], command:CatalogCommand) {
+    if(remote){await saveRemoteCatalog(command);return;}
     // Persist the catalog before committing React state; a quota/access failure must not report success.
     const nextHistory = [...events, ...history];
     const previousItems = localStorage.getItem("suprimentos:items:v1");
@@ -268,19 +286,20 @@ function App() {
     return { id: `hist-${crypto.randomUUID()}`, itemId: item.id, code: item.code, action, details, timestamp: new Date().toISOString() };
   }
 
-  function addImportedItems() {
+  async function addImportedItems() {
     if (!importPreview) return;
     try {
       const known = new Set(items.map(item => item.code.trim().toUpperCase()));
       const added = importPreview.newItems.filter(item => !known.has(item.code.trim().toUpperCase()));
       if (!added.length) throw new Error("Esses códigos já foram incluídos. Importe a lista novamente para conferir.");
-      persistImport([...items, ...added], added.map(item => importEvent(item, "Cadastro por importação", `Item novo incluído pelo arquivo ${importPreview.filename}. Itens existentes preservados.`)));
+      await persistImport([...items, ...added], added.map(item => importEvent(item, "Cadastro por importação", `Item novo incluído pelo arquivo ${importPreview.filename}. Itens existentes preservados.`)),{kind:"import-create",items:added});
       setImportMessage(`${added.length} novos itens adicionados. Nenhum item existente foi alterado.`);
       if (importPreview.updates.length) setImportPreview({ ...importPreview, newItems: [] }); else cancelImport();
     } catch (error) { setImportMessage(error instanceof Error ? error.message : "Não foi possível adicionar os itens."); }
   }
 
-  function downloadImportBackup() {
+  async function downloadImportBackup() {
+    if(remote){try{const backup=await remote.repository.backup();const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}));const link=document.createElement("a");link.href=url;link.download=`suprimentos-backup-${todayInBrazil()}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(cause){window.alert(cause instanceof Error?cause.message:"Não foi possível gerar o backup.");throw cause;}return;}
     const data = JSON.stringify({ format: "suprimentos-catalog-backup-v1", createdAt: new Date().toISOString(), ...JSON.parse(importBackupVersion) }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
     const link = document.createElement("a"); link.href = url;
@@ -289,15 +308,15 @@ function App() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function updateImportedItems(selection: ImportSelection, confirmation: string, backupVersion: string) {
+  async function updateImportedItems(selection: ImportSelection, confirmation: string, backupVersion: string) {
     if (!importPreview || !editorMode) throw new Error("Ative o perfil Editor para atualizar existentes.");
     if (confirmation !== "ATUALIZAR") throw new Error("Digite exatamente ATUALIZAR para confirmar.");
     if (backupVersion !== importBackupVersion) throw new Error("Os dados mudaram. Gere um novo backup antes de continuar.");
     const result = planImportUpdates(importPreview, selection, items);
     if (!result.updated.length) throw new Error("Selecione ao menos um campo para atualizar.");
-    const expiry = expiryRepository.read().workspace;
+    const expiry = readExpirySnapshot().workspace;
     if(result.updated.some(entry=>expiry.lots.some(lot=>lot.itemId===entry.item.id&&lot.unit!==normalizeCatalogUnit(entry.item.unit))))throw new Error("Há lotes vinculados a uma unidade diferente. Revise a correção de unidades antes de importar.");
-    persistImport(result.items, result.updated.map(entry => importEvent(entry.item, "Atualização por importação", `Arquivo: ${importPreview.filename}\n${entry.changes.map(change => `${change.label}: ${change.before || "(vazio)"} → ${change.after}`).join("\n")}`)));
+    await persistImport(result.items, result.updated.map(entry => importEvent(entry.item, "Atualização por importação", `Arquivo: ${importPreview.filename}\n${entry.changes.map(change => `${change.label}: ${change.before || "(vazio)"} → ${change.after}`).join("\n")}`)),{kind:"import-update",items:result.updated.map(entry=>entry.item)});
     setImportMessage(`${result.updated.length} itens atualizados somente nos campos escolhidos. Especificações, status e vínculos foram preservados.`);
     // Retain unapproved changes for a later review, without applying them implicitly.
     const remaining = importPreview.updates.flatMap(entry => {
@@ -308,16 +327,17 @@ function App() {
     if (remaining.length || importPreview.newItems.length) setImportPreview({ ...importPreview, updates: remaining }); else cancelImport();
   }
 
-  function deleteSelectedItems() {
+  async function deleteSelectedItems() {
     if (!selectedItemIds.length) return;
     try {
-      const liveExpiry = expiryRepository.read();
+      const liveExpiry = readExpirySnapshot();
       if (expiryState.error || liveExpiry.workspace.lots.some(lot => selectedItemIds.includes(lot.itemId)))
         throw new Error("Há materiais vinculados a validades. Use Inativo para preservar lotes e histórico.");
     } catch (cause) {
       window.alert(cause instanceof Error ? cause.message : "Não foi possível conferir as validades.");
       return;
     }
+    if(remote){const confirmation=window.prompt(`Excluir ${selectedItemIds.length} material(is)? Digite EXCLUIR.`);if(confirmation!=="EXCLUIR")return;try{await saveRemoteCatalog({kind:"delete",ids:selectedItemIds});setSelectedItemIds([]);}catch(cause){window.alert(cause instanceof Error?cause.message:"Não foi possível excluir.");}return;}
     if (localStorage.getItem(orderWorkspaceKey) !== orderState.raw || localStorage.getItem(dlOrderDraftsKey) !== orderState.legacyRaw) { window.alert("Os pedidos mudaram em outra aba. Recarregue para conferir os vínculos antes de excluir materiais."); return; }
     if (orderState.error || orderState.workspace.orders.some(order => order.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há materiais vinculados a pedidos ou vínculos que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
     if (dlState.error || dlWorkspace.plans.some(plan => plan.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há vínculos com DLs ou dados que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
@@ -344,7 +364,7 @@ function App() {
   const cycleRows = cycleWorkspace.lines.filter((line) => line.cycleId === activeCycle.id);
   const pendingOrders = orderState.workspace.orders.filter((order) => !["Concluído", "Cancelado", "Rascunho"].includes(order.status)).length;
 
-  function addItem() {
+  async function addItem() {
     if (!newItem.code.trim() || !newItem.description.trim()) return;
     if (!newItem.unit.trim()) { window.alert("Informe a unidade do material, conforme o MXM. A unidade não será preenchida automaticamente."); return; }
     if (items.some((item) => item.code.toLowerCase() === newItem.code.trim().toLowerCase())) {
@@ -362,6 +382,7 @@ function App() {
       criterion: newItem.criterion,
       active: true,
     };
+    if(remote){try{await saveRemoteCatalog({kind:"create",items:[createdItem]});setNewItem({code:"",description:"",unit:"",type:"GÊNEROS ALIMENTÍCIOS",group:"CEREAIS",criterion:"Mensal"});setShowAddItem(false);}catch(cause){window.alert(cause instanceof Error?cause.message:"Não foi possível salvar o material.");}return;}
     setItems((prev) => [...prev, createdItem]);
     recordHistory(createdItem, "Cadastro manual", "Item incluído manualmente no catálogo.");
     setNewItem({ code: "", description: "", unit: "", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" });
@@ -369,7 +390,7 @@ function App() {
     window.alert("Item incluído nesta sessão de demonstração. Ainda não foi gravado em banco de dados.");
   }
 
-  function saveEditedItem() {
+  async function saveEditedItem() {
     if (!editingItem) return;
     if (!editorMode) { window.alert("Ative o perfil Editor para alterar o cadastro."); return; }
     const code = editingItem.code.trim().toUpperCase();
@@ -377,7 +398,7 @@ function App() {
     if (!editingItem.unit.trim()) { window.alert("Informe a unidade do material, conforme o MXM."); return; }
     if (items.some((item) => item.id !== editingItem.id && item.code.toUpperCase() === code)) { window.alert("Já existe outro item com esse código."); return; }
     try {
-      const live = expiryRepository.read();
+      const live = readExpirySnapshot();
       if (live.workspace.lots.some(lot => lot.itemId === editingItem.id && lot.unit !== normalizeCatalogUnit(editingItem.unit)))
         throw new Error("Este material possui lotes vinculados. A unidade não pode ser alterada sem conversão explícita.");
     } catch (cause) {
@@ -385,6 +406,7 @@ function App() {
       return;
     }
     const updated = { ...editingItem, code, description: editingItem.description.trim().toUpperCase(), unit: normalizeCatalogUnit(editingItem.unit), type: (editingItem.type || "SEM TIPO").trim().toUpperCase(), group: editingItem.group.trim().toUpperCase(), technicalSpecification: (editingItem.technicalSpecification ?? "").trim() };
+    if(remote){try{await saveRemoteCatalog({kind:"update",items:[updated]});setEditingItem(null);}catch(cause){window.alert(cause instanceof Error?cause.message:"Não foi possível salvar.");}return;}
     const old = items.find((item) => item.id === updated.id);
     setItems((current) => current.map((item) => item.id === updated.id ? updated : item));
     const changes: string[] = [];
@@ -502,18 +524,18 @@ function App() {
   return (
     <div className={`app-shell modern-shell${sidebarCollapsed ? " menu-collapsed" : ""}`} data-section={section}>
       <a className="skip-navigation" href="#workspace-content">Ir para o conteúdo</a>
-      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) {setOpenOrderId(null);setSection(next);}}} />
+      <AppSidebar released={!!remote} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(value => !value)} section={section} pendingOrders={pendingOrders} onNavigate={next => {if(catalogPending)return;if(remote && !["Cadastro de itens","Validades"].includes(next))return;if (!dlDirty || window.confirm("Descartar alterações não salvas e mudar de tela?")) {setOpenOrderId(null);setSection(next);}}} />
 
       <main className="main-area" id="workspace-content" tabIndex={-1}>
         <header className="topbar">
           <div className="breadcrumbs" aria-label="Localização">Suprimentos <span>/</span> {navigationLocation(section).label}</div>
-          <div className="topbar-actions"><ThemeToggle /><div className="user-chip"><div className="avatar">US</div><span>Usuário de teste</span><ChevronDown size={15} /></div></div>
+          <div className="topbar-actions"><ThemeToggle /><div className="user-chip"><div className="avatar">US</div><span>{remote?.user.name || "Usuário de teste"}</span>{remote ? <button className="text-button" disabled={catalogPending} onClick={()=>{if(!dlDirty || window.confirm("Descartar alterações não salvas e sair?"))remote.onLogout();}}>Sair</button> : <ChevronDown size={15} />}</div></div>
         </header>
 
         <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
           {orderSections.includes(section) && <OrdersWorkspace key={section} allowCreate initialOrderId={section === "Pedidos DLs" ? openOrderId || undefined : undefined} workspace={orderState.workspace} context={orderContext} error={orderState.error || dlState.error || cycleState.error} onCommit={commitOrders} onDirtyChange={setDLDirty} />}
           {bulkMessage && section !== "Cadastro de itens" && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
-          {section === "Validades" && <Validades items={items} workspace={expiryState.workspace} error={expiryState.error} initialItemId={expiryInitialItem} onInitialConsumed={()=>setExpiryInitialItem(null)} onCommit={commitExpiry} onDirtyChange={setDLDirty}/> }
+          {section === "Validades" && <Validades onBackup={remote ? ()=>downloadImportBackup().catch(()=>{}) : undefined} actor={remote?.user.name} readOnly={remote?.user.role === "reader"} items={items} workspace={expiryState.workspace} error={expiryState.error} initialItemId={expiryInitialItem} onInitialConsumed={()=>setExpiryInitialItem(null)} onCommit={commitExpiry} onDirtyChange={setDLDirty}/> }
           {section === "Painel" && (
             <>
               <div className="page-heading">
@@ -565,9 +587,9 @@ function App() {
                 <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Cadastro mestre de materiais MXM.</p></div>
                 <div className="form-actions">
                   <input ref={importInputRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={(e) => void handleImportFile(e.target.files?.[0])} />
-                  <details className="page-more-actions"><summary className="secondary-button">Mais ações <ChevronDown size={14}/></summary><div><button type="button" className="text-button" onClick={()=>setUnitAuditOpen(true)}>Conferir unidades</button><button type="button" className="text-button" onClick={downloadTemplate}><Download size={15}/> Modelo CSV</button></div></details>
-                  <button className="secondary-button" onClick={() => importInputRef.current?.click()}><FileUp size={17} /> Importar planilha</button>
-                  <button className="primary-button" onClick={() => setShowAddItem((v) => !v)}><Boxes size={17} /> {showAddItem ? "Cancelar" : "Novo item"}</button>
+                  <details className="page-more-actions"><summary className="secondary-button">Mais ações <ChevronDown size={14}/></summary><div><button type="button" className="text-button" onClick={()=>setUnitAuditOpen(true)}>Conferir unidades</button>{remote && <button type="button" className="text-button" onClick={()=>void downloadImportBackup().catch(()=>{})}>Exportar backup</button>}<button type="button" className="text-button" onClick={downloadTemplate}><Download size={15}/> Modelo CSV</button></div></details>
+                  <button className="secondary-button" disabled={catalogPending || (!!remote && !editorMode)} onClick={() => importInputRef.current?.click()}><FileUp size={17} /> Importar planilha</button>
+                  <button className="primary-button" disabled={catalogPending || (!!remote && !editorMode)} onClick={() => setShowAddItem((v) => !v)}><Boxes size={17} /> {showAddItem ? "Cancelar" : "Novo item"}</button>
                 </div>
               </div>
               {unitAuditOpen && <CatalogUnitAudit items={items} onClose={()=>setUnitAuditOpen(false)}/>}
@@ -575,16 +597,16 @@ function App() {
               {importPreview && <CatalogImportPreview preview={importPreview} canUpdate={editorMode} backupVersion={importBackupVersion} onAdd={addImportedItems} onUpdate={updateImportedItems} onBackup={downloadImportBackup} onCancel={cancelImport} />}
               {showAddItem && <section className="panel form-panel">
                 <h2>Novo item</h2>
-                <div className="form-grid">
+                <fieldset className="form-grid catalog-edit-fields" disabled={catalogPending}>
                   <label>Código único MXM<input value={newItem.code} onChange={(e) => setNewItem({ ...newItem, code: e.target.value.toUpperCase() })} placeholder="Ex.: ES1300000000001" /></label>
                   <label>Descrição<input value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value.toUpperCase() })} placeholder="Descrição do produto" /></label>
                   <label>Unidade<input value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value.toUpperCase() })} /></label>
                   <label>Tipo<input value={newItem.type} onChange={(e) => setNewItem({ ...newItem, type: e.target.value.toUpperCase() })} /></label>
                   <label>Grupo<input value={newItem.group} onChange={(e) => setNewItem({ ...newItem, group: e.target.value.toUpperCase() })} /></label>
                   <label>Critério de solicitação<select value={newItem.criterion} onChange={(e) => setNewItem({ ...newItem, criterion: e.target.value as Item["criterion"] })}><option>Mensal</option><option>Entrada e saída</option><option>Sob solicitação</option></select></label>
-                </div>
-                <div className="form-actions"><button className="secondary-button" onClick={() => setShowAddItem(false)}>Cancelar</button><button className="primary-button" onClick={addItem}>Adicionar à demonstração</button></div>
-                <p className="form-note">Dados salvos apenas neste navegador. A conexão ao banco será feita em etapa posterior.</p>
+                </fieldset>
+                <div className="form-actions"><button className="secondary-button" disabled={catalogPending} onClick={() => setShowAddItem(false)}>Cancelar</button><button className="primary-button" disabled={catalogPending} onClick={() => void addItem()}>{remote ? "Salvar material" : "Adicionar à demonstração"}</button></div>
+                {!remote && <p className="form-note">Dados salvos apenas neste navegador. A conexão ao banco será feita em etapa posterior.</p>}
               </section>}
               <section className="panel catalog-panel">
                 <div className="toolbar catalog-toolbar"><div><h2>Materiais</h2><p aria-live="polite">{filteredItems.length} de {items.length} itens exibidos</p></div><div className="catalog-toolbar-actions"><CatalogTypeFilter types={allTypes} selected={selectedTypes} onChange={changeTypeView} /></div></div>
@@ -598,23 +620,20 @@ function App() {
                 <div className="form-actions catalog-bulk-actions" style={{ justifyContent: "space-between", marginBottom: 12 }}>
                   <label className="select-all-label"><input type="checkbox" checked={filteredItems.length > 0 && filteredItems.every((item) => selectedItemIds.includes(item.id))} onChange={(e) => setSelectedItemIds(e.target.checked ? [...new Set([...selectedItemIds, ...filteredItems.map((item) => item.id)])] : selectedItemIds.filter((id) => !filteredItems.some((item) => item.id === id)))} /> Selecionar todos os itens filtrados</label>
                   <div className="bulk-actions-right">
-                    <CatalogActionMenu label={`Preparar seleção (${selectedItemIds.length})`} icon={<ClipboardList size={16} aria-hidden="true" />} disabled={!selectedItemIds.length} options={[
+                    <CatalogActionMenu label={`Preparar seleção (${selectedItemIds.length})`} icon={<ClipboardList size={16} aria-hidden="true" />} disabled={catalogPending || !selectedItemIds.length || (!!remote && !editorMode)} options={[
                       { value: "expiry", label: "Registrar validade" },
-                      { value: "cycle", label: "Ciclo de suprimento" },
-                      { value: "dl", label: "Planejamento DLs" },
-                      { value: "order", label: "Preparação de pedido direto" },
-                      { value: "share", label: "Compartilhar com requisitante" },
+                      ...(!remote ? [{ value: "cycle", label: "Ciclo de suprimento" },{ value: "dl", label: "Planejamento DLs" },{ value: "order", label: "Preparação de pedido direto" },{ value: "share", label: "Compartilhar com requisitante" }] : []),
                     ]} onSelect={prepareBulkAction} />
                     <CatalogActionMenu label="Ordenar" icon={<ArrowDownAZ size={16} aria-hidden="true" />} selected={sortMode} options={[
                       { value: "description", label: "Descrição (A–Z)" },
                       { value: "code", label: "Código (A–Z)" },
                       { value: "group", label: "Grupo e descrição" },
                     ]} onSelect={setSortMode} />
-                    <button className="secondary-button" disabled={!selectedItemIds.length} onClick={deleteSelectedItems}><Trash2 size={16} /> Excluir selecionados</button>
+                    <button className="secondary-button" disabled={catalogPending || !selectedItemIds.length || (!!remote && !editorMode)} onClick={() => void deleteSelectedItems()}><Trash2 size={16} /> Excluir selecionados</button>
                   </div>
                 </div>
                 {bulkMessage && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
-                <div className="role-toolbar"><span>Permissão de edição: <strong>{editorMode ? "Editor (demonstração)" : "Consulta"}</strong></span><button className="secondary-button" onClick={() => { setEditingItem(null); setEditorMode((current) => !current); }}>{editorMode ? "Usar perfil Consulta" : "Ativar perfil Editor"}</button><span className="form-note">Controle ilustrativo; não substitui autenticação real.</span></div>
+                {!remote && <div className="role-toolbar"><span>Permissão de edição: <strong>{editorMode ? "Editor (demonstração)" : "Consulta"}</strong></span><button className="secondary-button" onClick={() => { setEditingItem(null); setEditorMode((current) => !current); }}>{editorMode ? "Usar perfil Consulta" : "Ativar perfil Editor"}</button><span className="form-note">Controle ilustrativo; não substitui autenticação real.</span></div>}
                 <div className="table-wrap catalog-table-wrap" ref={catalogWrapRef} onScroll={(e) => { if (syncingScroll.current || !fixedScrollRef.current) return; syncingScroll.current = true; fixedScrollRef.current.scrollLeft = e.currentTarget.scrollLeft; syncingScroll.current = false; }}><table className="catalog-table"><thead><tr><th>Selecionar</th><th>Código</th><th>Descrição</th><th>Unidade</th><th>Critério</th><th>Grupo</th></tr></thead><tbody>
                   {filteredItems.map((item) => <tr key={item.id}>
                     <td><input aria-label={`Selecionar ${item.code}`} type="checkbox" checked={selectedItemIds.includes(item.id)} onChange={(e) => setSelectedItemIds((current) => e.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /></td>
@@ -635,6 +654,7 @@ function App() {
                 {editingItem && editorMode && <ItemDetailsDialog
                   key={editingItem.id}
                   item={editingItem}
+                  busy={catalogPending}
                   history={history}
                   dlPlans={dlWorkspace.plans}
                   cycleItems={cycleWorkspace.lines}
@@ -644,7 +664,7 @@ function App() {
                   onClose={() => setEditingItem(null)}
                 />}
 
-                <p className="form-note">Importação nesta versão aceita CSV/TXT exportado do Excel. A importação .xlsx nativa ainda precisa de uma biblioteca específica. Exclusões afetam o catálogo local. Itens ligados a ciclos ou planejamentos de DL ficam protegidos.</p>
+                <p className="form-note">{remote ? "Importação por CSV/TXT. Materiais com lotes vinculados ficam protegidos contra exclusão e troca de unidade." : "Importação nesta versão aceita CSV/TXT exportado do Excel. A importação .xlsx nativa ainda precisa de uma biblioteca específica. Exclusões afetam o catálogo local. Itens ligados a ciclos ou planejamentos de DL ficam protegidos."}</p>
               </section>
             </>
           )}

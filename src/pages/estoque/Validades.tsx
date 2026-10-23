@@ -1,3 +1,4 @@
+import type { ExpiryCommand } from "../../services/expiryCommands";
 import {
   canRegisterExpiryItem,
   catalogExpiryType,
@@ -47,7 +48,11 @@ type Props = {
   onInitialConsumed: () => void;
   onCommit: (
     change: (ws: ExpiryWorkspace, items: Item[]) => ExpiryWorkspace,
-  ) => void;
+    command?: ExpiryCommand,
+  ) => void | Promise<void>;
+  actor?: string;
+  readOnly?: boolean;
+  onBackup?: () => void | Promise<void>;
   onDirtyChange: (dirty: boolean) => void;
 };
 type Mode =
@@ -69,6 +74,9 @@ export default function Validades({
   onInitialConsumed,
   onCommit,
   onDirtyChange,
+  actor = "Operador local",
+  readOnly = false,
+  onBackup,
 }: Props) {
   const today = todayInBrazil();
   const [query, setQuery] = useState("");
@@ -148,6 +156,10 @@ export default function Validades({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function backup() {
+    if (onBackup) {
+      void onBackup();
+      return;
+    }
     const raw = JSON.stringify(
       {
         format: "suprimentos-validades-backup-v1",
@@ -186,7 +198,7 @@ export default function Validades({
         <div className="expiry-actions">
           <button
             className="secondary-button"
-            disabled={!!error || !visible.length}
+            disabled={!!error || readOnly || !visible.length}
             onClick={() =>
               setMode({ kind: "audit", lotIds: visible.map((lot) => lot.id) })
             }
@@ -215,7 +227,7 @@ export default function Validades({
               setMessage("");
               setMode({ kind: "new" });
             }}
-            disabled={!!error}
+            disabled={!!error || readOnly}
           >
             <Plus size={16} /> Registrar validade
           </button>
@@ -343,7 +355,7 @@ export default function Validades({
             <button
               className="primary-button"
               onClick={() => setMode({ kind: "new" })}
-              disabled={!!error}
+              disabled={!!error || readOnly}
             >
               Registrar primeiro lote
             </button>
@@ -501,7 +513,12 @@ export default function Validades({
                                           label: "Conferir estoque",
                                         },
                                         { value: "detail", label: "Histórico" },
-                                      ]}
+                                      ].filter(
+                                        (option) =>
+                                          !readOnly ||
+                                          !option.value ||
+                                          option.value === "detail",
+                                      )}
                                       onChange={(action) => {
                                         if (action === "audit")
                                           setMode({
@@ -542,6 +559,7 @@ export default function Validades({
       </section>
       {mode?.kind === "audit" && (
         <ExpiryCountDialog
+          actor={actor}
           lotIds={mode.lotIds}
           workspace={workspace}
           items={items}
@@ -562,6 +580,7 @@ export default function Validades({
               ? `new:${mode.itemId || ""}`
               : `${mode.kind}:${mode.lotId}`
           }
+          actor={actor}
           mode={mode}
           viewType={type === "unclassified" ? "" : type}
           viewLocation={location}
@@ -581,6 +600,7 @@ export default function Validades({
   );
 }
 function ExpiryDialog({
+  actor,
   mode,
   viewType,
   viewLocation,
@@ -591,6 +611,7 @@ function ExpiryDialog({
   onCommit,
   onSaved,
 }: {
+  actor: string;
   mode: DialogMode;
   viewType: ExpiryType | "";
   viewLocation: ExpiryLocation | "";
@@ -611,7 +632,6 @@ function ExpiryDialog({
   );
   const [requestId] = useState(() => crypto.randomUUID());
   const [quantity, setQuantity] = useState("");
-  const actor = "Operador local";
   const [reason, setReason] = useState("");
   const today = todayInBrazil();
   const selectedLot =
@@ -629,6 +649,8 @@ function ExpiryDialog({
       : "Avaria",
   );
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  const saving = useRef(false);
   useEffect(() => {
     ref.current?.showModal();
     ref.current?.querySelector<HTMLElement>("h2")?.focus();
@@ -652,7 +674,10 @@ function ExpiryDialog({
     onDirty(true);
     setError("");
   };
-  function save() {
+  async function save() {
+    if (saving.current) return;
+    saving.current = true;
+    setPending(true);
     try {
       if (mode.kind === "new") {
         if (!item || !canRegisterExpiryItem(item, viewType))
@@ -677,46 +702,48 @@ function ExpiryDialog({
           category,
           location: category === "Bebidas" ? entryLocation : undefined,
         }));
-        onCommit((ws, currentItems) =>
-          registerExpiryBatch(ws, currentItems, entries),
+        await onCommit(
+          (ws, currentItems) => registerExpiryBatch(ws, currentItems, entries),
+          { kind: "register", entries },
         );
       } else if (lot) {
         const quantityMilli = parseScaledInput(quantity, 3, "Quantidade") || 0;
-        if (mode.kind === "transfer")
-          onCommit((ws, currentItems) =>
-            transferExpiry(ws, currentItems, {
-              id: requestId,
-              lotId: lot.id,
-              quantityMilli,
-              actor,
-            }),
+        if (mode.kind === "transfer") {
+          const input = { id: requestId, lotId: lot.id, quantityMilli };
+          await onCommit(
+            (ws, currentItems) =>
+              transferExpiry(ws, currentItems, { ...input, actor }),
+            { kind: "transfer", input },
           );
-        else if (mode.kind === "entry")
-          onCommit((ws, currentItems) =>
-            addExpiryEntry(ws, currentItems, {
-              id: requestId,
-              lotId: lot.id,
-              quantityMilli,
-              actor,
-              expectedUnit: lot.unit,
-            }),
+        } else if (mode.kind === "entry") {
+          const input = {
+            id: requestId,
+            lotId: lot.id,
+            quantityMilli,
+            expectedUnit: lot.unit,
+          };
+          await onCommit(
+            (ws, currentItems) =>
+              addExpiryEntry(ws, currentItems, { ...input, actor }),
+            { kind: "entry", input },
           );
-        else
-          onCommit((ws) =>
-            debitExpiry(ws, {
-              lotId: lot.id,
-              quantityMilli,
-              actor,
-              reason:
-                kind === "Consumo"
-                  ? "Consumo"
-                  : discardReason === "Outro"
-                    ? reason
-                    : discardReason,
-              kind,
-              today,
-            }),
-          );
+        } else {
+          const input = {
+            lotId: lot.id,
+            quantityMilli,
+            reason:
+              kind === "Consumo"
+                ? "Consumo"
+                : discardReason === "Outro"
+                  ? reason
+                  : discardReason,
+            kind,
+          };
+          await onCommit((ws) => debitExpiry(ws, { ...input, actor, today }), {
+            kind: "debit",
+            input,
+          });
+        }
       } else throw new Error("Lote não encontrado.");
       onSaved(
         mode.kind === "new"
@@ -731,6 +758,9 @@ function ExpiryDialog({
       setError(
         cause instanceof Error ? cause.message : "Não foi possível salvar.",
       );
+    } finally {
+      saving.current = false;
+      setPending(false);
     }
   }
   const title =
@@ -750,7 +780,7 @@ function ExpiryDialog({
       aria-labelledby="expiry-dialog-title"
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        if (!pending) onClose();
       }}
     >
       <header>
@@ -766,7 +796,7 @@ function ExpiryDialog({
           </p>
         )}
       </header>
-      <div className="expiry-dialog-body">
+      <fieldset className="expiry-dialog-body" disabled={pending}>
         {mode.kind === "new" && (
           <>
             <div
@@ -1042,13 +1072,21 @@ function ExpiryDialog({
             {error}
           </p>
         )}
-      </div>
+      </fieldset>
       <footer>
-        <button className="secondary-button" onClick={onClose}>
+        <button
+          className="secondary-button"
+          disabled={pending}
+          onClick={onClose}
+        >
           Fechar
         </button>
         {mode.kind !== "detail" && (
-          <button className="primary-button" onClick={save}>
+          <button
+            className="primary-button"
+            disabled={pending}
+            onClick={() => void save()}
+          >
             {mode.kind === "new"
               ? "Salvar"
               : mode.kind === "entry"
@@ -1180,6 +1218,7 @@ function newLotDraft() {
 }
 
 function ExpiryCountDialog({
+  actor,
   lotIds,
   workspace,
   items,
@@ -1188,6 +1227,7 @@ function ExpiryCountDialog({
   onCommit,
   onSaved,
 }: {
+  actor: string;
   lotIds: string[];
   workspace: ExpiryWorkspace;
   items: Item[];
@@ -1204,6 +1244,8 @@ function ExpiryCountDialog({
   );
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  const saving = useRef(false);
   useEffect(() => {
     ref.current?.showModal();
     ref.current?.querySelector<HTMLElement>("h2")?.focus();
@@ -1221,7 +1263,10 @@ function ExpiryCountDialog({
       parsed(row.counted) !== null &&
       parsed(row.counted) !== row.remainingMilli,
   );
-  function save() {
+  async function save() {
+    if (saving.current) return;
+    saving.current = true;
+    setPending(true);
     try {
       const counts = rows
         .filter((row) => row.counted.trim())
@@ -1234,7 +1279,11 @@ function ExpiryCountDialog({
             `Contagem do lote ${row.batch}`,
           )!,
         }));
-      onCommit((ws) => countExpiry(ws, counts, "Operador local", reason));
+      await onCommit((ws) => countExpiry(ws, counts, actor, reason), {
+        kind: "count",
+        counts,
+        reason,
+      });
       onSaved(
         `${counts.length === 1 ? "Lote conferido" : `${counts.length} lotes conferidos`}. Histórico atualizado.`,
       );
@@ -1244,6 +1293,9 @@ function ExpiryCountDialog({
           ? cause.message
           : "Não foi possível salvar a conferência.",
       );
+    } finally {
+      saving.current = false;
+      setPending(false);
     }
   }
   function update(id: string, value: string) {
@@ -1260,7 +1312,7 @@ function ExpiryCountDialog({
       aria-labelledby="expiry-count-title"
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        if (!pending) onClose();
       }}
     >
       <header>
@@ -1269,7 +1321,7 @@ function ExpiryCountDialog({
         </h2>
         <p>Informe o que encontrou. Deixe em branco o que não foi contado.</p>
       </header>
-      <div className="expiry-dialog-body">
+      <fieldset className="expiry-dialog-body" disabled={pending}>
         <div className="table-wrap">
           <table className="expiry-count-table">
             <thead>
@@ -1349,15 +1401,19 @@ function ExpiryCountDialog({
             {error}
           </p>
         )}
-      </div>
+      </fieldset>
       <footer>
-        <button className="secondary-button" onClick={onClose}>
+        <button
+          className="secondary-button"
+          disabled={pending}
+          onClick={onClose}
+        >
           Cancelar
         </button>
         <button
           className="primary-button"
-          disabled={!rows.some((row) => row.counted.trim())}
-          onClick={save}
+          disabled={pending || !rows.some((row) => row.counted.trim())}
+          onClick={() => void save()}
         >
           Salvar conferência
         </button>

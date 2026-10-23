@@ -54,6 +54,8 @@ export interface PurchaseOrderSummary {
     | "Com ocorrência";
 }
 export interface ItemHistoryEntry {
+  actor?:string;
+  actorId?:string;
   id: string;
   itemId: string;
   code: string;

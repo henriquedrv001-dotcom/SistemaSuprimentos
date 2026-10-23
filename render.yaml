@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: suprimentos
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build:release
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false

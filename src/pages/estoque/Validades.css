@@ -662,3 +662,8 @@
     --ui-filter-columns: minmax(0, 1fr);
   }
 }
+.expiry-dialog fieldset.expiry-dialog-body {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}

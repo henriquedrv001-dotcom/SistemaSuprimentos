@@ -166,3 +166,7 @@ Validades agora separa a visualização por Tipo e permite Todos. Bebidas possui
 
 
 A busca de Validades respeita Tipo/Grupo do Cadastro: bebidas dos grupos 1305/1306 são separadas de gêneros; o grupo de protetores/bloqueadores solares entra em Segurança e Proteção. Itens sem enquadramento não aparecem como opção em qualquer tipo. A mesma regra é conferida ao salvar.
+
+### Preparação do lançamento com Neon
+
+Cadastro e Validades possuem API PostgreSQL, login por e-mail/senha para usuários autorizados, perfis de consulta/edição e proteção contra gravações concorrentes. `npm run build:release` prepara apenas esses dois módulos para publicação; o protótipo continua disponível no desenvolvimento local. Não há migração automática dos dados demonstrativos. Configuração de Neon/Render, autorização de usuários, testes e recuperação de backup em [Docs/Publicacao-1.0-Neon.md](Docs/Publicacao-1.0-Neon.md). As contas externas e credenciais de produção ainda precisam ser configuradas.

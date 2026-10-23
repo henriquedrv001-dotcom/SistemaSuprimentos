@@ -79,7 +79,9 @@ export default function AppSidebar({
   onNavigate,
   collapsed,
   onToggle,
+  released = false,
 }: {
+  released?: boolean;
   section: AppSection;
   pendingOrders: number;
   onNavigate: (section: AppSection) => void;
@@ -116,37 +118,48 @@ export default function AppSidebar({
         </button>
       </div>
       <nav id="main-navigation" aria-label="Navegação principal">
-        {items.map(({ label, section: target, matches, icon: Icon }) => {
-          const active = target === section || matches?.includes(section);
-          return (
-            <button
-              type="button"
-              key={label}
-              className={`nav-item ${active ? "active" : ""}`}
-              disabled={!target}
-              aria-label={label}
-              aria-current={active ? "page" : undefined}
-              title={target ? label : "Configurações — em breve"}
-              onClick={() => {
-                if (target) onNavigate(target);
-              }}
-            >
-              <Icon size={18} aria-hidden="true" />
-              <span>{label}</span>
-              {!target && <small>Em breve</small>}
-              {target === "Acompanhamento de pedidos" && (
-                <small>{pendingOrders}</small>
-              )}
-            </button>
-          );
-        })}
+        {items
+          .filter(
+            (item) =>
+              !released ||
+              item.section === "Cadastro de itens" ||
+              item.section === "Validades",
+          )
+          .map(({ label, section: target, matches, icon: Icon }) => {
+            const active = target === section || matches?.includes(section);
+            return (
+              <button
+                type="button"
+                key={label}
+                className={`nav-item ${active ? "active" : ""}`}
+                disabled={!target}
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                title={target ? label : "Configurações — em breve"}
+                onClick={() => {
+                  if (target) onNavigate(target);
+                }}
+              >
+                <Icon size={18} aria-hidden="true" />
+                <span>{label}</span>
+                {!target && <small>Em breve</small>}
+                {target === "Acompanhamento de pedidos" && (
+                  <small>{pendingOrders}</small>
+                )}
+              </button>
+            );
+          })}
       </nav>
       <div className="sidebar-bottom">
         <div className="mode-pill">
           <span className="status-dot" />
-          <span className="mode-copy">Protótipo local</span>
+          <span className="mode-copy">
+            {released ? "Versão 1.0" : "Protótipo local"}
+          </span>
         </div>
-        <p>Dados salvos neste navegador.</p>
+        <p>
+          {released ? "Cadastro e Validades" : "Dados salvos neste navegador."}
+        </p>
       </div>
     </aside>
   );
