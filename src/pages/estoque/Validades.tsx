@@ -1,4 +1,5 @@
 import {
+  canRegisterExpiryItem,
   catalogExpiryType,
   expiryTypeOf,
   expiryLocationOf,
@@ -605,7 +606,6 @@ function ExpiryDialog({
   const [itemId, setItemId] = useState(
     mode.kind === "new" ? mode.itemId || "" : "",
   );
-  const [manualType, setManualType] = useState<ExpiryType | "">(viewType);
   const [entryLocation, setEntryLocation] = useState<ExpiryLocation>(
     viewLocation || "Almoxarifado",
   );
@@ -638,11 +638,7 @@ function ExpiryDialog({
       ? workspace.lots.find((lot) => lot.id === mode.lotId)
       : undefined;
   const item = items.find((item) => item.id === (lot?.itemId || itemId));
-  const inheritedType =
-    catalogExpiryType(item) ||
-    workspace.lots.find((row) => row.itemId === itemId && row.category)
-      ?.category;
-  const category = inheritedType || manualType;
+  const category = catalogExpiryType(item);
   const firstToUse = lot
     ? expiryFirstToUse(
         workspace,
@@ -659,7 +655,12 @@ function ExpiryDialog({
   function save() {
     try {
       if (mode.kind === "new") {
-        if (!category) throw new Error("Selecione o Tipo deste material.");
+        if (!item || !canRegisterExpiryItem(item, viewType))
+          throw new Error(
+            "Este material não pertence ao tipo selecionado. Confira o Tipo e o Grupo no Cadastro.",
+          );
+        if (!category)
+          throw new Error("Confira o Tipo e o Grupo do material no Cadastro.");
         const entries = drafts.map((draft, index) => ({
           id: draft.id,
           itemId,
@@ -772,15 +773,9 @@ function ExpiryDialog({
               className={`expiry-material-context${category === "Bebidas" ? " has-location" : ""}`}
             >
               <MaterialPicker
-                items={
-                  viewType
-                    ? items.filter(
-                        (item) =>
-                          !catalogExpiryType(item) ||
-                          catalogExpiryType(item) === viewType,
-                      )
-                    : items
-                }
+                items={items.filter((item) =>
+                  canRegisterExpiryItem(item, viewType),
+                )}
                 value={itemId}
                 onChange={(value) => {
                   if (value !== itemId) edit(() => setItemId(value));
@@ -800,18 +795,10 @@ function ExpiryDialog({
                 />
               )}
             </div>
-            {item && !inheritedType && (
-              <FilterSelect
-                label="Tipo"
-                value={manualType}
-                onChange={(value) =>
-                  edit(() => setManualType(value as ExpiryType))
-                }
-                options={[
-                  { value: "", label: "Selecionar tipo" },
-                  ...expiryTypes.map((value) => ({ value, label: value })),
-                ]}
-              />
+            {item && !canRegisterExpiryItem(item, viewType) && (
+              <p className="notice">
+                Material fora deste tipo. Confira o Tipo e o Grupo no Cadastro.
+              </p>
             )}
             <div className="expiry-lot-rows">
               {drafts.map((draft, index) => (

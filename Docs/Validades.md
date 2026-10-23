@@ -71,10 +71,20 @@ A adaptação mantém apenas as operações necessárias para este módulo. Conf
 
 O filtro **Tipo** contém Todos, Gêneros alimentícios, Bebidas, Higiene e Limpeza e Segurança e Proteção. Em Todos, a listagem mantém seções separadas por tipo. Pesquisa e situação continuam disponíveis. Os indicadores e a conferência coletiva respeitam o tipo/local selecionado.
 
-A classificação aproveita o Tipo do Cadastro, reconhecendo grafias explícitas como Gêneros/Alimentos, Limpeza e EPI. Não usa a descrição do produto para adivinhar o tipo. Lotes novos guardam a classificação. Registros sem tipo reconhecido permanecem em Todos e em **Sem classificação**. Ao registrar um desses materiais, o operador informa Tipo; a classificação explícita também se aplica aos seus lotes antigos ainda sem classificação, sem alterar quantidades ou eventos anteriores.
+A classificação usa Tipo, Grupo e prefixo do código do Cadastro, seguindo as regras abaixo. Lotes novos guardam a classificação. Registros antigos fora das regras permanecem em Todos e em **Sem classificação**, com saldo e histórico preservados. Para novos registros, a busca oferece somente materiais enquadrados; a correção de Tipo/Grupo deve ser feita no Cadastro, sem classificar manualmente pelo formulário de validade.
 
 Somente em Bebidas aparece o filtro **Local**: Todos, Almoxarifado e Lanchonete. O cadastro de uma bebida também permite escolher o local, aproveitando o local da visualização. Registros antigos de bebidas são apresentados no Almoxarifado por padrão, sem regravação automática ao ler. Esse local é materializado quando ocorre uma operação. Ao expandir um material, os lotes de bebidas mostram Local; entradas, baixas e conferências operam somente na posição escolhida. A prioridade de consumo considera os lotes do mesmo local.
 
 **Ações → Transferir para Lanchonete** aparece exclusivamente em bebidas com saldo no Almoxarifado. Basta informar a quantidade. A operação reduz o saldo da origem e soma na Lanchonete, mantendo material, lote, validade e unidade. Reutiliza a posição de destino quando já existe, inclusive zerada. A transferência não é consumo e não altera o total entre os dois locais.
 
 Saída e entrada são vinculadas pelo identificador da transferência e gravadas juntas. Excesso, operação repetida, outro tipo e direção inversa são bloqueados. O leitor exige o par completo, quantidades iguais e locais corretos. Histórico e CSV identificam local, tipo e transferência; os dois lados permanecem rastreáveis. Um lote físico presente nos dois locais conta uma única vez nos indicadores; a capa identifica que há dois locais.
+
+
+### Regras de elegibilidade da busca
+
+- **Gêneros alimentícios:** tipo de gêneros/alimentos, excluindo os grupos de bebidas.
+- **Bebidas:** grupo BEBIDAS ALCOÓLICAS ou BEBIDAS NÃO ALCOÓLICAS, ou prefixos 1305/1306 no código MXM (com ou sem ES) ou no campo Grupo. O tipo base Gêneros não impede esse enquadramento. O rótulo Bebidas sozinho não admite materiais de outros grupos.
+- **Higiene e Limpeza:** itens desse tipo, excluindo a exceção de solares.
+- **Segurança e Proteção:** itens desse tipo e o grupo PROTETORES OU BLOQUEADORES SOLARES, mesmo que o tipo base seja Higiene e Limpeza.
+
+As regras valem para pesquisa, visualização, gravação, classificação dos relatórios e transferência. A classificação atual do Cadastro prevalece sobre um enquadramento antigo do lote; consultar não regrava saldos ou eventos. Palavras de descrição como “cerveja” não tornam um utensílio uma bebida. Em Todos, a busca de registro reúne somente materiais elegíveis nas quatro categorias; em um tipo específico, só oferece a categoria escolhida.

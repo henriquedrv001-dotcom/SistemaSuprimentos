@@ -271,10 +271,11 @@ export function registerExpiry(
     throw new Error(
       "Informe lote, quantidade positiva, validade e responsável.",
     );
-  const category =
-    catalogExpiryType(item) ||
-    ws.lots.find((lot) => lot.itemId === item.id && lot.category)?.category ||
-    input.category;
+  const category = catalogExpiryType(item);
+  if (!category)
+    throw new Error(
+      "Este material está fora dos tipos permitidos. Confira Tipo e Grupo no Cadastro.",
+    );
   if (input.category && input.category !== category)
     throw new Error(
       "O tipo do material mudou. Reabra o registro para conferir.",

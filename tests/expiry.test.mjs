@@ -1,4 +1,5 @@
 import {
+  canRegisterExpiryItem,
   catalogExpiryType,
   expiryTypeOf,
   expiryLocationOf,
@@ -551,12 +552,25 @@ test("CSV de lotes e histórico exporta contagens, saldos anterior/atual e prote
   assert.ok(report.includes(ws.movements.at(-1).timestamp));
 });
 
-const beverageItems = [{ ...items[0], type: "Bebidas" }];
+const beverageItems = [
+  {
+    ...items[0],
+    type: "Gêneros alimentícios",
+    group: "BEBIDAS NAO ALCOOLICAS",
+    code: "ES130600000001",
+  },
+];
 const drinkEntry = (overrides = {}) =>
   entry({ category: "Bebidas", location: "Almoxarifado", ...overrides });
 test("tipos aproveitam classificação do Cadastro sem deduzir pela descrição", () => {
   for (const type of expiryTypes)
-    assert.equal(catalogExpiryType({ type }), type);
+    assert.equal(
+      catalogExpiryType({
+        type,
+        ...(type === "Bebidas" ? { group: "BEBIDAS NAO ALCOOLICAS" } : {}),
+      }),
+      type,
+    );
   assert.equal(
     catalogExpiryType({ type: "GÊNEROS ALIMENTÍCIOS" }),
     "Gêneros alimentícios",
@@ -764,24 +778,133 @@ test("transferir para outro local não duplica a contagem do lote físico", () =
   assert.equal(ws.lots.length, 2);
   assert.equal(expiryLotCount(ws.lots), 1);
 });
-test("classificação explícita de material antigo preserva seus lotes e soma no Almoxarifado", () => {
-  const unknownItems = [{ ...items[0], type: "SEM TIPO" }];
-  const ws = registerExpiry(emptyExpiryWorkspace(), unknownItems, entry());
-  const original = JSON.stringify(ws);
-  const result = registerExpiry(
-    ws,
-    unknownItems,
-    entry({
-      id: "new",
-      category: "Bebidas",
-      location: "Almoxarifado",
-      quantityMilli: 1000,
-    }),
+test("tipo manual não permite incluir material fora das regras do Cadastro", () => {
+  const unknownItems = [
+    {
+      ...items[0],
+      type: "SEM TIPO",
+      group: "UTENSILIOS",
+      description: "TULIPA PARA CERVEJA",
+    },
+  ];
+  assert.throws(
+    () =>
+      registerExpiry(
+        emptyExpiryWorkspace(),
+        unknownItems,
+        entry({ category: "Bebidas", location: "Almoxarifado" }),
+      ),
+    /fora dos tipos permitidos/,
   );
-  assert.equal(result.lots.length, 1);
-  assert.equal(result.lots[0].category, "Bebidas");
-  assert.equal(result.lots[0].location, "Almoxarifado");
-  assert.equal(result.lots[0].remainingMilli, 21000);
-  assert.equal(JSON.stringify(ws), original);
-  assert.doesNotThrow(() => readExpiryWorkspace(JSON.stringify(result)));
+});
+
+test("gêneros exclui grupos de bebidas 1305/1306 mesmo quando o tipo base é gêneros", () => {
+  const base = {
+    ...items[0],
+    type: "Gêneros alimentícios",
+    description: "BEBIDA",
+    group: "Grupo",
+  };
+  for (const code of [
+    "1305000001",
+    "1306000001",
+    "ES130500000001",
+    "ES130600000001",
+  ]) {
+    const item = { ...base, code };
+    assert.equal(catalogExpiryType(item), "Bebidas");
+    assert.equal(canRegisterExpiryItem(item, "Gêneros alimentícios"), false);
+    assert.equal(canRegisterExpiryItem(item, "Bebidas"), true);
+  }
+  for (const group of [
+    "1305 - BEBIDAS ALCOÓLICAS",
+    "1306 BEBIDAS NÃO ALCOÓLICAS",
+    "BEBIDAS ALCOOLICAS",
+    "BEBIDAS NAO ALCOOLICAS",
+  ]) {
+    const item = { ...base, code: "001", group };
+    assert.equal(catalogExpiryType(item), "Bebidas");
+    assert.equal(canRegisterExpiryItem(item, "Gêneros alimentícios"), false);
+  }
+  assert.equal(
+    canRegisterExpiryItem(
+      { ...base, group: "CEREAIS", code: "ES13010000001" },
+      "Gêneros alimentícios",
+    ),
+    true,
+  );
+});
+test("busca de bebidas não admite utensílios nem itens sem classificação por conter cerveja na descrição", () => {
+  for (const type of ["Bebidas", "UTENSILIOS", "SEM TIPO"]) {
+    const item = {
+      ...items[0],
+      type,
+      code: "ES060100000004",
+      group: "COPOS E UTENSILIOS",
+      description: "TULIPA PARA CERVEJA 200ML",
+    };
+    assert.equal(catalogExpiryType(item), undefined);
+    assert.equal(canRegisterExpiryItem(item, "Bebidas"), false);
+    assert.equal(canRegisterExpiryItem(item), false);
+  }
+  const food = {
+    ...items[0],
+    type: "Gêneros alimentícios",
+    group: "CEREAIS",
+    description: "INGREDIENTE PARA CERVEJA",
+  };
+  assert.equal(canRegisterExpiryItem(food, "Bebidas"), false);
+});
+test("proteção inclui o grupo de protetores/bloqueadores solares e o exclui de higiene", () => {
+  for (const group of [
+    "PROTETORES OU BLOQUEADORES SOLARES",
+    "2501 - PROTETORES OU BLOQUEADORES SOLARES",
+  ]) {
+    const item = { ...items[0], type: "Higiene e Limpeza", group };
+    assert.equal(catalogExpiryType(item), "Segurança e Proteção");
+    assert.equal(canRegisterExpiryItem(item, "Segurança e Proteção"), true);
+    assert.equal(canRegisterExpiryItem(item, "Higiene e Limpeza"), false);
+  }
+  assert.equal(
+    canRegisterExpiryItem(
+      { ...items[0], type: "Segurança e Proteção" },
+      "Segurança e Proteção",
+    ),
+    true,
+  );
+  assert.equal(
+    canRegisterExpiryItem(
+      { ...items[0], type: "Higiene e Limpeza" },
+      "Higiene e Limpeza",
+    ),
+    true,
+  );
+  assert.equal(
+    canRegisterExpiryItem(
+      { ...items[0], type: "Segurança e Proteção" },
+      "Higiene e Limpeza",
+    ),
+    false,
+  );
+});
+test("classificação atual de tipo/grupo prevalece sobre enquadramento antigo sem apagar saldo/histórico", () => {
+  const lot = {
+    id: "x",
+    itemId: "item-1",
+    batch: "A",
+    expiresOn: "2027-01-10",
+    unit: "UN",
+    initialMilli: 1000,
+    remainingMilli: 1000,
+    category: "Gêneros alimentícios",
+  };
+  const item = {
+    ...items[0],
+    type: "Gêneros alimentícios",
+    group: "BEBIDAS NAO ALCOOLICAS",
+  };
+  const before = JSON.stringify(lot);
+  assert.equal(expiryTypeOf(lot, item), "Bebidas");
+  assert.equal(expiryLocationOf(lot, item), "Almoxarifado");
+  assert.equal(JSON.stringify(lot), before);
 });
