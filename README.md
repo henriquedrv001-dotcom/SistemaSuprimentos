@@ -24,9 +24,9 @@ npm run dev
 4. Abra o endereço mostrado no terminal. Normalmente: `http://127.0.0.1:5173`.
 
 ## Estado atual
-A interface é um protótipo com dados demonstrativos. Itens, ciclos e histórico são salvos no armazenamento local do navegador, sem banco conectado. Os exemplos de PDL/pedido ERP são ilustrativos.
+Existem dois modos: o protótipo local mantém dados demonstrativos no navegador; a versão de lançamento usa login e API PostgreSQL, com acesso somente a Cadastro e Validades. Os exemplos de PDL/pedido ERP continuam restritos ao protótipo.
 
-O banco ainda não está conectado. O esquema SQL é um ponto de partida que precisa de revisão e complementação antes de ser aplicado ou usado em operações reais.
+A publicação exige **hospedagem do site e da API no Render e banco no Neon**. O Neon sozinho não publica o sistema. Configuração, limitações dos planos e preparação do primeiro usuário: [guia de publicação](Docs/Publicacao-1.0-Neon.md). A existência desta configuração não significa que os serviços externos já foram conectados ou publicados.
 
 ## Arquivos importantes
 - `src/App.tsx`: telas iniciais e navegação.
@@ -37,7 +37,7 @@ O banco ainda não está conectado. O esquema SQL é um ponto de partida que pre
 - Documento de requisitos: arquivo DOCX entregue separadamente.
 
 ## Segurança e produção
-Não use dados reais do Sesc nesta versão. Antes de produção, implementar autenticação, autorização/RLS, transações para controlar saldos e compromissos, testes, backups e revisão pela TI.
+Usar dados reais somente na versão conectada após validar a implantação, contas autorizadas e backups e obter a revisão institucional aplicável. O protótipo local não oferece autenticação real. As migrações da versão de lançamento estão em `server/migrations/`; o esquema antigo em `supabase/migrations/` não é o procedimento desta publicação.
 
 
 ## Importação de materiais MXM

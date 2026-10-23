@@ -1,5 +1,22 @@
 # Publicação 1.0 — Cadastro e Validades com Neon
 
+## Hospedagem completa e custos
+
+O Neon hospeda o banco PostgreSQL. O site e a API precisam de hospedagem própria: a configuração deste repositório usa um único Web Service Node no Render para ambos. O Codespace é ambiente de desenvolvimento e não é a hospedagem da versão publicada.
+
+São duas contas: Neon para dados e Render para executar o sistema. O `render.yaml` solicita o plano Free do Render. Isso não garante operação sem limites ou gratuidade permanente: conferir condições, cotas e preços apresentados pelos dois fornecedores antes de contratar. O serviço gratuito do Render pode suspender por inatividade e demorar para responder ao próximo acesso. Para uso diário, avaliar uma instância paga que permaneça ativa. Nenhum plano pago deve ser contratado automaticamente.
+
+### Próximo passo no painel
+
+1. Entrar em https://dashboard.render.com e conectar a conta do GitHub.
+2. Escolher **New → Web Service**, conectar `henriquedrv001-dotcom/SistemaSuprimentos` e selecionar a branch que contenha o commit de lançamento. Confirmar antes que os commits locais foram enviados ao GitHub.
+3. Usar as configurações da seção 3 abaixo e escolher explicitamente o plano desejado. Não criar um Static Site: este sistema precisa executar a API Node.
+4. Preencher `DATABASE_URL` no campo de variável de ambiente do Render, usando a conexão copiada do Neon. Não compartilhar esse valor no chat ou no repositório.
+5. Preparar as tabelas e o primeiro usuário conforme a seção 2, em terminal autorizado com a conexão configurada em `.env` ignorado pelo Git. O plano gratuito de hospedagem pode não oferecer terminal remoto; o terminal do projeto pode executar essa preparação.
+6. Configurar `APP_ORIGIN` com a URL HTTPS atribuída ao serviço e publicar. Validar `/api/health`, login, Cadastro e Validades antes de disponibilizar aos usuários.
+
+Criar o projeto no Neon, sozinho, não publica o sistema. A publicação só está concluída após esses testes no endereço real da hospedagem.
+
 ## Entrega preparada
 
 A aplicação possui duas formas de execução:
