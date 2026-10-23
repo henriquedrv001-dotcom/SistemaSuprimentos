@@ -1,3 +1,4 @@
+import { normalizeCatalogUnit } from "./catalogUnits.ts";
 import type { Item } from "../types";
 
 export const importFields = [
@@ -65,7 +66,7 @@ export function buildImportPreview(text: string, items: Item[], filename: string
     if (seen.has(code)) throw new Error(`Código repetido no arquivo: ${code}. Corrija a lista antes de importar.`);
     seen.add(code);
     const old = existing.get(code);
-    const importedUnit = read("unit").toUpperCase();
+    const importedUnit = normalizeCatalogUnit(read("unit"));
     if (!old && !importedUnit) {
       throw new Error(indexes.unit < 0
         ? `Código ${code}: não encontrei a coluna de unidade. Use Unidade, UNID, UND, UN ou Unidade de medida. Não foi usado “UN” como padrão e nenhum item foi importado.`
@@ -74,7 +75,7 @@ export function buildImportPreview(text: string, items: Item[], filename: string
     const candidate: Item = old ? { ...old, description } : {
       id: `import-${crypto.randomUUID()}`, code, description, unit: importedUnit, type: "SEM TIPO", group: "SEM GRUPO", criterion: "Mensal", active: true, visible: true,
     };
-    for (const field of ["unit", "type", "group"] as const) { const value = read(field); if (value) candidate[field] = value.toUpperCase(); }
+    for (const field of ["unit", "type", "group"] as const) { const value = read(field); if (value) candidate[field] = field === "unit" ? normalizeCatalogUnit(value) : value.toUpperCase(); }
     const criterion = read("criterion");
     if (criterion) {
       const values: Record<string, Item["criterion"]> = { mensal: "Mensal", entradaesaida: "Entrada e saída", sobsolicitacao: "Sob solicitação" };

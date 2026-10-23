@@ -151,3 +151,10 @@ O cabeçalho de materiais tem menor espaçamento entre linhas e não exibe o avi
 Em **Administração → Tarefas**, alterne Lista/Kanban e selecione o perfil funcional para simular sua fila. Os exemplos permitem iniciar, encaminhar, devolver com observação e aprovar tarefas, mostrando o perfil de destino em cada etapa. São dados demonstrativos em memória: não criam atribuições reais nem alteram DLs, pedidos ou saldos.
 
 No Controle, a descrição do material abre os dados daquela origem de saldo; código e objeto da aquisição ficam nessa janela. A baixa direta será conectada à área de movimentações em etapa posterior.
+
+
+### Cadastro e Validades
+
+O Cadastro utiliza filtros visuais compartilhados, unidades padronizadas na exibição e a ação **Mais ações → Conferir unidades**. A importação e o salvamento normalizam abreviações sem converter quantidades ou inferir unidades pela descrição.
+
+**Validades**, na barra lateral, usa os mesmos materiais do Cadastro para registrar múltiplos lotes, acompanhar vencimentos, efetuar baixas e consultar o histórico. Há inclusão consecutiva de lotes, pesquisa, filtros e exportação JSON. A implementação atual mantém persistência local, com um repositório separado para a futura integração com Firebase. Fluxo e limites em [Docs/Validades.md](Docs/Validades.md).

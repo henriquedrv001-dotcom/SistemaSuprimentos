@@ -1,3 +1,12 @@
+import CatalogUnitAudit from "./components/CatalogUnitAudit";
+import Validades from "./pages/estoque/Validades";
+import { LocalExpiryRepository } from "./repositories/expiryRepository";
+import { emptyExpiryWorkspace } from "./services/expiry";
+import type { ExpiryWorkspace } from "./types/expiry";
+import { normalizeCatalogUnit } from "./services/catalogUnits";
+import FilterSelect from "./components/ui/FilterSelect";
+import FilterSearch from "./components/ui/FilterSearch";
+import "./components/CatalogReview.css";
 import Tarefas from "./pages/administracao/Tarefas";
 import {resolveDLRequestStage} from "./services/dlRequest";
 import type { DLPlan, DLSaveOptions } from "./types/dl";
@@ -6,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Boxes, CalendarDays, CheckCircle2,
   ChevronDown, ClipboardList, FileText, PackageSearch,
-  Search, Truck, WalletCards, FileUp, Trash2, Download, ArrowDownAZ
+  Truck, WalletCards, FileUp, Trash2, Download, ArrowDownAZ
 } from "lucide-react";
 import { demoCycles, demoItems } from "./data";
 import type { CycleItemEvent, CycleWorkspace, Item, ItemHistoryEntry, SupplyCycle } from "./types";
@@ -76,9 +85,31 @@ function App() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const importReadId = useRef(0);
   const [items, setItems] = useState<Item[]>(() => readLocalCollection("suprimentos:items:v1", demoItems));
+  const expiryRepository = useMemo(() => new LocalExpiryRepository(window.localStorage), []);
+  const [expiryState, setExpiryState] = useState(() => {
+    try {
+      return { ...expiryRepository.read(), error: "" };
+    } catch (cause) {
+      return {
+        workspace: emptyExpiryWorkspace(), revision: null as string | null,
+        error: cause instanceof Error ? cause.message : "Não foi possível ler as validades.",
+      };
+    }
+  });
+  const [expiryInitialItem, setExpiryInitialItem] = useState<string | null>(null);
+  function commitExpiry(change: (workspace: ExpiryWorkspace, items: Item[]) => ExpiryWorkspace) {
+    if (expiryState.error) throw new Error(expiryState.error);
+    const raw = localStorage.getItem("suprimentos:items:v1");
+    const liveItems = raw === null ? items : JSON.parse(raw) as Item[];
+    if (!Array.isArray(liveItems)) throw new Error("Não foi possível conferir o Cadastro.");
+    const next = change(expiryState.workspace, liveItems);
+    const saved = expiryRepository.save(next, expiryState.revision);
+    setExpiryState({ ...saved, error: "" });
+  }
   const importCatalogRef = useRef(items);
   importCatalogRef.current = items;
   const [cycles, setCycles] = useState<SupplyCycle[]>(() => readLocalCollection("suprimentos:cycles:v1", demoCycles));
+  const [unitAuditOpen,setUnitAuditOpen] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [cycleState, setCycleState] = useState(() => {
     try { return { workspace: readCycleWorkspace(localStorage.getItem(cycleWorkspaceKey)), error: "" }; }
@@ -121,7 +152,7 @@ function App() {
   const [cycleDestinationItems, setCycleDestinationItems] = useState<Item[] | null>(null);
   const [openCycleId, setOpenCycleId] = useState<string | null>(null);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
-  const [newItem, setNewItem] = useState({ code: "", description: "", unit: "KG", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" as Item["criterion"] });
+  const [newItem, setNewItem] = useState({ code: "", description: "", unit: "", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" as Item["criterion"] });
 
   useEffect(() => writeLocalCollection("suprimentos:items:v1", items), [items]);
   useEffect(() => writeLocalCollection("suprimentos:cycles:v1", cycles), [cycles]);
@@ -188,7 +219,7 @@ function App() {
     return () => observer.disconnect();
   }, [filteredItems?.length, section, filterType, filterGroup]);
 
-  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace, dlWorkspace, orderWorkspace: orderState.workspace }), [items, cycles, history, cycleWorkspace, dlWorkspace, orderState.workspace]);
+  const importBackupVersion = useMemo(() => JSON.stringify({ items, cycles, history, cycleWorkspace, dlWorkspace, orderWorkspace: orderState.workspace, expiryWorkspace: expiryState.workspace }), [items, cycles, history, cycleWorkspace, dlWorkspace, orderState.workspace, expiryState.workspace]);
 
   function cancelImport() {
     importReadId.current++;
@@ -264,6 +295,8 @@ function App() {
     if (backupVersion !== importBackupVersion) throw new Error("Os dados mudaram. Gere um novo backup antes de continuar.");
     const result = planImportUpdates(importPreview, selection, items);
     if (!result.updated.length) throw new Error("Selecione ao menos um campo para atualizar.");
+    const expiry = expiryRepository.read().workspace;
+    if(result.updated.some(entry=>expiry.lots.some(lot=>lot.itemId===entry.item.id&&lot.unit!==normalizeCatalogUnit(entry.item.unit))))throw new Error("Há lotes vinculados a uma unidade diferente. Revise a correção de unidades antes de importar.");
     persistImport(result.items, result.updated.map(entry => importEvent(entry.item, "Atualização por importação", `Arquivo: ${importPreview.filename}\n${entry.changes.map(change => `${change.label}: ${change.before || "(vazio)"} → ${change.after}`).join("\n")}`)));
     setImportMessage(`${result.updated.length} itens atualizados somente nos campos escolhidos. Especificações, status e vínculos foram preservados.`);
     // Retain unapproved changes for a later review, without applying them implicitly.
@@ -277,6 +310,14 @@ function App() {
 
   function deleteSelectedItems() {
     if (!selectedItemIds.length) return;
+    try {
+      const liveExpiry = expiryRepository.read();
+      if (expiryState.error || liveExpiry.workspace.lots.some(lot => selectedItemIds.includes(lot.itemId)))
+        throw new Error("Há materiais vinculados a validades. Use Inativo para preservar lotes e histórico.");
+    } catch (cause) {
+      window.alert(cause instanceof Error ? cause.message : "Não foi possível conferir as validades.");
+      return;
+    }
     if (localStorage.getItem(orderWorkspaceKey) !== orderState.raw || localStorage.getItem(dlOrderDraftsKey) !== orderState.legacyRaw) { window.alert("Os pedidos mudaram em outra aba. Recarregue para conferir os vínculos antes de excluir materiais."); return; }
     if (orderState.error || orderState.workspace.orders.some(order => order.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há materiais vinculados a pedidos ou vínculos que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
     if (dlState.error || dlWorkspace.plans.some(plan => plan.lines.some(line => selectedItemIds.includes(line.itemId)))) { window.alert("Há vínculos com DLs ou dados que não puderam ser conferidos. Use o status Inativo para preservar o histórico."); return; }
@@ -314,7 +355,7 @@ function App() {
       id: `local-${crypto.randomUUID()}`,
       code: newItem.code.trim().toUpperCase(),
       description: newItem.description.trim().toUpperCase(),
-      unit: newItem.unit.trim().toUpperCase(),
+      unit: normalizeCatalogUnit(newItem.unit),
       type: newItem.type.trim().toUpperCase() || "SEM TIPO",
       group: newItem.group.trim().toUpperCase() || "SEM GRUPO",
       visible: true,
@@ -323,7 +364,7 @@ function App() {
     };
     setItems((prev) => [...prev, createdItem]);
     recordHistory(createdItem, "Cadastro manual", "Item incluído manualmente no catálogo.");
-    setNewItem({ code: "", description: "", unit: "KG", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" });
+    setNewItem({ code: "", description: "", unit: "", type: "GÊNEROS ALIMENTÍCIOS", group: "CEREAIS", criterion: "Mensal" });
     setShowAddItem(false);
     window.alert("Item incluído nesta sessão de demonstração. Ainda não foi gravado em banco de dados.");
   }
@@ -335,7 +376,15 @@ function App() {
     if (!code || !editingItem.description.trim()) { window.alert("Código e descrição são obrigatórios."); return; }
     if (!editingItem.unit.trim()) { window.alert("Informe a unidade do material, conforme o MXM."); return; }
     if (items.some((item) => item.id !== editingItem.id && item.code.toUpperCase() === code)) { window.alert("Já existe outro item com esse código."); return; }
-    const updated = { ...editingItem, code, description: editingItem.description.trim().toUpperCase(), unit: editingItem.unit.trim().toUpperCase(), type: (editingItem.type || "SEM TIPO").trim().toUpperCase(), group: editingItem.group.trim().toUpperCase(), technicalSpecification: (editingItem.technicalSpecification ?? "").trim() };
+    try {
+      const live = expiryRepository.read();
+      if (live.workspace.lots.some(lot => lot.itemId === editingItem.id && lot.unit !== normalizeCatalogUnit(editingItem.unit)))
+        throw new Error("Este material possui lotes vinculados. A unidade não pode ser alterada sem conversão explícita.");
+    } catch (cause) {
+      window.alert(cause instanceof Error ? cause.message : "Não foi possível conferir os lotes.");
+      return;
+    }
+    const updated = { ...editingItem, code, description: editingItem.description.trim().toUpperCase(), unit: normalizeCatalogUnit(editingItem.unit), type: (editingItem.type || "SEM TIPO").trim().toUpperCase(), group: editingItem.group.trim().toUpperCase(), technicalSpecification: (editingItem.technicalSpecification ?? "").trim() };
     const old = items.find((item) => item.id === updated.id);
     setItems((current) => current.map((item) => item.id === updated.id ? updated : item));
     const changes: string[] = [];
@@ -355,9 +404,10 @@ function App() {
   }
 
   function prepareBulkAction(destination: string) {
-    if (!["cycle", "dl", "order", "share"].includes(destination)) return;
+    if (!["cycle", "dl", "order", "share", "expiry"].includes(destination)) return;
     const selected = filteredItems.filter((item) => selectedItemIds.includes(item.id));
     if (!selected.length) return;
+    if (destination === "expiry") {if(selected.length!==1){setBulkMessage("Selecione um único material para registrar seus lotes.");return;}setExpiryInitialItem(selected[0].id);setSection("Validades");return;}
     if (destination === "share") { setShareItems(selected); return; }
     if (destination === "cycle") { setCycleDestinationItems(selected); return; }
     if (destination === "dl") {setDLPendingItems(selected); setSection("Planejamento DLs"); return;}
@@ -463,6 +513,7 @@ function App() {
         <div className={`page-content${orderSections.includes(section) ? " orders-page" : ""}`}>
           {orderSections.includes(section) && <OrdersWorkspace key={section} allowCreate initialOrderId={section === "Pedidos DLs" ? openOrderId || undefined : undefined} workspace={orderState.workspace} context={orderContext} error={orderState.error || dlState.error || cycleState.error} onCommit={commitOrders} onDirtyChange={setDLDirty} />}
           {bulkMessage && section !== "Cadastro de itens" && <div className="notice"><CheckCircle2 size={17} /><span>{bulkMessage}</span></div>}
+          {section === "Validades" && <Validades items={items} workspace={expiryState.workspace} error={expiryState.error} initialItemId={expiryInitialItem} onInitialConsumed={()=>setExpiryInitialItem(null)} onCommit={commitExpiry} onDirtyChange={setDLDirty}/> }
           {section === "Painel" && (
             <>
               <div className="page-heading">
@@ -514,11 +565,12 @@ function App() {
                 <div><p className="eyebrow">DADOS SISTEMA MXM</p><h1>Cadastro de itens</h1><p className="muted">Cadastro mestre de materiais MXM.</p></div>
                 <div className="form-actions">
                   <input ref={importInputRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={(e) => void handleImportFile(e.target.files?.[0])} />
-                  <details className="page-more-actions"><summary className="secondary-button">Mais ações <ChevronDown size={14}/></summary><div><button type="button" className="text-button" onClick={downloadTemplate}><Download size={15}/> Modelo CSV</button></div></details>
+                  <details className="page-more-actions"><summary className="secondary-button">Mais ações <ChevronDown size={14}/></summary><div><button type="button" className="text-button" onClick={()=>setUnitAuditOpen(true)}>Conferir unidades</button><button type="button" className="text-button" onClick={downloadTemplate}><Download size={15}/> Modelo CSV</button></div></details>
                   <button className="secondary-button" onClick={() => importInputRef.current?.click()}><FileUp size={17} /> Importar planilha</button>
                   <button className="primary-button" onClick={() => setShowAddItem((v) => !v)}><Boxes size={17} /> {showAddItem ? "Cancelar" : "Novo item"}</button>
                 </div>
               </div>
+              {unitAuditOpen && <CatalogUnitAudit items={items} onClose={()=>setUnitAuditOpen(false)}/>}
               {importMessage && <div className="notice"><AlertTriangle size={17} /><span>{importMessage}</span></div>}
               {importPreview && <CatalogImportPreview preview={importPreview} canUpdate={editorMode} backupVersion={importBackupVersion} onAdd={addImportedItems} onUpdate={updateImportedItems} onBackup={downloadImportBackup} onCancel={cancelImport} />}
               {showAddItem && <section className="panel form-panel">
@@ -536,16 +588,18 @@ function App() {
               </section>}
               <section className="panel catalog-panel">
                 <div className="toolbar catalog-toolbar"><div><h2>Materiais</h2><p aria-live="polite">{filteredItems.length} de {items.length} itens exibidos</p></div><div className="catalog-toolbar-actions"><CatalogTypeFilter types={allTypes} selected={selectedTypes} onChange={changeTypeView} /></div></div>
-                <div className="catalog-filters catalog-unified-filters"><label className="search-box catalog-search"><Search size={16} aria-hidden="true" /><input aria-label="Buscar itens" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar código, descrição, grupo ou unidade" /></label>
-                  <label>Tipo<select value={filterType} onChange={(e) => { setFilterType(e.target.value); setFilterGroup("Todos"); setFilterCriterion("Todos"); setSelectedItemIds([]); }}><option>Todos</option>{types.map((type) => <option key={type}>{type}</option>)}</select></label>
-                  <label>Grupo<select value={filterGroup} onChange={(e) => { setFilterGroup(e.target.value); setFilterCriterion("Todos"); }}><option>Todos</option>{groups.map((group) => <option key={group}>{group}</option>)}</select></label>
-                  <label>Critério<select value={filterCriterion} onChange={(e) => setFilterCriterion(e.target.value)}><option>Todos</option>{criteria.map(criterion => <option key={criterion}>{criterion}</option>)}</select></label>
-                  <label>Status<select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option>Todos</option><option>Ativo</option><option>Inativo</option></select></label>
+                <div className="ui-filterbar catalog-reviewed-filters">
+                  <FilterSearch label="Buscar material" aria-label="Buscar itens" value={query} onChange={setQuery} placeholder="Código, descrição, grupo ou unidade"/>
+                  <FilterSelect label="Tipo" value={filterType} onChange={value=>{setFilterType(value);setFilterGroup("Todos");setFilterCriterion("Todos");setSelectedItemIds([]);}} options={["Todos",...types].map(value=>({value,label:value}))}/>
+                  <FilterSelect label="Grupo" value={filterGroup} onChange={value=>{setFilterGroup(value);setFilterCriterion("Todos");}} options={["Todos",...groups].map(value=>({value,label:value}))}/>
+                  <FilterSelect label="Critério" value={filterCriterion} onChange={setFilterCriterion} options={["Todos",...criteria].map(value=>({value,label:value}))}/>
+                  <FilterSelect label="Status" value={filterStatus} onChange={setFilterStatus} options={["Todos","Ativo","Inativo"].map(value=>({value,label:value}))}/>
                 </div>
                 <div className="form-actions catalog-bulk-actions" style={{ justifyContent: "space-between", marginBottom: 12 }}>
                   <label className="select-all-label"><input type="checkbox" checked={filteredItems.length > 0 && filteredItems.every((item) => selectedItemIds.includes(item.id))} onChange={(e) => setSelectedItemIds(e.target.checked ? [...new Set([...selectedItemIds, ...filteredItems.map((item) => item.id)])] : selectedItemIds.filter((id) => !filteredItems.some((item) => item.id === id)))} /> Selecionar todos os itens filtrados</label>
                   <div className="bulk-actions-right">
                     <CatalogActionMenu label={`Preparar seleção (${selectedItemIds.length})`} icon={<ClipboardList size={16} aria-hidden="true" />} disabled={!selectedItemIds.length} options={[
+                      { value: "expiry", label: "Registrar validade" },
                       { value: "cycle", label: "Ciclo de suprimento" },
                       { value: "dl", label: "Planejamento DLs" },
                       { value: "order", label: "Preparação de pedido direto" },
@@ -569,7 +623,7 @@ function App() {
                       setEditingItem({ ...item, type: item.type || "SEM TIPO", visible: item.visible !== false });
                     }}>{item.code}</button></td>
                     <td><strong>{item.description}</strong></td>
-                    <td>{item.unit}</td>
+                    <td><span className="catalog-unit-badge">{normalizeCatalogUnit(item.unit)||"A definir"}</span></td>
                     <td><span className="tag tag-neutral">{item.criterion}</span></td>
                     <td>{item.group}</td>
                   </tr>)}

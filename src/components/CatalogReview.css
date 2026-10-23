@@ -1,0 +1,71 @@
+.modern-shell .catalog-panel .catalog-reviewed-filters {
+  --ui-filter-columns: minmax(240px, 2fr) repeat(4, minmax(115px, 1fr));
+  margin: 18px 0;
+  align-items: end;
+}
+.catalog-unit-badge {
+  display: inline-block;
+  min-width: 38px;
+  text-align: center;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--primary);
+  background: var(--background-soft);
+  font-weight: 600;
+}
+.modern-shell .catalog-table input[type="checkbox"],
+.modern-shell .catalog-bulk-actions input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  accent-color: var(--primary);
+}
+.modern-shell .catalog-table th {
+  font-weight: 600;
+  text-align: left;
+}
+.modern-shell .catalog-table td {
+  vertical-align: middle;
+}
+.modern-shell .catalog-panel .role-toolbar {
+  margin: 14px 0;
+  padding: 10px 12px;
+  background: var(--background-soft);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+@media (max-width: 1100px) {
+  .modern-shell .catalog-panel .catalog-reviewed-filters {
+    --ui-filter-columns: repeat(4, minmax(0, 1fr));
+  }
+  .catalog-reviewed-filters > .ui-filter-search {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 650px) {
+  .modern-shell .catalog-panel .catalog-reviewed-filters {
+    --ui-filter-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 360px) {
+  .modern-shell .catalog-panel .catalog-reviewed-filters {
+    --ui-filter-columns: minmax(0, 1fr);
+  }
+}
+.catalog-unit-audit-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.catalog-unit-audit-table th,
+.catalog-unit-audit-table td {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 12px;
+}
+.expiry-dialog .table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}

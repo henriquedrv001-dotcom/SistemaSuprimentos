@@ -1,4 +1,5 @@
 import {
+  CalendarClock,
   PackageSearch,
   RefreshCw,
   ClipboardList,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 export type AppSection =
+  | "Validades"
   | "Tarefas"
   | "Painel"
   | "Cadastro de itens"
@@ -40,6 +42,7 @@ const items: {
   { label: "Visão geral", section: "Painel", icon: LayoutDashboard },
   { label: "Tarefas", section: "Tarefas", icon: ListTodo },
   { label: "Catálogo", section: "Cadastro de itens", icon: PackageSearch },
+  { label: "Validades", section: "Validades", icon: CalendarClock },
   {
     label: "Ciclos",
     section: "Ciclos de suprimento",

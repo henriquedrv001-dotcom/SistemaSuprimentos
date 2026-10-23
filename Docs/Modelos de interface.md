@@ -107,3 +107,10 @@ DL para entrada e saída: seleção em janela com lista de checkboxes e busca, f
 ## UI-SUM-02 — valores junto às quantidades
 
 Ao distribuir materiais, manter previsto, distribuído e falta/excesso por área na própria seção de materiais. O resumo fica fixo ao rolar essa seção, sem depender dos cartões de configuração acima. Mostrar também valor total e diferença global. Destacar a área do campo em edição; em telas estreitas, manter a área focada visível no resumo horizontal e ajustar ao redimensionamento. Não alterar cálculos de domínio nem arredondamentos para construir a apresentação. Conferir se o resumo não cobre o campo em edição.
+
+
+## UI-EXP-01 — Cadastro e Validades
+
+Cadastro reutiliza FilterSearch e FilterSelect, mantendo filtros dependentes, seleção e operações existentes. As unidades têm apresentação curta e uniforme; Conferir unidades é uma consulta e não corrige dados automaticamente.
+
+Validades usa a área principal para painel, filtros e lista de lotes; registro, baixa e histórico usam janela compacta central com corpo rolável e ações acessíveis. Registrar vários lotes mantém material e responsável após salvar. Alterações não salvas exigem confirmação ao sair; erros preservam os campos preenchidos. A página e os diálogos devem funcionar nos temas claro e noturno e em telas estreitas, com rolagem horizontal restrita à tabela. As regras de dados estão em Validades.md.

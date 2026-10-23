@@ -1,0 +1,285 @@
+.expiry-page {
+  min-width: 0;
+  color: var(--text);
+}
+.expiry-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.expiry-indicators {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+.expiry-indicator {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+.expiry-indicator strong {
+  font-size: 28px;
+}
+.expiry-indicator span,
+.expiry-indicator small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.expiry-indicator[data-status="Vencido"] strong {
+  color: var(--warning);
+}
+.expiry-indicator.is-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.expiry-list {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--expiry-surface, #fff);
+  min-width: 0;
+}
+:root[data-theme="dark"] .expiry-page {
+  --expiry-surface: #162131;
+  --expiry-field: #101b2b;
+}
+.expiry-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.expiry-list h2 {
+  font-size: 16px;
+  margin: 0 0 5px;
+}
+.expiry-list p {
+  font-size: 12px;
+}
+.expiry-note {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.expiry-list-heading > .expiry-note {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.expiry-filters {
+  --ui-filter-columns: minmax(200px, 2fr) minmax(180px, 1fr) auto;
+  margin: 20px 0;
+}
+.expiry-page .table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.expiry-page table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.expiry-page th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--background-soft);
+  text-align: left;
+}
+.expiry-page th,
+.expiry-page td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.expiry-page td small {
+  display: block;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.expiry-page td:first-child {
+  min-width: 220px;
+}
+.expiry-page td:nth-child(4) {
+  min-width: 140px;
+}
+.expiry-status,
+.expiry-unit {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--background-soft);
+  color: var(--primary);
+  font-size: 11px;
+}
+.expiry-status[data-status="Vencido"],
+.expiry-status[data-status="Até 7 dias"] {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+.expiry-status[data-status="Encerrado"] {
+  color: var(--text-secondary);
+}
+.expiry-empty {
+  text-align: center;
+  padding: 45px 20px;
+  color: var(--text-secondary);
+}
+.expiry-empty svg {
+  color: var(--primary);
+}
+.expiry-empty h3 {
+  color: var(--text);
+  font-size: 18px;
+}
+.expiry-empty .primary-button {
+  margin: 16px auto 0;
+}
+.modern-shell .item-edit-dialog.expiry-dialog[open] {
+  inset: 0;
+  width: min(720px, calc(100% - 32px));
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--expiry-surface, #fff);
+  color: var(--text);
+}
+:root[data-theme="dark"] .expiry-dialog {
+  --expiry-surface: #162131;
+  --expiry-field: #101b2b;
+}
+.expiry-dialog header {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.expiry-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.expiry-dialog header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.expiry-dialog-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  min-height: 0;
+  display: grid;
+  gap: 15px;
+}
+.expiry-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.expiry-dialog label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.expiry-dialog input,
+.expiry-dialog textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: var(--expiry-field, #fff);
+  color: var(--text);
+  font: inherit;
+}
+.expiry-dialog .ui-search-control input {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.expiry-dialog input:focus-visible,
+.expiry-dialog textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.expiry-dialog footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.expiry-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  background: var(--background-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.expiry-balance strong {
+  color: var(--primary);
+  font-size: 17px;
+}
+.expiry-history {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+.expiry-history small {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+@media (max-width: 900px) {
+  .expiry-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .expiry-filters {
+    --ui-filter-columns: minmax(0, 1fr);
+  }
+  .expiry-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .expiry-list {
+    padding: 14px;
+  }
+  .expiry-indicator {
+    padding: 12px;
+  }
+  .expiry-dialog-body {
+    padding: 16px;
+  }
+  .expiry-dialog header,
+  .expiry-dialog footer {
+    padding: 16px;
+  }
+  .expiry-balance {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .expiry-actions {
+    gap: 6px;
+  }
+}
