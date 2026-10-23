@@ -3,7 +3,7 @@ services:
     name: suprimentos
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build:release
+    buildCommand: npm ci --include=dev && npm run build:release
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: "off"

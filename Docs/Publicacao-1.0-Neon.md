@@ -75,7 +75,7 @@ Há um `render.yaml` revisável para um único serviço Node, com publicação a
 Configuração equivalente no painel:
 
 - Runtime: Node 24.
-- Build: `npm ci && npm run build:release`.
+- Build: `npm ci --include=dev && npm run build:release`.
 - Start: `npm start`.
 - Health check: `/api/health`.
 - `NODE_ENV=production`.
@@ -83,6 +83,8 @@ Configuração equivalente no painel:
 - `APP_ORIGIN`: opcional no Render, pois o servidor usa `RENDER_EXTERNAL_URL` automaticamente. Definir com o endereço HTTPS exato ao usar domínio próprio ou outra hospedagem.
 
 Aplicar as migrações antes da primeira publicação. O processo não semeia materiais, usuários demonstrativos ou lotes automaticamente. Um build comum do protótipo não inicia em produção: o servidor exige o marcador produzido por `build:release`.
+
+O `--include=dev` é necessário na instalação do build mesmo com `NODE_ENV=production`: TypeScript, Vite e os tipos do React são dependências de compilação. O servidor continua executando em modo de produção.
 
 A API e o frontend compartilham o endereço; não habilitar CORS para origens arbitrárias. Ao mudar para domínio próprio, atualizar `APP_ORIGIN` e republicar/reiniciar.
 
