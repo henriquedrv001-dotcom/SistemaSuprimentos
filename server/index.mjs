@@ -17,7 +17,11 @@ if (production) {
   if (marker.mode !== "production")
     throw new Error("Build de produção inválido.");
 }
-const app = createApp({ pool, production, origin: process.env.APP_ORIGIN });
+const app = createApp({
+  pool,
+  production,
+  origin: process.env.APP_ORIGIN || process.env.RENDER_EXTERNAL_URL,
+});
 const server = app.listen(Number(process.env.PORT || 3001), "0.0.0.0", () =>
   console.log("API de Suprimentos iniciada."),
 );

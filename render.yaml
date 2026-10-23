@@ -14,5 +14,3 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
-      - key: APP_ORIGIN
-        sync: false

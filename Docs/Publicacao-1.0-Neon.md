@@ -13,7 +13,7 @@ São duas contas: Neon para dados e Render para executar o sistema. O `render.ya
 3. Usar as configurações da seção 3 abaixo e escolher explicitamente o plano desejado. Não criar um Static Site: este sistema precisa executar a API Node.
 4. Preencher `DATABASE_URL` no campo de variável de ambiente do Render, usando a conexão copiada do Neon. Não compartilhar esse valor no chat ou no repositório.
 5. Preparar as tabelas e o primeiro usuário conforme a seção 2, em terminal autorizado com a conexão configurada em `.env` ignorado pelo Git. O plano gratuito de hospedagem pode não oferecer terminal remoto; o terminal do projeto pode executar essa preparação.
-6. Configurar `APP_ORIGIN` com a URL HTTPS atribuída ao serviço e publicar. Validar `/api/health`, login, Cadastro e Validades antes de disponibilizar aos usuários.
+6. Publicar: no Render o servidor usa automaticamente `RENDER_EXTERNAL_URL`, fornecida pela plataforma. Não é necessário informar `APP_ORIGIN` na primeira publicação. Validar `/api/health`, login, Cadastro e Validades antes de disponibilizar aos usuários.
 
 Criar o projeto no Neon, sozinho, não publica o sistema. A publicação só está concluída após esses testes no endereço real da hospedagem.
 
@@ -80,7 +80,7 @@ Configuração equivalente no painel:
 - Health check: `/api/health`.
 - `NODE_ENV=production`.
 - `DATABASE_URL`: segredo copiado do Neon de produção.
-- `APP_ORIGIN`: endereço HTTPS exato da aplicação, por exemplo `https://seu-servico.onrender.com`.
+- `APP_ORIGIN`: opcional no Render, pois o servidor usa `RENDER_EXTERNAL_URL` automaticamente. Definir com o endereço HTTPS exato ao usar domínio próprio ou outra hospedagem.
 
 Aplicar as migrações antes da primeira publicação. O processo não semeia materiais, usuários demonstrativos ou lotes automaticamente. Um build comum do protótipo não inicia em produção: o servidor exige o marcador produzido por `build:release`.
 
