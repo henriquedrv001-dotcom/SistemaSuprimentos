@@ -241,3 +241,21 @@ export function debitExpiry(
     ],
   };
 }
+
+/** Valida todos os lotes antes que o repositório grave o resultado uma única vez. */
+export function registerExpiryBatch(
+  ws: ExpiryWorkspace,
+  items: Item[],
+  entries: Parameters<typeof registerExpiry>[2][],
+): ExpiryWorkspace {
+  if (!entries.length) throw new Error("Adicione ao menos um lote.");
+  return entries.reduce((next, entry, index) => {
+    try {
+      return registerExpiry(next, items, entry);
+    } catch (cause) {
+      throw new Error(
+        `Lote ${index + 1}: ${cause instanceof Error ? cause.message : "Dados inválidos."}`,
+      );
+    }
+  }, ws);
+}

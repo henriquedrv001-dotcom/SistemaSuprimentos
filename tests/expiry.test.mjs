@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   registerExpiry,
+  registerExpiryBatch,
   debitExpiry,
   emptyExpiryWorkspace,
   readExpiryWorkspace,
@@ -213,5 +214,40 @@ test("falha de armazenamento não retorna confirmação de gravação", () => {
     () =>
       repo.save(registerExpiry(emptyExpiryWorkspace(), items, entry()), null),
     /Sem espaço/,
+  );
+});
+
+test("vários lotes do material são preparados juntos para uma única gravação", () => {
+  const original = emptyExpiryWorkspace();
+  const result = registerExpiryBatch(original, items, [
+    entry(),
+    entry({ id: "lot-2", batch: "B", quantityMilli: 15000 }),
+  ]);
+  assert.equal(result.lots.length, 2);
+  assert.equal(result.movements.length, 2);
+  assert.ok(result.lots.every((lot) => lot.itemId === items[0].id));
+  assert.equal(original.lots.length, 0);
+  assert.doesNotThrow(() => readExpiryWorkspace(JSON.stringify(result)));
+});
+test("lote inválido ou repetido bloqueia o conjunto sem alterar os registros anteriores", () => {
+  const original = registerExpiry(emptyExpiryWorkspace(), items, entry());
+  const before = JSON.stringify(original);
+  for (const second of [
+    entry({ id: "lot-3", batch: "C", quantityMilli: 0 }),
+    entry({ id: "lot-3", batch: "B" }),
+  ]) {
+    assert.throws(
+      () =>
+        registerExpiryBatch(original, items, [
+          entry({ id: "lot-2", batch: "B" }),
+          second,
+        ]),
+      /Lote 2:/,
+    );
+    assert.equal(JSON.stringify(original), before);
+  }
+  assert.throws(
+    () => registerExpiryBatch(original, items, []),
+    /ao menos um lote/,
   );
 });

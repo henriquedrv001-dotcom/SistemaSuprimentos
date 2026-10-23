@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { CalendarClock, Download, Plus } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { CalendarClock, Download, Plus, Search, Trash2 } from "lucide-react";
 import type { Item } from "../../types";
 import type { ExpiryLot, ExpiryWorkspace } from "../../types/expiry";
 import {
   debitExpiry,
   expiryDays,
   expiryStatus,
-  registerExpiry,
+  registerExpiryBatch,
 } from "../../services/expiry";
 import {
   decimalInput,
@@ -349,10 +349,10 @@ export default function Validades({
           onClose={close}
           onDirty={setDirty}
           onCommit={onCommit}
-          onSaved={(text, keepOpen) => {
+          onSaved={(text) => {
             setDirty(false);
             setMessage(text);
-            if (!keepOpen) setMode(null);
+            setMode(null);
           }}
         />
       )}
@@ -374,24 +374,20 @@ function ExpiryDialog({
   onClose: () => boolean;
   onDirty: (dirty: boolean) => void;
   onCommit: Props["onCommit"];
-  onSaved: (text: string, keepOpen: boolean) => void;
+  onSaved: (text: string) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [id, setId] = useState(crypto.randomUUID());
+  const [drafts, setDrafts] = useState(() => [newLotDraft()]);
   const [itemId, setItemId] = useState(
     mode.kind === "new" ? mode.itemId || "" : "",
   );
-  const [search, setSearch] = useState("");
-  const [batch, setBatch] = useState("");
-  const [expiresOn, setExpiresOn] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [actor, setActor] = useState("");
+  const actor = "Operador local";
   const [reason, setReason] = useState("");
   const [kind, setKind] = useState<"Consumo" | "Descarte" | "Ajuste">(
     "Consumo",
   );
   const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState("");
   useEffect(() => {
     ref.current?.showModal();
   }, []);
@@ -400,39 +396,33 @@ function ExpiryDialog({
       ? workspace.lots.find((lot) => lot.id === mode.lotId)
       : undefined;
   const item = items.find((item) => item.id === (lot?.itemId || itemId));
-  const matched = items
-    .filter(
-      (i) =>
-        i.active !== false &&
-        fold(`${i.code} ${i.description}`).includes(fold(search.trim())),
-    )
-    .slice(0, 50);
-  const choices =
-    item && mode.kind === "new" && !matched.some((i) => i.id === item.id)
-      ? [item, ...matched]
-      : matched;
   const edit = (change: () => void) => {
     change();
     onDirty(true);
     setError("");
-    setFeedback("");
   };
-  function save(another = false) {
+  function save() {
     try {
-      const quantityMilli = parseScaledInput(quantity, 3, "Quantidade") || 0;
-      if (mode.kind === "new")
+      if (mode.kind === "new") {
+        const entries = drafts.map((draft, index) => ({
+          id: draft.id,
+          itemId,
+          batch: draft.batch,
+          expiresOn: draft.expiresOn,
+          quantityMilli:
+            parseScaledInput(
+              draft.quantity,
+              3,
+              `Quantidade do lote ${index + 1}`,
+            ) || 0,
+          actor,
+          expectedUnit: normalizeCatalogUnit(item?.unit || ""),
+        }));
         onCommit((ws, currentItems) =>
-          registerExpiry(ws, currentItems, {
-            id,
-            itemId,
-            batch,
-            expiresOn,
-            quantityMilli,
-            actor,
-            expectedUnit: normalizeCatalogUnit(item?.unit || ""),
-          }),
+          registerExpiryBatch(ws, currentItems, entries),
         );
-      else if (lot)
+      } else if (lot) {
+        const quantityMilli = parseScaledInput(quantity, 3, "Quantidade") || 0;
         onCommit((ws) =>
           debitExpiry(ws, {
             lotId: lot.id,
@@ -442,20 +432,12 @@ function ExpiryDialog({
             kind,
           }),
         );
-      else throw new Error("Lote não encontrado.");
+      } else throw new Error("Lote não encontrado.");
       onSaved(
         mode.kind === "new"
-          ? "Validade registrada."
+          ? `${drafts.length === 1 ? "Lote registrado" : `${drafts.length} lotes registrados`}.`
           : "Baixa registrada no histórico do lote.",
-        another,
       );
-      if (another) {
-        setId(crypto.randomUUID());
-        setBatch("");
-        setQuantity("");
-        setExpiresOn("");
-        setFeedback("Lote salvo. Informe os dados do próximo lote.");
-      }
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Não foi possível salvar.",
@@ -480,123 +462,145 @@ function ExpiryDialog({
     >
       <header>
         <h2 id="expiry-dialog-title">{title}</h2>
-        <p>
-          {mode.kind === "new"
-            ? "Use os materiais do Cadastro. Cada lote mantém seu próprio saldo."
-            : `${item?.description || lot?.itemId} · Lote ${lot?.batch}`}
-        </p>
+        {mode.kind !== "new" && (
+          <p>
+            {item?.description || lot?.itemId} · Lote {lot?.batch}
+          </p>
+        )}
       </header>
       <div className="expiry-dialog-body">
         {mode.kind === "new" && (
           <>
-            <FilterSearch
-              label="Buscar material do Cadastro"
-              value={search}
-              onChange={setSearch}
-              placeholder="Digite o código ou descrição"
-            />
-            <FilterSelect
-              label="Material do Cadastro"
+            <MaterialPicker
+              items={items}
               value={itemId}
               onChange={(value) => edit(() => setItemId(value))}
-              options={[
-                { value: "", label: "Selecionar material" },
-                ...choices.map((i) => ({
-                  value: i.id,
-                  label: `${i.code} · ${i.description}`,
-                })),
-              ]}
             />
-            <small className="expiry-note">
-              Mostrando até 50 resultados. Refine a busca para encontrar outros
-              materiais.
-            </small>
-            <div className="expiry-fields">
-              <label>
-                Lote
-                <input
-                  aria-label="Lote"
-                  value={batch}
-                  onChange={(e) => edit(() => setBatch(e.target.value))}
-                />
-              </label>
-              <label>
-                Data de validade
-                <input
-                  aria-label="Data de validade"
-                  type="date"
-                  value={expiresOn}
-                  onChange={(e) => edit(() => setExpiresOn(e.target.value))}
-                />
-              </label>
+            <div className="expiry-lot-rows">
+              {drafts.map((draft, index) => (
+                <div className="expiry-lot-row" key={draft.id}>
+                  <label>
+                    Quantidade
+                    {item?.unit ? ` (${normalizeCatalogUnit(item.unit)})` : ""}
+                    <input
+                      aria-label={`Quantidade do lote ${index + 1}`}
+                      inputMode="decimal"
+                      value={draft.quantity}
+                      onChange={(e) =>
+                        edit(() =>
+                          setDrafts((current) =>
+                            current.map((row) =>
+                              row.id === draft.id
+                                ? { ...row, quantity: e.target.value }
+                                : row,
+                            ),
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Lote
+                    <input
+                      aria-label={`Lote ${index + 1}`}
+                      value={draft.batch}
+                      onChange={(e) =>
+                        edit(() =>
+                          setDrafts((current) =>
+                            current.map((row) =>
+                              row.id === draft.id
+                                ? { ...row, batch: e.target.value }
+                                : row,
+                            ),
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Validade
+                    <input
+                      aria-label={`Validade do lote ${index + 1}`}
+                      type="date"
+                      value={draft.expiresOn}
+                      onChange={(e) =>
+                        edit(() =>
+                          setDrafts((current) =>
+                            current.map((row) =>
+                              row.id === draft.id
+                                ? { ...row, expiresOn: e.target.value }
+                                : row,
+                            ),
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  {drafts.length > 1 && (
+                    <button
+                      className="text-button expiry-remove-lot"
+                      aria-label={`Remover lote ${index + 1}`}
+                      onClick={() =>
+                        edit(() =>
+                          setDrafts((current) =>
+                            current.filter((row) => row.id !== draft.id),
+                          ),
+                        )
+                      }
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
+            <button
+              className="text-button expiry-add-lot"
+              onClick={() =>
+                edit(() => setDrafts((current) => [...current, newLotDraft()]))
+              }
+            >
+              <Plus size={15} /> Adicionar lote
+            </button>
           </>
         )}
-        {mode.kind !== "detail" && (
+        {mode.kind === "debit" && (
           <>
             <div className="expiry-balance">
-              <span>
-                {mode.kind === "new"
-                  ? "Unidade do Cadastro"
-                  : "Saldo disponível do lote"}
-              </span>
+              <span>Saldo disponível do lote</span>
               <strong>
-                {mode.kind === "new"
-                  ? item
-                    ? normalizeCatalogUnit(item.unit)
-                    : "Selecione um material"
-                  : `${decimalInput(lot?.remainingMilli || 0, 3)} ${lot?.unit || ""}`}
+                {decimalInput(lot?.remainingMilli || 0, 3)} {lot?.unit || ""}
               </strong>
             </div>
             <div className="expiry-fields">
               <label>
-                {mode.kind === "new"
-                  ? "Quantidade do lote"
-                  : "Quantidade da baixa"}
+                Quantidade da baixa
                 <input
-                  aria-label={
-                    mode.kind === "new"
-                      ? "Quantidade do lote"
-                      : "Quantidade da baixa"
-                  }
+                  aria-label="Quantidade da baixa"
                   inputMode="decimal"
                   value={quantity}
                   onChange={(e) => edit(() => setQuantity(e.target.value))}
                 />
               </label>
-              <label>
-                Responsável
-                <input
-                  aria-label="Responsável pelo registro"
-                  value={actor}
-                  onChange={(e) => edit(() => setActor(e.target.value))}
-                />
-              </label>
+              <FilterSelect
+                label="Tipo de baixa"
+                value={kind}
+                onChange={(value) => edit(() => setKind(value as typeof kind))}
+                options={["Consumo", "Descarte", "Ajuste"].map((value) => ({
+                  value,
+                  label: value,
+                }))}
+              />
             </div>
-            {mode.kind === "debit" && (
-              <>
-                <FilterSelect
-                  label="Tipo de baixa"
-                  value={kind}
-                  onChange={(value) =>
-                    edit(() => setKind(value as typeof kind))
-                  }
-                  options={["Consumo", "Descarte", "Ajuste"].map((value) => ({
-                    value,
-                    label: value,
-                  }))}
-                />
-                <label>
-                  Motivo da baixa
-                  <textarea
-                    aria-label="Motivo da baixa"
-                    rows={2}
-                    value={reason}
-                    onChange={(e) => edit(() => setReason(e.target.value))}
-                  />
-                </label>
-              </>
-            )}
+            <label>
+              Motivo da baixa
+              <textarea
+                aria-label="Motivo da baixa"
+                rows={2}
+                value={reason}
+                onChange={(e) => edit(() => setReason(e.target.value))}
+              />
+            </label>
           </>
         )}
         {mode.kind === "detail" && lot && (
@@ -631,27 +635,137 @@ function ExpiryDialog({
             {error}
           </p>
         )}
-        {feedback && (
-          <p className="notice" role="status">
-            {feedback}
-          </p>
-        )}
       </div>
       <footer>
         <button className="secondary-button" onClick={onClose}>
           Fechar
         </button>
-        {mode.kind === "new" && (
-          <button className="secondary-button" onClick={() => save(true)}>
-            Salvar e adicionar outro
-          </button>
-        )}
         {mode.kind !== "detail" && (
-          <button className="primary-button" onClick={() => save(false)}>
-            {mode.kind === "new" ? "Salvar validade" : "Confirmar baixa"}
+          <button className="primary-button" onClick={save}>
+            {mode.kind === "new" ? "Salvar" : "Confirmar baixa"}
           </button>
         )}
       </footer>
     </dialog>
   );
+}
+
+function MaterialPicker({
+  items,
+  value,
+  onChange,
+}: {
+  items: Item[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const id = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const selected = items.find((item) => item.id === value);
+  const label = (item: Item) => `${item.code} · ${item.description}`;
+  const results = items
+    .filter(
+      (item) =>
+        item.active !== false &&
+        fold(label(item)).includes(fold(query?.trim() || "")),
+    )
+    .slice(0, 50);
+  function choose(item: Item) {
+    onChange(item.id);
+    setQuery(null);
+    setOpen(false);
+  }
+  useEffect(() => {
+    if (open)
+      root.current
+        ?.querySelector(`[data-index="${active}"]`)
+        ?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+  return (
+    <div ref={root} className="expiry-material-picker">
+      <label htmlFor={id}>Material</label>
+      <div className="expiry-material-input">
+        <Search size={17} aria-hidden="true" />
+        <input
+          id={id}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls={open ? `${id}-list` : undefined}
+          aria-activedescendant={
+            open && results[active] ? `${id}-${active}` : undefined
+          }
+          autoComplete="off"
+          placeholder="Buscar código ou descrição"
+          value={query ?? (selected ? label(selected) : "")}
+          onFocus={() => {
+            setOpen(true);
+            setActive(0);
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            onChange("");
+            setOpen(true);
+            setActive(0);
+          }}
+          onClick={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && open) {
+              event.preventDefault();
+              event.stopPropagation();
+              setOpen(false);
+            } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              setOpen(true);
+              setActive((current) =>
+                Math.max(
+                  0,
+                  Math.min(
+                    results.length - 1,
+                    open ? current + (event.key === "ArrowDown" ? 1 : -1) : 0,
+                  ),
+                ),
+              );
+            } else if (event.key === "Enter" && open) {
+              event.preventDefault();
+              if (results[active]) choose(results[active]);
+            }
+          }}
+        />
+      </div>
+      {open && (
+        <div
+          id={`${id}-list`}
+          role="listbox"
+          aria-label="Materiais"
+          className="expiry-material-options"
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          {results.map((item, index) => (
+            <div
+              key={item.id}
+              id={`${id}-${index}`}
+              role="option"
+              aria-selected={value === item.id}
+              data-index={index}
+              data-active={active === index}
+              onPointerMove={() => setActive(index)}
+              onClick={() => choose(item)}
+            >
+              {label(item)}
+            </div>
+          ))}
+          {!results.length && <p>Nenhum material encontrado.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function newLotDraft() {
+  return { id: crypto.randomUUID(), batch: "", expiresOn: "", quantity: "" };
 }

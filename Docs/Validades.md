@@ -4,13 +4,13 @@ Validades é acessado pela barra lateral e usa o mesmo `item.id` do Cadastro cen
 
 ## Operação
 
-1. Em Validades, clique em **Registrar validade**, encontre um material ativo do Cadastro e informe lote, validade, quantidade e responsável.
-2. **Salvar e adicionar outro** mantém o material e o responsável, limpando somente os campos do próximo lote. Também é possível selecionar um material no Cadastro e usar **Preparar seleção → Registrar validade**.
+1. Em Validades, clique em **Registrar validade**, busque e selecione um material ativo em um único campo. Informe quantidade, lote e validade na mesma linha.
+2. **Adicionar lote** inclui outra linha para o mesmo material. **Salvar** valida e grava todas as linhas de uma vez; um lote inválido impede a gravação do conjunto e preserva o formulário. Também é possível selecionar um material no Cadastro e usar **Preparar seleção → Registrar validade**.
 3. O painel mostra lotes com saldo: vencidos, até 7 dias, de 8 a 30 dias e acima de 30 dias. Vencimento de hoje permanece no prazo. A lista ordena os mais próximos primeiro e permite pesquisar código, descrição ou lote.
-4. **Dar baixa** registra consumo, descarte ou ajuste redutor, com quantidade, motivo e responsável. Não aceita quantidade acima do saldo. Lotes zerados continuam disponíveis pelo filtro **Encerrado**, com seu histórico.
+4. **Dar baixa** registra consumo, descarte ou ajuste redutor, com quantidade e motivo. Não aceita quantidade acima do saldo. Lotes zerados continuam disponíveis pelo filtro **Encerrado**, com seu histórico.
 5. **Exportar backup** baixa o Cadastro e os registros de validade em JSON. Não há restauração pela interface nesta etapa.
 
-O saldo dos lotes é independente dos saldos de DLs, pedidos e do MXM. Não há movimentação automática nesses módulos. Os responsáveis são informados pelo operador; ainda não representam identidades autenticadas.
+O saldo dos lotes é independente dos saldos de DLs, pedidos e do MXM. Não há movimentação automática nesses módulos. O formulário não solicita responsável. Enquanto não houver autenticação, os novos eventos são identificados como “Operador local”; não representam identidade autenticada. Responsáveis históricos permanecem preservados.
 
 ## Unidades e integridade
 
