@@ -1,9 +1,23 @@
+import {
+  catalogExpiryType,
+  expiryTypeOf,
+  expiryLocationOf,
+  expiryTypes,
+  expiryLocations,
+} from "../../services/expiryCategories";
 import { expiryCsv } from "../../services/expiryReports";
 import { useEffect, useId, useRef, useState } from "react";
 import { CalendarClock, ChevronDown, Plus, Search, Trash2 } from "lucide-react";
 import type { Item } from "../../types";
-import type { ExpiryLot, ExpiryWorkspace } from "../../types/expiry";
+import type {
+  ExpiryLot,
+  ExpiryWorkspace,
+  ExpiryType,
+  ExpiryLocation,
+} from "../../types/expiry";
 import {
+  expiryLotCount,
+  transferExpiry,
   groupExpiryLots,
   expiryQuantity,
   addExpiryEntry,
@@ -37,7 +51,7 @@ type Props = {
 };
 type Mode =
   | { kind: "new"; itemId?: string }
-  | { kind: "debit" | "detail" | "entry"; lotId: string }
+  | { kind: "debit" | "detail" | "entry" | "transfer"; lotId: string }
   | { kind: "audit"; lotIds: string[] };
 type DialogMode = Exclude<Mode, { kind: "audit" }>;
 const fold = (s: string) =>
@@ -58,6 +72,8 @@ export default function Validades({
   const today = todayInBrazil();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
+  const [type, setType] = useState<ExpiryType | "" | "unclassified">("");
+  const [location, setLocation] = useState<ExpiryLocation | "">("");
   const [mode, setMode] = useState<Mode | null>(null);
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -81,7 +97,20 @@ export default function Validades({
     }
   }, [initialItemId, onInitialConsumed]);
   const byId = new Map(items.map((item) => [item.id, item]));
-  const groups = groupExpiryLots(workspace).filter((group) =>
+  const scopeLots = workspace.lots.filter((lot) => {
+    const item = byId.get(lot.itemId);
+    const category = expiryTypeOf(lot, item);
+    return (
+      (!type || (type === "unclassified" ? !category : category === type)) &&
+      (type !== "Bebidas" ||
+        !location ||
+        expiryLocationOf(lot, item) === location)
+    );
+  });
+  const groups = groupExpiryLots(
+    { ...workspace, lots: scopeLots },
+    items,
+  ).filter((group) =>
     group.lots.some((lot) => {
       const item = byId.get(lot.itemId);
       const matchesStatus = !status
@@ -96,6 +125,15 @@ export default function Validades({
     }),
   );
   const visible = groups.flatMap((group) => group.lots);
+  const sections = (type ? [type] : [...expiryTypes, "unclassified"])
+    .map((category) => ({
+      category,
+      title: category === "unclassified" ? "Sem classificação" : category,
+      groups: groups.filter(
+        (group) => (group.category || "unclassified") === category,
+      ),
+    }))
+    .filter((section) => section.groups.length);
   function exportCsv(report: "lots" | "history") {
     const url = URL.createObjectURL(
       new Blob([expiryCsv(workspace, items, report, today)], {
@@ -206,11 +244,9 @@ export default function Validades({
             >
               <span>{label === "Vencido" ? "Lotes vencidos" : label}</span>
               <strong>
-                {
-                  workspace.lots.filter(
-                    (lot) => expiryStatus(lot, today) === label,
-                  ).length
-                }
+                {expiryLotCount(
+                  scopeLots.filter((lot) => expiryStatus(lot, today) === label),
+                )}
               </strong>
               <small>lotes com saldo</small>
             </button>
@@ -227,13 +263,47 @@ export default function Validades({
             </p>
           </div>
         </div>
-        <div className="ui-filterbar expiry-filters">
+        <div
+          className={`ui-filterbar expiry-filters expiry-category-filters${type === "Bebidas" ? " has-location" : ""}`}
+        >
           <FilterSearch
             label="Buscar lote ou material"
             value={query}
             onChange={setQuery}
             placeholder="Código, descrição ou lote"
           />
+          <FilterSelect
+            label="Tipo"
+            value={type}
+            onChange={(value) => {
+              setType(value as typeof type);
+              setLocation("");
+              setExpanded(new Set());
+            }}
+            options={[
+              { value: "", label: "Todos" },
+              ...expiryTypes.map((value) => ({ value, label: value })),
+              ...(workspace.lots.some(
+                (lot) => !expiryTypeOf(lot, byId.get(lot.itemId)),
+              )
+                ? [{ value: "unclassified", label: "Sem classificação" }]
+                : []),
+            ]}
+          />
+          {type === "Bebidas" && (
+            <FilterSelect
+              label="Local"
+              value={location}
+              onChange={(value) => {
+                setLocation(value as typeof location);
+                setExpanded(new Set());
+              }}
+              options={[
+                { value: "", label: "Todos" },
+                ...expiryLocations.map((value) => ({ value, label: value })),
+              ]}
+            />
+          )}
           <FilterSelect
             label="Situação da validade"
             value={status}
@@ -254,6 +324,8 @@ export default function Validades({
             onClick={() => {
               setQuery("");
               setStatus("");
+              setType("");
+              setLocation("");
             }}
           >
             Limpar filtros
@@ -277,141 +349,188 @@ export default function Validades({
           </div>
         ) : (
           <div className="expiry-groups">
-            {groups.map((group) => {
-              const item = byId.get(group.itemId);
-              const isOpen = expanded.has(group.key);
-              const nearest = group.nearest;
-              return (
-                <article className="expiry-material-group" key={group.key}>
-                  <button
-                    className="expiry-group-heading"
-                    aria-expanded={isOpen}
-                    onClick={() =>
-                      setExpanded((current) => {
-                        const next = new Set(current);
-                        if (next.has(group.key)) next.delete(group.key);
-                        else next.add(group.key);
-                        return next;
-                      })
-                    }
-                  >
-                    <span className="expiry-group-name">
-                      <strong>
-                        {item?.description ||
-                          "Material indisponível no Cadastro"}
-                      </strong>
-                      <small>
-                        {item?.code || group.itemId} · {group.lots.length}{" "}
-                        {group.lots.length === 1 ? "lote" : "lotes"}
-                      </small>
-                    </span>
-                    <span className="expiry-group-total">
-                      <small>Total</small>
-                      <strong>
-                        {expiryQuantity(group.totalMilli)} {group.unit}
-                      </strong>
-                    </span>
-                    <span
-                      className="expiry-group-nearest"
-                      data-status={
-                        nearest ? expiryStatus(nearest, today) : "Encerrado"
-                      }
-                    >
-                      <small>
-                        {nearest && expiryDays(nearest.expiresOn, today) < 0
-                          ? "Vencido"
-                          : "Próxima validade"}
-                      </small>
-                      <strong>
-                        {nearest
-                          ? `${expiryQuantity(group.nearestMilli)} ${group.unit} · ${date(nearest.expiresOn)}`
-                          : "Sem saldo"}
-                      </strong>
-                    </span>
-                    <ChevronDown
-                      size={17}
-                      className={isOpen ? "is-open" : ""}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Lote</th>
-                            <th>Validade</th>
-                            <th>Saldo</th>
-                            <th>Situação</th>
-                            <th>Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.lots.map((lot) => (
-                            <tr key={lot.id}>
-                              <td>{lot.batch}</td>
-                              <td>{date(lot.expiresOn)}</td>
-                              <td>
-                                {decimalInput(lot.remainingMilli, 3)} {lot.unit}
-                              </td>
-                              <td>
-                                <span
-                                  className="expiry-status"
-                                  data-status={expiryStatus(lot, today)}
-                                >
-                                  {expiryStatus(lot, today)}
-                                </span>
-                              </td>
-                              <td>
-                                <FilterSelect
-                                  aria-label={`Ações do lote ${lot.batch}`}
-                                  value=""
-                                  options={[
-                                    {
-                                      value: "",
-                                      label: "Ações",
-                                      disabled: true,
-                                    },
-                                    ...(item && item.active !== false
-                                      ? [
-                                          {
-                                            value: "entry",
-                                            label: "Nova entrada",
-                                          },
-                                        ]
-                                      : []),
-                                    ...(lot.remainingMilli > 0
-                                      ? [{ value: "debit", label: "Dar baixa" }]
-                                      : []),
-                                    {
-                                      value: "audit",
-                                      label: "Conferir estoque",
-                                    },
-                                    { value: "detail", label: "Histórico" },
-                                  ]}
-                                  onChange={(action) => {
-                                    if (action === "audit")
-                                      setMode({
-                                        kind: "audit",
-                                        lotIds: [lot.id],
-                                      });
-                                    else if (
-                                      action === "entry" ||
-                                      action === "debit" ||
-                                      action === "detail"
-                                    )
-                                      setMode({ kind: action, lotId: lot.id });
-                                  }}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+            {sections.map((section) => (
+              <section
+                className="expiry-type-section"
+                key={section.category}
+                aria-label={section.title}
+              >
+                {!type && <h3>{section.title}</h3>}
+                {section.groups.map((group) => {
+                  const item = byId.get(group.itemId);
+                  const isOpen = expanded.has(group.key);
+                  const nearest = group.nearest;
+                  return (
+                    <article className="expiry-material-group" key={group.key}>
+                      <button
+                        className="expiry-group-heading"
+                        aria-expanded={isOpen}
+                        onClick={() =>
+                          setExpanded((current) => {
+                            const next = new Set(current);
+                            if (next.has(group.key)) next.delete(group.key);
+                            else next.add(group.key);
+                            return next;
+                          })
+                        }
+                      >
+                        <span className="expiry-group-name">
+                          <strong>
+                            {item?.description ||
+                              "Material indisponível no Cadastro"}
+                          </strong>
+                          <small>
+                            {item?.code || group.itemId} ·{" "}
+                            {expiryLotCount(group.lots)}{" "}
+                            {expiryLotCount(group.lots) === 1
+                              ? "lote"
+                              : "lotes"}
+                            {group.category === "Bebidas" &&
+                            new Set(
+                              group.lots.map((lot) =>
+                                expiryLocationOf(lot, item),
+                              ),
+                            ).size > 1
+                              ? " · 2 locais"
+                              : ""}
+                          </small>
+                        </span>
+                        <span className="expiry-group-total">
+                          <small>Total</small>
+                          <strong>
+                            {expiryQuantity(group.totalMilli)} {group.unit}
+                          </strong>
+                        </span>
+                        <span
+                          className="expiry-group-nearest"
+                          data-status={
+                            nearest ? expiryStatus(nearest, today) : "Encerrado"
+                          }
+                        >
+                          <small>
+                            {nearest && expiryDays(nearest.expiresOn, today) < 0
+                              ? "Vencido"
+                              : "Próxima validade"}
+                          </small>
+                          <strong>
+                            {nearest
+                              ? `${expiryQuantity(group.nearestMilli)} ${group.unit} · ${date(nearest.expiresOn)}`
+                              : "Sem saldo"}
+                          </strong>
+                        </span>
+                        <ChevronDown
+                          size={17}
+                          className={isOpen ? "is-open" : ""}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Lote</th>
+                                {group.category === "Bebidas" && <th>Local</th>}
+                                <th>Validade</th>
+                                <th>Saldo</th>
+                                <th>Situação</th>
+                                <th>Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.lots.map((lot) => (
+                                <tr key={lot.id}>
+                                  <td>{lot.batch}</td>
+                                  {group.category === "Bebidas" && (
+                                    <td>{expiryLocationOf(lot, item)}</td>
+                                  )}
+                                  <td>{date(lot.expiresOn)}</td>
+                                  <td>
+                                    {decimalInput(lot.remainingMilli, 3)}{" "}
+                                    {lot.unit}
+                                  </td>
+                                  <td>
+                                    <span
+                                      className="expiry-status"
+                                      data-status={expiryStatus(lot, today)}
+                                    >
+                                      {expiryStatus(lot, today)}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <FilterSelect
+                                      aria-label={`Ações do lote ${lot.batch}${group.category === "Bebidas" ? ` ${expiryLocationOf(lot, item)}` : ""}`}
+                                      value=""
+                                      options={[
+                                        {
+                                          value: "",
+                                          label: "Ações",
+                                          disabled: true,
+                                        },
+                                        ...(item && item.active !== false
+                                          ? [
+                                              {
+                                                value: "entry",
+                                                label: "Nova entrada",
+                                              },
+                                            ]
+                                          : []),
+                                        ...(lot.remainingMilli > 0
+                                          ? [
+                                              {
+                                                value: "debit",
+                                                label: "Dar baixa",
+                                              },
+                                            ]
+                                          : []),
+                                        ...(group.category === "Bebidas" &&
+                                        item?.active !== false &&
+                                        lot.remainingMilli > 0 &&
+                                        expiryLocationOf(lot, item) ===
+                                          "Almoxarifado"
+                                          ? [
+                                              {
+                                                value: "transfer",
+                                                label:
+                                                  "Transferir para Lanchonete",
+                                              },
+                                            ]
+                                          : []),
+                                        {
+                                          value: "audit",
+                                          label: "Conferir estoque",
+                                        },
+                                        { value: "detail", label: "Histórico" },
+                                      ]}
+                                      onChange={(action) => {
+                                        if (action === "audit")
+                                          setMode({
+                                            kind: "audit",
+                                            lotIds: [lot.id],
+                                          });
+                                        else if (
+                                          action === "entry" ||
+                                          action === "debit" ||
+                                          action === "detail" ||
+                                          action === "transfer"
+                                        )
+                                          setMode({
+                                            kind: action,
+                                            lotId: lot.id,
+                                          });
+                                      }}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </section>
+            ))}
             {!groups.length && (
               <p className="empty-state">
                 Nenhum material corresponde aos filtros.
@@ -443,6 +562,8 @@ export default function Validades({
               : `${mode.kind}:${mode.lotId}`
           }
           mode={mode}
+          viewType={type === "unclassified" ? "" : type}
+          viewLocation={location}
           items={items}
           workspace={workspace}
           onClose={close}
@@ -460,6 +581,8 @@ export default function Validades({
 }
 function ExpiryDialog({
   mode,
+  viewType,
+  viewLocation,
   items,
   workspace,
   onClose,
@@ -468,6 +591,8 @@ function ExpiryDialog({
   onSaved,
 }: {
   mode: DialogMode;
+  viewType: ExpiryType | "";
+  viewLocation: ExpiryLocation | "";
   items: Item[];
   workspace: ExpiryWorkspace;
   onClose: () => boolean;
@@ -479,6 +604,10 @@ function ExpiryDialog({
   const [drafts, setDrafts] = useState(() => [newLotDraft()]);
   const [itemId, setItemId] = useState(
     mode.kind === "new" ? mode.itemId || "" : "",
+  );
+  const [manualType, setManualType] = useState<ExpiryType | "">(viewType);
+  const [entryLocation, setEntryLocation] = useState<ExpiryLocation>(
+    viewLocation || "Almoxarifado",
   );
   const [requestId] = useState(() => crypto.randomUUID());
   const [quantity, setQuantity] = useState("");
@@ -509,8 +638,18 @@ function ExpiryDialog({
       ? workspace.lots.find((lot) => lot.id === mode.lotId)
       : undefined;
   const item = items.find((item) => item.id === (lot?.itemId || itemId));
+  const inheritedType =
+    catalogExpiryType(item) ||
+    workspace.lots.find((row) => row.itemId === itemId && row.category)
+      ?.category;
+  const category = inheritedType || manualType;
   const firstToUse = lot
-    ? expiryFirstToUse(workspace, lot.itemId, today)
+    ? expiryFirstToUse(
+        workspace,
+        lot.itemId,
+        today,
+        expiryLocationOf(lot, item),
+      )
     : undefined;
   const edit = (change: () => void) => {
     change();
@@ -520,6 +659,7 @@ function ExpiryDialog({
   function save() {
     try {
       if (mode.kind === "new") {
+        if (!category) throw new Error("Selecione o Tipo deste material.");
         const entries = drafts.map((draft, index) => ({
           id: draft.id,
           itemId,
@@ -533,13 +673,24 @@ function ExpiryDialog({
             ) || 0,
           actor,
           expectedUnit: normalizeCatalogUnit(item?.unit || ""),
+          category,
+          location: category === "Bebidas" ? entryLocation : undefined,
         }));
         onCommit((ws, currentItems) =>
           registerExpiryBatch(ws, currentItems, entries),
         );
       } else if (lot) {
         const quantityMilli = parseScaledInput(quantity, 3, "Quantidade") || 0;
-        if (mode.kind === "entry")
+        if (mode.kind === "transfer")
+          onCommit((ws, currentItems) =>
+            transferExpiry(ws, currentItems, {
+              id: requestId,
+              lotId: lot.id,
+              quantityMilli,
+              actor,
+            }),
+          );
+        else if (mode.kind === "entry")
           onCommit((ws, currentItems) =>
             addExpiryEntry(ws, currentItems, {
               id: requestId,
@@ -571,7 +722,9 @@ function ExpiryDialog({
           ? `${drafts.length === 1 ? "Lote registrado" : `${drafts.length} lotes registrados`}.`
           : mode.kind === "entry"
             ? "Entrada somada ao lote e registrada no histórico."
-            : "Baixa registrada no histórico do lote.",
+            : mode.kind === "transfer"
+              ? "Transferência para Lanchonete registrada."
+              : "Baixa registrada no histórico do lote.",
       );
     } catch (cause) {
       setError(
@@ -586,7 +739,9 @@ function ExpiryDialog({
         ? "Dar baixa no lote"
         : mode.kind === "entry"
           ? "Nova entrada no lote"
-          : "Histórico do lote";
+          : mode.kind === "transfer"
+            ? "Transferir para Lanchonete"
+            : "Histórico do lote";
   return (
     <dialog
       ref={ref}
@@ -604,19 +759,60 @@ function ExpiryDialog({
         {mode.kind !== "new" && (
           <p>
             {item?.description || lot?.itemId} · Lote {lot?.batch}
+            {lot && expiryLocationOf(lot, item)
+              ? ` · ${expiryLocationOf(lot, item)}`
+              : ""}
           </p>
         )}
       </header>
       <div className="expiry-dialog-body">
         {mode.kind === "new" && (
           <>
-            <MaterialPicker
-              items={items}
-              value={itemId}
-              onChange={(value) => {
-                if (value !== itemId) edit(() => setItemId(value));
-              }}
-            />
+            <div
+              className={`expiry-material-context${category === "Bebidas" ? " has-location" : ""}`}
+            >
+              <MaterialPicker
+                items={
+                  viewType
+                    ? items.filter(
+                        (item) =>
+                          !catalogExpiryType(item) ||
+                          catalogExpiryType(item) === viewType,
+                      )
+                    : items
+                }
+                value={itemId}
+                onChange={(value) => {
+                  if (value !== itemId) edit(() => setItemId(value));
+                }}
+              />
+              {category === "Bebidas" && (
+                <FilterSelect
+                  label="Local"
+                  value={entryLocation}
+                  onChange={(value) =>
+                    edit(() => setEntryLocation(value as ExpiryLocation))
+                  }
+                  options={expiryLocations.map((value) => ({
+                    value,
+                    label: value,
+                  }))}
+                />
+              )}
+            </div>
+            {item && !inheritedType && (
+              <FilterSelect
+                label="Tipo"
+                value={manualType}
+                onChange={(value) =>
+                  edit(() => setManualType(value as ExpiryType))
+                }
+                options={[
+                  { value: "", label: "Selecionar tipo" },
+                  ...expiryTypes.map((value) => ({ value, label: value })),
+                ]}
+              />
+            )}
             <div className="expiry-lot-rows">
               {drafts.map((draft, index) => (
                 <div className="expiry-lot-row" key={draft.id}>
@@ -683,7 +879,9 @@ function ExpiryDialog({
                         l.itemId === itemId &&
                         l.batch.trim().toUpperCase() ===
                           draft.batch.trim().toUpperCase() &&
-                        l.expiresOn === draft.expiresOn,
+                        l.expiresOn === draft.expiresOn &&
+                        expiryLocationOf(l, item) ===
+                          (category === "Bebidas" ? entryLocation : undefined),
                     );
                     return existing ? (
                       <small className="expiry-existing-lot">
@@ -719,6 +917,24 @@ function ExpiryDialog({
             >
               <Plus size={15} /> Adicionar lote
             </button>
+          </>
+        )}
+        {mode.kind === "transfer" && lot && (
+          <>
+            <p className="expiry-note">
+              Almoxarifado → Lanchonete · Disponível:{" "}
+              {decimalInput(lot.remainingMilli, 3)} {lot.unit} · Validade{" "}
+              {date(lot.expiresOn)}
+            </p>
+            <label>
+              Quantidade a transferir ({lot.unit})
+              <input
+                aria-label="Quantidade a transferir"
+                inputMode="decimal"
+                value={quantity}
+                onChange={(e) => edit(() => setQuantity(e.target.value))}
+              />
+            </label>
           </>
         )}
         {mode.kind === "entry" && lot && (
@@ -814,7 +1030,11 @@ function ExpiryDialog({
               .map((event) => (
                 <article key={event.id} className="expiry-history">
                   <strong>
-                    {event.kind} ·{" "}
+                    {event.kind}
+                    {event.kind === "Transferência"
+                      ? ` (${event.afterMilli! > event.beforeMilli! ? "entrada" : "saída"})`
+                      : ""}{" "}
+                    ·{" "}
                     {event.beforeMilli !== undefined &&
                     event.afterMilli !== undefined
                       ? `${decimalInput(event.beforeMilli, 3)} → ${decimalInput(event.afterMilli, 3)}`
@@ -846,7 +1066,9 @@ function ExpiryDialog({
               ? "Salvar"
               : mode.kind === "entry"
                 ? "Confirmar entrada"
-                : "Confirmar baixa"}
+                : mode.kind === "transfer"
+                  ? "Confirmar transferência"
+                  : "Confirmar baixa"}
           </button>
         )}
       </footer>
@@ -1083,6 +1305,9 @@ function ExpiryCountDialog({
                       <strong>{item?.description || row.itemId}</strong>
                       <small>
                         {item?.code} · Lote {row.batch} · {date(row.expiresOn)}
+                        {expiryLocationOf(row, item)
+                          ? ` · ${expiryLocationOf(row, item)}`
+                          : ""}
                       </small>
                     </td>
                     <td>
@@ -1091,7 +1316,7 @@ function ExpiryCountDialog({
                     <td>
                       <div className="expiry-count-input">
                         <input
-                          aria-label={`Contagem do lote ${row.batch} ${item?.code || row.itemId}`}
+                          aria-label={`Contagem do lote ${row.batch} ${item?.code || row.itemId}${expiryLocationOf(row, item) ? ` ${expiryLocationOf(row, item)}` : ""}`}
                           inputMode="decimal"
                           value={row.counted}
                           onChange={(event) =>

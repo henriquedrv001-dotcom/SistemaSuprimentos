@@ -1,3 +1,4 @@
+import { expiryTypeOf, expiryLocationOf } from "./expiryCategories.ts";
 import type { Item } from "../types";
 import type { ExpiryWorkspace } from "../types/expiry";
 import { expiryStatus } from "./expiry.ts";
@@ -34,6 +35,8 @@ export function expiryCsv(
             "Saldo",
             "Situação",
             "Última conferência",
+            "Tipo",
+            "Local",
           ],
           ...ws.lots.map((lot) => {
             const item = byId.get(lot.itemId);
@@ -52,6 +55,8 @@ export function expiryCsv(
               quantity(lot.remainingMilli),
               expiryStatus(lot, today),
               audit?.timestamp || "",
+              expiryTypeOf(lot, item) || "Sem classificação",
+              expiryLocationOf(lot, item) || "",
             ];
           }),
         ]
@@ -69,6 +74,9 @@ export function expiryCsv(
             "Saldo após",
             "Motivo",
             "Responsável",
+            "Tipo",
+            "Local",
+            "Transferência",
           ],
           ...ws.movements.map((event) => {
             const lot = lots.get(event.lotId)!;
@@ -79,7 +87,9 @@ export function expiryCsv(
               item?.description || "",
               lot.batch,
               lot.expiresOn,
-              event.kind,
+              event.kind === "Transferência"
+                ? `Transferência (${event.afterMilli! > event.beforeMilli! ? "entrada" : "saída"})`
+                : event.kind,
               quantity(event.quantityMilli),
               lot.unit,
               event.beforeMilli === undefined
@@ -88,6 +98,9 @@ export function expiryCsv(
               event.afterMilli === undefined ? "" : quantity(event.afterMilli),
               event.reason,
               event.actor,
+              expiryTypeOf(lot, item) || "Sem classificação",
+              expiryLocationOf(lot, item) || "",
+              event.transferId || "",
             ];
           }),
         ];

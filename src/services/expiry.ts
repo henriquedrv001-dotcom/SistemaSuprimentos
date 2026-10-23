@@ -1,6 +1,15 @@
+import {
+  catalogExpiryType,
+  expiryTypeOf,
+  expiryLocationOf,
+  expiryTypes,
+  expiryLocations,
+} from "./expiryCategories.ts";
 import type { Item } from "../types";
 import type {
   ExpiryLot,
+  ExpiryType,
+  ExpiryLocation,
   ExpiryMovement,
   ExpiryWorkspace,
 } from "../types/expiry";
@@ -58,6 +67,10 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
       ![lot.id, lot.itemId, lot.batch, lot.unit, lot.createdBy].every(
         (v) => typeof v === "string" && v.trim(),
       ) ||
+      (lot.category !== undefined && !expiryTypes.includes(lot.category)) ||
+      (lot.location !== undefined &&
+        (!expiryLocations.includes(lot.location) ||
+          lot.category !== "Bebidas")) ||
       ids.has(lot.id) ||
       !expiryDateValid(lot.expiresOn) ||
       !safe(lot.initialMilli) ||
@@ -68,7 +81,12 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
     )
       fail();
     ids.add(lot.id);
-    const signature = `${lot.itemId}:${lot.batch.trim().toUpperCase()}:${lot.expiresOn}`;
+    const signature = JSON.stringify([
+      lot.itemId,
+      lot.batch.trim().toUpperCase(),
+      lot.expiresOn,
+      lot.location || "Almoxarifado",
+    ]);
     if (signatures.has(signature)) fail();
     signatures.add(signature);
   }
@@ -76,6 +94,7 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
   const balances = new Map<string, number>();
   const entries = new Map<string, number>();
   const references = new Set<string>();
+  const transfers = new Map<string, ExpiryMovement[]>();
   for (const event of ws.movements) {
     if (
       !event ||
@@ -84,9 +103,14 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
       ) ||
       eventIds.has(event.id) ||
       !ids.has(event.lotId) ||
-      !["Entrada", "Consumo", "Descarte", "Ajuste", "Conferência"].includes(
-        event.kind,
-      ) ||
+      ![
+        "Entrada",
+        "Consumo",
+        "Descarte",
+        "Ajuste",
+        "Conferência",
+        "Transferência",
+      ].includes(event.kind) ||
       !safe(event.quantityMilli) ||
       (event.quantityMilli === 0 && event.kind !== "Conferência") ||
       typeof event.timestamp !== "string" ||
@@ -103,7 +127,32 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
         fail();
       references.add(event.referenceId);
     }
-    if (event.kind === "Entrada") {
+    if (event.kind === "Transferência") {
+      if (
+        typeof event.transferId !== "string" ||
+        !event.transferId.trim() ||
+        !event.counterpartLotId ||
+        !ids.has(event.counterpartLotId) ||
+        event.counterpartLotId === event.lotId ||
+        !safe(event.beforeMilli!) ||
+        !safe(event.afterMilli!) ||
+        Math.abs(event.afterMilli! - event.beforeMilli!) !== event.quantityMilli
+      )
+        fail();
+      transfers.set(event.transferId!, [
+        ...(transfers.get(event.transferId!) || []),
+        event,
+      ]);
+    } else if (
+      event.transferId !== undefined ||
+      event.counterpartLotId !== undefined
+    )
+      fail();
+    const credit =
+      event.kind === "Entrada" ||
+      (event.kind === "Transferência" &&
+        event.afterMilli! > event.beforeMilli!);
+    if (credit) {
       if (!entries.has(event.lotId))
         entries.set(event.lotId, event.quantityMilli);
     } else if (!entries.has(event.lotId)) fail();
@@ -111,13 +160,11 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
     const balance =
       event.kind === "Conferência"
         ? event.afterMilli!
-        : before +
-          (event.kind === "Entrada"
-            ? event.quantityMilli
-            : -event.quantityMilli);
+        : before + (credit ? event.quantityMilli : -event.quantityMilli);
     if (!safe(balance)) fail();
     if (
       event.kind === "Conferência" ||
+      event.kind === "Transferência" ||
       event.beforeMilli !== undefined ||
       event.afterMilli !== undefined
     ) {
@@ -135,6 +182,37 @@ export function readExpiryWorkspace(raw: string | null): ExpiryWorkspace {
         fail();
     }
     balances.set(event.lotId, balance);
+  }
+  for (const pair of transfers.values()) {
+    if (pair.length !== 2) fail();
+    const outgoing = pair.find(
+      (event) => event.afterMilli! < event.beforeMilli!,
+    );
+    const incoming = pair.find(
+      (event) => event.afterMilli! > event.beforeMilli!,
+    );
+    if (
+      !outgoing ||
+      !incoming ||
+      outgoing.quantityMilli !== incoming.quantityMilli ||
+      outgoing.counterpartLotId !== incoming.lotId ||
+      incoming.counterpartLotId !== outgoing.lotId ||
+      outgoing.timestamp !== incoming.timestamp
+    )
+      fail();
+    const source = ws.lots.find((lot) => lot.id === outgoing!.lotId)!;
+    const target = ws.lots.find((lot) => lot.id === incoming!.lotId)!;
+    if (
+      source.category !== "Bebidas" ||
+      target.category !== "Bebidas" ||
+      source.location !== "Almoxarifado" ||
+      target.location !== "Lanchonete" ||
+      source.itemId !== target.itemId ||
+      source.unit !== target.unit ||
+      source.batch.trim().toUpperCase() !== target.batch.trim().toUpperCase() ||
+      source.expiresOn !== target.expiresOn
+    )
+      fail();
   }
   for (const lot of ws.lots) {
     if (
@@ -156,6 +234,8 @@ export function registerExpiry(
     quantityMilli: number;
     actor: string;
     expectedUnit: string;
+    category?: ExpiryType;
+    location?: ExpiryLocation;
   },
 ): ExpiryWorkspace {
   readExpiryWorkspace(JSON.stringify(ws));
@@ -174,7 +254,10 @@ export function registerExpiry(
     );
   if (
     ws.lots.some((lot) => lot.id === input.id) ||
-    ws.movements.some((event) => event.referenceId === input.id)
+    ws.movements.some(
+      (event) =>
+        event.referenceId === input.id || event.transferId === input.id,
+    )
   )
     throw new Error("Este registro já foi salvo. Recarregue para conferir.");
   if (
@@ -188,18 +271,40 @@ export function registerExpiry(
     throw new Error(
       "Informe lote, quantidade positiva, validade e responsável.",
     );
+  const category =
+    catalogExpiryType(item) ||
+    ws.lots.find((lot) => lot.itemId === item.id && lot.category)?.category ||
+    input.category;
+  if (input.category && input.category !== category)
+    throw new Error(
+      "O tipo do material mudou. Reabra o registro para conferir.",
+    );
+  if (category !== undefined && !expiryTypes.includes(category))
+    throw new Error("Selecione um tipo válido.");
+  if (
+    input.location !== undefined &&
+    (category !== "Bebidas" || !expiryLocations.includes(input.location))
+  )
+    throw new Error("Local é utilizado somente para Bebidas.");
+  const location =
+    category === "Bebidas" ? input.location || "Almoxarifado" : undefined;
   const existing = ws.lots.find(
     (lot) =>
       lot.itemId === item.id &&
       lot.batch.trim().toUpperCase() === input.batch.trim().toUpperCase() &&
-      lot.expiresOn === input.expiresOn,
+      lot.expiresOn === input.expiresOn &&
+      (expiryLocationOf(lot, item) ||
+        (!lot.category && category === "Bebidas"
+          ? "Almoxarifado"
+          : undefined)) === location,
   );
   if (
     !existing &&
     ws.lots.some(
       (lot) =>
         lot.itemId === item.id &&
-        lot.batch.trim().toUpperCase() === input.batch.trim().toUpperCase(),
+        lot.batch.trim().toUpperCase() === input.batch.trim().toUpperCase() &&
+        lot.expiresOn !== input.expiresOn,
     )
   )
     throw new Error(
@@ -221,14 +326,27 @@ export function registerExpiry(
     remainingMilli: input.quantityMilli,
     createdAt: now,
     createdBy: input.actor.trim(),
+    ...(category ? { category } : {}),
+    ...(location ? { location } : {}),
   };
+  const classified = ws.lots.map((row) =>
+    row.itemId === item.id && !row.category && category
+      ? {
+          ...row,
+          category,
+          ...(category === "Bebidas"
+            ? { location: row.location || ("Almoxarifado" as const) }
+            : {}),
+        }
+      : row,
+  );
   return {
     ...ws,
     lots: existing
-      ? ws.lots.map((row) =>
+      ? classified.map((row) =>
           row.id === existing.id ? { ...row, remainingMilli: after } : row,
         )
-      : [...ws.lots, lot],
+      : [...classified, lot],
     movements: [
       ...ws.movements,
       {
@@ -321,6 +439,7 @@ export function registerExpiryBatch(
         entry.itemId,
         entry.batch.trim().toUpperCase(),
         entry.expiresOn,
+        entry.location || "Almoxarifado",
       ]);
       if (signatures.has(signature))
         throw new Error(
@@ -343,11 +462,14 @@ export function expiryFirstToUse(
   ws: ExpiryWorkspace,
   itemId: string,
   today: string,
+  location?: ExpiryLocation,
 ) {
   return ws.lots
     .filter(
       (lot) =>
         lot.itemId === itemId &&
+        (location === undefined ||
+          (lot.location || "Almoxarifado") === location) &&
         lot.remainingMilli > 0 &&
         expiryDays(lot.expiresOn, today) >= 0,
     )
@@ -377,6 +499,14 @@ export function addExpiryEntry(
     itemId: lot.itemId,
     batch: lot.batch,
     expiresOn: lot.expiresOn,
+    category: expiryTypeOf(
+      lot,
+      items.find((item) => item.id === lot.itemId),
+    ),
+    location: expiryLocationOf(
+      lot,
+      items.find((item) => item.id === lot.itemId),
+    ),
   });
 }
 
@@ -436,12 +566,13 @@ export function countExpiry(
 }
 
 /** Identidade do Cadastro e unidade preservadas; nunca agrupa só por descrição. */
-export function groupExpiryLots(ws: ExpiryWorkspace) {
+export function groupExpiryLots(ws: ExpiryWorkspace, items: Item[] = []) {
   const groups = new Map<
     string,
     {
       key: string;
       itemId: string;
+      category?: ExpiryType;
       unit: string;
       lots: ExpiryLot[];
       totalMilli: bigint;
@@ -450,10 +581,15 @@ export function groupExpiryLots(ws: ExpiryWorkspace) {
     }
   >();
   for (const lot of ws.lots) {
-    const key = JSON.stringify([lot.itemId, lot.unit]);
+    const category = expiryTypeOf(
+      lot,
+      items.find((item) => item.id === lot.itemId),
+    );
+    const key = JSON.stringify([lot.itemId, lot.unit, category]);
     const group = groups.get(key) || {
       key,
       itemId: lot.itemId,
+      category,
       unit: lot.unit,
       lots: [],
       totalMilli: 0n,
@@ -487,4 +623,132 @@ export function expiryQuantity(value: number | bigint) {
   const abs = n < 0n ? -n : n;
   const fraction = (abs % 1000n).toString().padStart(3, "0").replace(/0+$/, "");
   return `${n < 0n ? "-" : ""}${abs / 1000n}${fraction ? `,${fraction}` : ""}`;
+}
+
+/** Desloca somente Bebidas: saída e entrada vinculadas na mesma gravação. */
+export function transferExpiry(
+  ws: ExpiryWorkspace,
+  items: Item[],
+  input: { id: string; lotId: string; quantityMilli: number; actor: string },
+) {
+  readExpiryWorkspace(JSON.stringify(ws));
+  const source = ws.lots.find((lot) => lot.id === input.lotId);
+  const item = items.find((item) => item.id === source?.itemId);
+  if (
+    !source ||
+    !item ||
+    item.active === false ||
+    expiryTypeOf(source, item) !== "Bebidas" ||
+    expiryLocationOf(source, item) !== "Almoxarifado"
+  )
+    throw new Error(
+      "A transferência é exclusiva de Bebidas do Almoxarifado para a Lanchonete.",
+    );
+  if (normalizeCatalogUnit(item.unit) !== source.unit)
+    throw new Error(
+      "A unidade do material mudou. Confira o Cadastro antes de transferir.",
+    );
+  if (
+    !input.id.trim() ||
+    !input.actor.trim() ||
+    !safe(input.quantityMilli) ||
+    input.quantityMilli <= 0 ||
+    input.quantityMilli > source.remainingMilli
+  )
+    throw new Error(
+      "Informe uma quantidade positiva, até o saldo do Almoxarifado.",
+    );
+  if (
+    ws.movements.some(
+      (event) =>
+        event.transferId === input.id || event.referenceId === input.id,
+    ) ||
+    ws.lots.some((lot) => lot.id === input.id)
+  )
+    throw new Error(
+      "Esta transferência já foi salva. Recarregue para conferir.",
+    );
+  const existing = ws.lots.find(
+    (lot) =>
+      lot.itemId === source.itemId &&
+      lot.unit === source.unit &&
+      lot.batch.trim().toUpperCase() === source.batch.trim().toUpperCase() &&
+      lot.expiresOn === source.expiresOn &&
+      expiryLocationOf(lot, item) === "Lanchonete",
+  );
+  const before = existing?.remainingMilli || 0;
+  const after = before + input.quantityMilli;
+  if (!safe(after))
+    throw new Error("Saldo de destino acima do limite permitido.");
+  const now = new Date().toISOString();
+  const destination: ExpiryLot = existing || {
+    ...source,
+    id: crypto.randomUUID(),
+    category: "Bebidas",
+    location: "Lanchonete",
+    initialMilli: input.quantityMilli,
+    remainingMilli: 0,
+    createdAt: now,
+    createdBy: input.actor.trim(),
+  };
+  const lots = ws.lots.map((lot) =>
+    lot.id === source.id
+      ? {
+          ...lot,
+          category: "Bebidas" as const,
+          location: "Almoxarifado" as const,
+          remainingMilli: lot.remainingMilli - input.quantityMilli,
+        }
+      : lot.id === destination.id
+        ? { ...lot, category: "Bebidas" as const, remainingMilli: after }
+        : lot,
+  );
+  if (!existing) lots.push({ ...destination, remainingMilli: after });
+  const common = {
+    kind: "Transferência" as const,
+    transferId: input.id,
+    quantityMilli: input.quantityMilli,
+    actor: input.actor.trim(),
+    reason: "Almoxarifado → Lanchonete",
+    timestamp: now,
+  };
+  const result = {
+    ...ws,
+    lots,
+    movements: [
+      ...ws.movements,
+      {
+        ...common,
+        id: crypto.randomUUID(),
+        lotId: source.id,
+        counterpartLotId: destination.id,
+        beforeMilli: source.remainingMilli,
+        afterMilli: source.remainingMilli - input.quantityMilli,
+      },
+      {
+        ...common,
+        id: crypto.randomUUID(),
+        lotId: destination.id,
+        counterpartLotId: source.id,
+        beforeMilli: before,
+        afterMilli: after,
+      },
+    ],
+  };
+  readExpiryWorkspace(JSON.stringify(result));
+  return result;
+}
+
+/** Um lote físico em dois locais continua sendo um lote, com duas posições de saldo. */
+export function expiryLotCount(lots: ExpiryLot[]) {
+  return new Set(
+    lots.map((lot) =>
+      JSON.stringify([
+        lot.itemId,
+        lot.batch.trim().toUpperCase(),
+        lot.expiresOn,
+        lot.unit,
+      ]),
+    ),
+  ).size;
 }

@@ -1,7 +1,15 @@
+import {
+  catalogExpiryType,
+  expiryTypeOf,
+  expiryLocationOf,
+  expiryTypes,
+} from "../src/services/expiryCategories.ts";
 import { expiryCsv } from "../src/services/expiryReports.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  expiryLotCount,
+  transferExpiry,
   groupExpiryLots,
   expiryQuantity,
   addExpiryEntry,
@@ -541,4 +549,239 @@ test("CSV de lotes e histórico exporta contagens, saldos anterior/atual e prote
   const report = expiryCsv(ws, items, "lots", "2026-10-22");
   assert.match(report, /"17,5";"Acima de 30 dias"/);
   assert.ok(report.includes(ws.movements.at(-1).timestamp));
+});
+
+const beverageItems = [{ ...items[0], type: "Bebidas" }];
+const drinkEntry = (overrides = {}) =>
+  entry({ category: "Bebidas", location: "Almoxarifado", ...overrides });
+test("tipos aproveitam classificação do Cadastro sem deduzir pela descrição", () => {
+  for (const type of expiryTypes)
+    assert.equal(catalogExpiryType({ type }), type);
+  assert.equal(
+    catalogExpiryType({ type: "GÊNEROS ALIMENTÍCIOS" }),
+    "Gêneros alimentícios",
+  );
+  assert.equal(catalogExpiryType({ type: "LIMPEZA" }), "Higiene e Limpeza");
+  assert.equal(catalogExpiryType({ type: "EPI" }), "Segurança e Proteção");
+  assert.equal(catalogExpiryType({ type: "Materiais de consumo" }), undefined);
+});
+test("bebidas antigas são exibidas no Almoxarifado sem regravar a base", () => {
+  const ws = registerExpiry(emptyExpiryWorkspace(), items, entry());
+  delete ws.lots[0].category;
+  delete ws.lots[0].location;
+  const raw = JSON.stringify(ws);
+  assert.equal(expiryTypeOf(ws.lots[0], beverageItems[0]), "Bebidas");
+  assert.equal(expiryLocationOf(ws.lots[0], beverageItems[0]), "Almoxarifado");
+  assert.equal(JSON.stringify(ws), raw);
+  assert.doesNotThrow(() => readExpiryWorkspace(raw));
+});
+test("o mesmo lote em locais diferentes mantém saldos e entradas separados", () => {
+  let ws = registerExpiry(emptyExpiryWorkspace(), beverageItems, drinkEntry());
+  ws = registerExpiry(
+    ws,
+    beverageItems,
+    drinkEntry({ id: "bar", location: "Lanchonete", quantityMilli: 5000 }),
+  );
+  assert.equal(ws.lots.length, 2);
+  ws = addExpiryEntry(ws, beverageItems, {
+    id: "new-bar",
+    lotId: "bar",
+    quantityMilli: 2000,
+    actor: "Henrique",
+    expectedUnit: "L",
+  });
+  assert.equal(ws.lots[0].remainingMilli, 20000);
+  assert.equal(ws.lots[1].remainingMilli, 7000);
+  assert.doesNotThrow(() => readExpiryWorkspace(JSON.stringify(ws)));
+  assert.throws(
+    () =>
+      registerExpiry(ws, items, entry({ id: "wrong", location: "Lanchonete" })),
+    /somente para Bebidas/,
+  );
+});
+test("transferência retira do Almoxarifado, soma na Lanchonete e preserva total, lote, validade e histórico", () => {
+  const original = registerExpiry(
+    emptyExpiryWorkspace(),
+    beverageItems,
+    drinkEntry(),
+  );
+  const before = JSON.stringify(original);
+  let ws = transferExpiry(original, beverageItems, {
+    id: "transfer-1",
+    lotId: "lot-1",
+    quantityMilli: 5000,
+    actor: "Henrique",
+  });
+  const destination = ws.lots.find((lot) => lot.location === "Lanchonete");
+  assert.equal(ws.lots[0].remainingMilli, 15000);
+  assert.equal(destination.remainingMilli, 5000);
+  assert.equal(destination.batch, "A");
+  assert.equal(destination.expiresOn, "2027-01-10");
+  assert.equal(
+    ws.lots.reduce((sum, lot) => sum + lot.remainingMilli, 0),
+    20000,
+  );
+  assert.equal(
+    ws.movements.filter((event) => event.transferId === "transfer-1").length,
+    2,
+  );
+  ws = transferExpiry(ws, beverageItems, {
+    id: "transfer-2",
+    lotId: "lot-1",
+    quantityMilli: 15000,
+    actor: "Henrique",
+  });
+  assert.equal(ws.lots.length, 2);
+  assert.equal(ws.lots[0].remainingMilli, 0);
+  assert.equal(
+    ws.lots.find((lot) => lot.id === destination.id).remainingMilli,
+    20000,
+  );
+  assert.equal(groupExpiryLots(ws, beverageItems)[0].totalMilli, 20000n);
+  assert.equal(JSON.stringify(original), before);
+  assert.doesNotThrow(() => readExpiryWorkspace(JSON.stringify(ws)));
+});
+test("transferência bloqueia outros tipos, direção inversa, excesso e repetição da operação", () => {
+  const ordinary = registerExpiry(emptyExpiryWorkspace(), items, entry());
+  const action = {
+    id: "transfer-1",
+    lotId: "lot-1",
+    quantityMilli: 1000,
+    actor: "Henrique",
+  };
+  assert.throws(
+    () => transferExpiry(ordinary, items, action),
+    /exclusiva de Bebidas/,
+  );
+  const ws = registerExpiry(
+    emptyExpiryWorkspace(),
+    beverageItems,
+    drinkEntry(),
+  );
+  for (const qty of [0, -1, 1.5, 20001])
+    assert.throws(() =>
+      transferExpiry(ws, beverageItems, { ...action, quantityMilli: qty }),
+    );
+  const moved = transferExpiry(ws, beverageItems, action);
+  assert.throws(
+    () => transferExpiry(moved, beverageItems, action),
+    /já foi salva/,
+  );
+  assert.throws(
+    () =>
+      transferExpiry(moved, beverageItems, {
+        ...action,
+        id: "reverse",
+        lotId: moved.lots.find((lot) => lot.location === "Lanchonete").id,
+      }),
+    /exclusiva/,
+  );
+  assert.throws(
+    () => transferExpiry(ws, [{ ...beverageItems[0], active: false }], action),
+    /exclusiva/,
+  );
+});
+test("histórico detecta transferência incompleta, duplicada ou com quantidade/local alterado", () => {
+  const ws = transferExpiry(
+    registerExpiry(emptyExpiryWorkspace(), beverageItems, drinkEntry()),
+    beverageItems,
+    {
+      id: "transfer-1",
+      lotId: "lot-1",
+      quantityMilli: 1000,
+      actor: "Henrique",
+    },
+  );
+  for (const change of [
+    (w) => w.movements.pop(),
+    (w) => w.movements.at(-1).quantityMilli++,
+    (w) => (w.movements.at(-1).transferId = "broken"),
+    (w) => (w.movements.at(-1).counterpartLotId = "missing"),
+    (w) => (w.lots[1].location = "Almoxarifado"),
+    (w) => (w.lots[1].category = "Gêneros alimentícios"),
+    (w) => w.movements.at(-1).afterMilli++,
+  ]) {
+    const broken = structuredClone(ws);
+    change(broken);
+    assert.throws(() => readExpiryWorkspace(JSON.stringify(broken)));
+  }
+});
+test("transferência de legado só materializa locais ao operar e relatório distingue movimentos", () => {
+  const ws = registerExpiry(
+    emptyExpiryWorkspace(),
+    beverageItems,
+    drinkEntry(),
+  );
+  delete ws.lots[0].category;
+  delete ws.lots[0].location;
+  const moved = transferExpiry(ws, beverageItems, {
+    id: "transfer-legacy",
+    lotId: "lot-1",
+    quantityMilli: 1000,
+    actor: "Henrique",
+  });
+  assert.equal(moved.lots[0].location, "Almoxarifado");
+  assert.equal(moved.lots[1].location, "Lanchonete");
+  const csv = expiryCsv(moved, beverageItems, "history", "2026-10-22");
+  assert.match(csv, /Transferência \(saída\)/);
+  assert.match(csv, /Transferência \(entrada\)/);
+  assert.match(csv, /Almoxarifado/);
+  assert.match(csv, /Lanchonete/);
+  assert.match(csv, /transfer-legacy/);
+});
+test("prioridade de consumo de bebidas é calculada dentro do próprio local", () => {
+  let ws = registerExpiry(
+    emptyExpiryWorkspace(),
+    beverageItems,
+    drinkEntry({ expiresOn: "2026-11-01" }),
+  );
+  ws = registerExpiry(
+    ws,
+    beverageItems,
+    drinkEntry({
+      id: "bar",
+      batch: "B",
+      location: "Lanchonete",
+      expiresOn: "2026-12-01",
+    }),
+  );
+  assert.equal(
+    expiryFirstToUse(ws, "item-1", "2026-10-22", "Lanchonete").id,
+    "bar",
+  );
+  assert.equal(
+    expiryFirstToUse(ws, "item-1", "2026-10-22", "Almoxarifado").id,
+    "lot-1",
+  );
+});
+
+test("transferir para outro local não duplica a contagem do lote físico", () => {
+  const ws = transferExpiry(
+    registerExpiry(emptyExpiryWorkspace(), beverageItems, drinkEntry()),
+    beverageItems,
+    { id: "move", lotId: "lot-1", quantityMilli: 1000, actor: "Henrique" },
+  );
+  assert.equal(ws.lots.length, 2);
+  assert.equal(expiryLotCount(ws.lots), 1);
+});
+test("classificação explícita de material antigo preserva seus lotes e soma no Almoxarifado", () => {
+  const unknownItems = [{ ...items[0], type: "SEM TIPO" }];
+  const ws = registerExpiry(emptyExpiryWorkspace(), unknownItems, entry());
+  const original = JSON.stringify(ws);
+  const result = registerExpiry(
+    ws,
+    unknownItems,
+    entry({
+      id: "new",
+      category: "Bebidas",
+      location: "Almoxarifado",
+      quantityMilli: 1000,
+    }),
+  );
+  assert.equal(result.lots.length, 1);
+  assert.equal(result.lots[0].category, "Bebidas");
+  assert.equal(result.lots[0].location, "Almoxarifado");
+  assert.equal(result.lots[0].remainingMilli, 21000);
+  assert.equal(JSON.stringify(ws), original);
+  assert.doesNotThrow(() => readExpiryWorkspace(JSON.stringify(result)));
 });

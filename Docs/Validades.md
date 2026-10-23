@@ -66,3 +66,15 @@ Foram consultados os arquivos oficiais das documentações, mantidos nos reposit
 4. [Microsoft Dynamics — contagem cíclica](https://github.com/MicrosoftDocs/dynamics-365-unified-operations-public/blob/main/articles/supply-chain/warehousing/cycle-counting.md): conferência pontual e tratamento de divergências.
 
 A adaptação mantém apenas as operações necessárias para este módulo. Configurações de armazéns, ordens de compra, aprovações e notificações externas descritas pelos fornecedores não foram adicionadas.
+
+## Visualização por Tipo e Local
+
+O filtro **Tipo** contém Todos, Gêneros alimentícios, Bebidas, Higiene e Limpeza e Segurança e Proteção. Em Todos, a listagem mantém seções separadas por tipo. Pesquisa e situação continuam disponíveis. Os indicadores e a conferência coletiva respeitam o tipo/local selecionado.
+
+A classificação aproveita o Tipo do Cadastro, reconhecendo grafias explícitas como Gêneros/Alimentos, Limpeza e EPI. Não usa a descrição do produto para adivinhar o tipo. Lotes novos guardam a classificação. Registros sem tipo reconhecido permanecem em Todos e em **Sem classificação**. Ao registrar um desses materiais, o operador informa Tipo; a classificação explícita também se aplica aos seus lotes antigos ainda sem classificação, sem alterar quantidades ou eventos anteriores.
+
+Somente em Bebidas aparece o filtro **Local**: Todos, Almoxarifado e Lanchonete. O cadastro de uma bebida também permite escolher o local, aproveitando o local da visualização. Registros antigos de bebidas são apresentados no Almoxarifado por padrão, sem regravação automática ao ler. Esse local é materializado quando ocorre uma operação. Ao expandir um material, os lotes de bebidas mostram Local; entradas, baixas e conferências operam somente na posição escolhida. A prioridade de consumo considera os lotes do mesmo local.
+
+**Ações → Transferir para Lanchonete** aparece exclusivamente em bebidas com saldo no Almoxarifado. Basta informar a quantidade. A operação reduz o saldo da origem e soma na Lanchonete, mantendo material, lote, validade e unidade. Reutiliza a posição de destino quando já existe, inclusive zerada. A transferência não é consumo e não altera o total entre os dois locais.
+
+Saída e entrada são vinculadas pelo identificador da transferência e gravadas juntas. Excesso, operação repetida, outro tipo e direção inversa são bloqueados. O leitor exige o par completo, quantidades iguais e locais corretos. Histórico e CSV identificam local, tipo e transferência; os dois lados permanecem rastreáveis. Um lote físico presente nos dois locais conta uma única vez nos indicadores; a capa identifica que há dois locais.

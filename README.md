@@ -161,3 +161,5 @@ O Cadastro utiliza filtros visuais compartilhados, unidades padronizadas na exib
 
 
 A gestão de Validades apresenta materiais agrupados, com total e quantidade do vencimento mais próximo. A janela de registro é compacta e abre a busca apenas por ação do usuário. Novas chegadas somam ao lote existente com histórico; conferência física individual ou de vários lotes registra diferenças, inclusive zero e saldo correto. As ações do lote reúnem entrada, baixa, conferência e histórico; Exportar reúne lotes/histórico em CSV e backup JSON. Fontes da pesquisa, operação e limites em [Docs/Validades.md](Docs/Validades.md).
+
+Validades agora separa a visualização por Tipo e permite Todos. Bebidas possui posições no Almoxarifado e na Lanchonete, com filtro Local e transferência entre esses locais. A transferência preserva o total, lote e validade e registra os dois movimentos vinculados. Entradas, baixas, conferências e relatórios distinguem as posições. Detalhes e tratamento dos registros antigos em [Docs/Validades.md](Docs/Validades.md).
